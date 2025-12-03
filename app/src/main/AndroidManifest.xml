@@ -12,7 +12,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.UNICK">
         <activity
-            android:name=".SchoolProfileActivity"
+            android:name=".SchoolDetailActivity"
             android:exported="true"
             android:label="@string/title_activity_school_profile"
             android:theme="@style/Theme.UNICK">

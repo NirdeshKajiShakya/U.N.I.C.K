@@ -75,7 +75,7 @@ fun SchoolDetailsScreen() {
 
             // School Logo (circular)
             Image(
-                painter = painterResource(id = R.drawable.school_logo),  // <-- put your logo here
+                painter = painterResource(id = R.drawable.school_banner),  // <-- put your logo here
                 contentDescription = "School Logo",
                 modifier = Modifier
                     .size(55.dp)
