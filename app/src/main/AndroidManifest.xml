@@ -12,8 +12,18 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.UNICK">
         <activity
-            android:name=".SendCodeToEmailActivity"
+            android:name=".view.ResetPasswordActivity"
             android:exported="false"
+            android:label="@string/title_activity_reset_password"
+            android:theme="@style/Theme.UNICK" />
+        <activity
+            android:name=".view.CodeConfirmActivity"
+            android:exported="false"
+            android:label="@string/title_activity_code_confirm"
+            android:theme="@style/Theme.UNICK" />
+        <activity
+            android:name=".view.SendCodeToEmailActivity"
+            android:exported="true"
             android:label="@string/title_activity_send_code_to_email"
             android:theme="@style/Theme.UNICK" />
         <activity

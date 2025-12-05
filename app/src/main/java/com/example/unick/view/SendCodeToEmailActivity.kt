@@ -1,20 +1,14 @@
-package com.example.unick
+package com.example.unick.view
 
-import android.content.ClipData
 import android.content.Intent
-import android.graphics.Paint
-import android.media.tv.TvContract
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -35,20 +29,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ModifierInfo
-import androidx.compose.ui.layout.ModifierLocalBeyondBoundsLayout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontStyle.Companion.Italic
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.unick.R
 import com.example.unick.ui.theme.Blue
 import com.example.unick.ui.theme.LightGray
-import com.example.unick.ui.theme.UNICKTheme
 
 class SendCodeToEmailActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -71,8 +62,8 @@ fun CodeToEmail() {
                 .padding(padding)
         ) {
             item { Logo() }
-            item { HeadingText() }
-            item { SubText() }
+            item { HeadingTextForSendCodeToEmail() }
+            item { SubTextForSendCodeToEmail() }
             item { EmailInputField() }
             item { ButtonForOTP() }
             item { BackToLoginText()}
@@ -106,7 +97,7 @@ fun Logo() {
 }
 
 @Composable
-fun HeadingText() {
+fun HeadingTextForSendCodeToEmail() {
     Row(
         modifier = Modifier
             .fillMaxSize()
@@ -123,7 +114,7 @@ fun HeadingText() {
 }
 
 @Composable
-fun SubText(){
+fun SubTextForSendCodeToEmail(){
     Row(
         modifier = Modifier
             .fillMaxSize()
@@ -160,6 +151,7 @@ fun EmailInputField() {
 
 @Composable
 fun ButtonForOTP(){
+    val context = LocalContext.current
     Row(
         modifier = Modifier
             .fillMaxSize()
@@ -167,7 +159,10 @@ fun ButtonForOTP(){
         horizontalArrangement = Arrangement.Center
     ) {
         Button(
-            onClick = {},
+            onClick = {
+                val intent = Intent(context, CodeConfirmActivity::class.java)
+                context.startActivity(intent)
+            },
             colors = ButtonDefaults.buttonColors(containerColor = Blue)
         ) {
             Text(
@@ -202,6 +197,7 @@ fun BackToLoginText(){
         )
     }
 }
+
 
 @Preview(showBackground = true)
 @Composable
