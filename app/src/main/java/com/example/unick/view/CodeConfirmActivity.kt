@@ -1,5 +1,6 @@
 package com.example.unick.view
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -24,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.VisualTransformation
@@ -157,6 +159,7 @@ fun OtpCodeInput(length: Int) {
 
 @Composable
 fun ButtonForOTPConfirm(){
+    val context = LocalContext.current
     Row(
         modifier = Modifier
             .fillMaxSize()
@@ -164,7 +167,10 @@ fun ButtonForOTPConfirm(){
         horizontalArrangement = Arrangement.Center
     ) {
         androidx.compose.material3.Button(
-            onClick = {},
+            onClick = {
+                val intent = Intent(context, ResetPasswordActivity::class.java)
+                context.startActivity(intent)
+            },
             colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = com.example.unick.ui.theme.Blue)
         ) {
             Text(

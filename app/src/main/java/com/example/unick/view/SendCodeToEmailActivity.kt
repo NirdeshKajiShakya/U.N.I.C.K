@@ -161,7 +161,7 @@ fun ButtonForOTP(){
         Button(
             onClick = {
                 val intent = Intent(context, CodeConfirmActivity::class.java)
-                context.startActivity(intent)
+            context.startActivity(intent)
             },
             colors = ButtonDefaults.buttonColors(containerColor = Blue)
         ) {

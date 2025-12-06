@@ -53,7 +53,7 @@ fun ResetPassword() {
             item { Spacer(modifier = Modifier.padding(top = 32.dp))}
             item { NewPasswordInputField() }
             item { Spacer(modifier = Modifier.padding(top = 32.dp))}
-            item { ButtonForOTPConfirm() }
+            item { ButtonForResetPasswordConfirm() }
         }
     }
 }
@@ -127,6 +127,24 @@ fun NewPasswordInputField(){
                 modifier = Modifier.fillMaxWidth(0.9f),
                 label = { Text("Confirm Password") }
             )
+        }
+    }
+}
+
+@Composable
+fun ButtonForResetPasswordConfirm(){
+    Row(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        horizontalArrangement = Arrangement.Center
+    ) {
+        androidx.compose.material3.Button(
+            onClick = {},
+            modifier = Modifier.fillMaxWidth(0.9f),
+            colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = com.example.unick.ui.theme.Blue)
+        ) {
+            Text("Confirm New Password")
         }
     }
 }
