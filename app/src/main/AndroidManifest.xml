@@ -12,7 +12,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.UNICK">
         <activity
-            android:name=".DashboardActivity"
+            android:name=".view.DashboardActivity"
             android:exported="true"
             android:label="@string/title_activity_dashboard"
             android:theme="@style/Theme.UNICK">
