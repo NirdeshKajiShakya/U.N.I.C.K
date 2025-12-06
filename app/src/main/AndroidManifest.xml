@@ -12,6 +12,21 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.UNICK">
         <activity
+            android:name=".UserRegistrationActivity"
+            android:exported="false"
+            android:label="@string/title_activity_user_registration"
+            android:theme="@style/Theme.UNICK" />
+        <activity
+            android:name=".UserLoginActivity"
+            android:exported="false"
+            android:label="@string/title_activity_user_login"
+            android:theme="@style/Theme.UNICK" />
+        <activity
+            android:name=".AdminLoginActivity"
+            android:exported="false"
+            android:label="@string/title_activity_admin_login"
+            android:theme="@style/Theme.UNICK" />
+        <activity
             android:name=".MainActivity"
             android:exported="true"
             android:label="@string/app_name"
