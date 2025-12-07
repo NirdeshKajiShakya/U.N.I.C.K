@@ -17,12 +17,12 @@
             android:label="@string/title_activity_user_registration"
             android:theme="@style/Theme.UNICK" />
         <activity
-            android:name=".UserLoginActivity"
+            android:name=".view.UserLoginActivity"
             android:exported="false"
             android:label="@string/title_activity_user_login"
             android:theme="@style/Theme.UNICK" />
         <activity
-            android:name=".AdminLoginActivity"
+            android:name=".view.AdminLoginActivity"
             android:exported="false"
             android:label="@string/title_activity_admin_login"
             android:theme="@style/Theme.UNICK" />

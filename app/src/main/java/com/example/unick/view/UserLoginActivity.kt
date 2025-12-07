@@ -1,4 +1,4 @@
-package com.example.unick
+package com.example.unick.view
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
