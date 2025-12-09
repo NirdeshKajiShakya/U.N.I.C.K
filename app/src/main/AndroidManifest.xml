@@ -12,13 +12,18 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.UNICK">
         <activity
+            android:name=".view.CompareActivity"
+            android:exported="true"
+            android:label="@string/title_activity_compare"
+            android:theme="@style/Theme.UNICK" />
+        <activity
             android:name=".view.ResetPasswordActivity"
-            android:exported="false"
+            android:exported="true"
             android:label="@string/title_activity_reset_password"
             android:theme="@style/Theme.UNICK" />
         <activity
             android:name=".view.CodeConfirmActivity"
-            android:exported="false"
+            android:exported="true"
             android:label="@string/title_activity_code_confirm"
             android:theme="@style/Theme.UNICK" />
         <activity

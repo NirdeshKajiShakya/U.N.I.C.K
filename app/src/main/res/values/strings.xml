@@ -3,4 +3,5 @@
     <string name="title_activity_send_code_to_email">SendCodeToEmailActivity</string>
     <string name="title_activity_code_confirm">CodeConfirmActivity</string>
     <string name="title_activity_reset_password">ResetPasswordActivity</string>
+    <string name="title_activity_compare">CompareActivity</string>
 </resources>
