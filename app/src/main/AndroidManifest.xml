@@ -12,7 +12,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.UNICK">
         <activity
-            android:name=".UserRegistrationActivity"
+            android:name=".view.UserRegistrationActivity"
             android:exported="false"
             android:label="@string/title_activity_user_registration"
             android:theme="@style/Theme.UNICK" />
