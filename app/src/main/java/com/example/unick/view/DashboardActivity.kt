@@ -19,6 +19,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -35,7 +36,7 @@ class DashboardActivity : ComponentActivity() {
             UNICKTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    color = Color(0xFFF5F7FA)
+                    color = Color(0xFFF8F9FA)
                 ) {
                     DashboardScreen()
                 }
@@ -52,199 +53,187 @@ fun DashboardScreen() {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                Brush.linearGradient(
-                    colors = listOf(
-                        Color(0xFFF5F7FA),
-                        Color(0xFFE8ECF1)
-                    )
-                )
-            )
+            .background(Color(0xFFF8F9FA))
             .verticalScroll(rememberScrollState())
-            .padding(24.dp)
+            .padding(20.dp)
     ) {
+        Spacer(modifier = Modifier.height(16.dp))
+
         // Header
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.Top
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "Welcome back, User",
-                    fontSize = 28.sp,
+                    text = "Namaste,",
+                    fontSize = 16.sp,
+                    color = Color(0xFF64748B),
+                    fontWeight = FontWeight.Medium
+                )
+                Text(
+                    text = "Student",
+                    fontSize = 32.sp,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = Color(0xFF0F172A)
                 )
             }
 
             Box(
                 modifier = Modifier
-                    .size(48.dp)
-                    .background(Color(0xFFE8ECF1), CircleShape),
+                    .size(52.dp)
+                    .shadow(4.dp, CircleShape)
+                    .background(
+                        Brush.linearGradient(
+                            colors = listOf(Color(0xFF667EEA), Color(0xFF764BA2))
+                        ),
+                        CircleShape
+                    ),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = Icons.Default.Person,
                     contentDescription = "User",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(24.dp)
+                    tint = Color.White,
+                    modifier = Modifier.size(26.dp)
                 )
             }
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
-        // Subtitle
         Text(
-            text = "Discover schools that match your preferences and educational goals.",
+            text = "Explore the best colleges in Nepal tailored to your SEE/SLC results and interests.",
             fontSize = 15.sp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = Color(0xFF64748B),
             lineHeight = 22.sp
         )
 
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(24.dp))
 
-        // Search Button / Field
-        if (!isSearchActive) {
-            Button(
-                onClick = { isSearchActive = true },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF2563EB)
-                ),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Search,
-                    contentDescription = "Search",
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "Start Your Search",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.SemiBold
+        // Search Section
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            if (!isSearchActive) {
+                Button(
+                    onClick = { isSearchActive = true },
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(58.dp)
+                        .shadow(8.dp, RoundedCornerShape(14.dp)),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB)),
+                    shape = RoundedCornerShape(14.dp)
+                ) {
+                    Icon(Icons.Default.Search, "Search", modifier = Modifier.size(22.dp), tint = Color.White)
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Text("Search Colleges", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                }
+            } else {
+                OutlinedTextField(
+                    value = searchText,
+                    onValueChange = { searchText = it },
+                    modifier = Modifier
+                        .weight(1f)
+                        .shadow(4.dp, RoundedCornerShape(14.dp)),
+                    placeholder = { Text("e.g. St. Xavier's, Budhanilkantha...", color = Color(0xFF94A3B8)) },
+                    leadingIcon = { Icon(Icons.Default.Search, null, tint = Color(0xFF2563EB)) },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Color(0xFF2563EB),
+                        focusedContainerColor = Color.White,
+                        unfocusedContainerColor = Color.White
+                    ),
+                    shape = RoundedCornerShape(14.dp),
+                    singleLine = true
                 )
             }
-        } else {
-            OutlinedTextField(
-                value = searchText,
-                onValueChange = { searchText = it },
+
+            // Filter Button
+            OutlinedButton(
+                onClick = { /* Handle filter */ },
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                placeholder = { Text("Search for schools...") },
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Default.Search,
-                        contentDescription = "Search"
-                    )
-                },
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color(0xFF2563EB),
-                    unfocusedBorderColor = Color(0xFF2563EB),
+                    .size(58.dp)
+                    .shadow(4.dp, RoundedCornerShape(14.dp)),
+                colors = ButtonDefaults.outlinedButtonColors(containerColor = Color.White),
+                border = ButtonDefaults.outlinedButtonBorder.copy(
+                    width = 2.dp,
+                    brush = Brush.linearGradient(listOf(Color(0xFF2563EB), Color(0xFF2563EB)))
                 ),
-                shape = RoundedCornerShape(12.dp),
-                singleLine = true
-            )
+                shape = RoundedCornerShape(14.dp),
+                contentPadding = PaddingValues(0.dp)
+            ) {
+                Text("🎯", fontSize = 24.sp)
+            }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(14.dp))
 
-        // Compare Schools Button
+        // Compare Button
         OutlinedButton(
             onClick = { /* Handle compare */ },
             modifier = Modifier
                 .fillMaxWidth()
-                .height(56.dp),
-            colors = ButtonDefaults.outlinedButtonColors(
-                contentColor = Color(0xFF2563EB)
-            ),
+                .height(58.dp)
+                .shadow(4.dp, RoundedCornerShape(14.dp)),
+            colors = ButtonDefaults.outlinedButtonColors(containerColor = Color.White),
             border = ButtonDefaults.outlinedButtonBorder.copy(
                 width = 2.dp,
                 brush = Brush.linearGradient(listOf(Color(0xFF2563EB), Color(0xFF2563EB)))
             ),
-            shape = RoundedCornerShape(12.dp)
+            shape = RoundedCornerShape(14.dp)
         ) {
-            Text(
-                text = "📍",
-                fontSize = 20.sp
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = "Compare Schools",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.SemiBold
-            )
+            Text("📊", fontSize = 22.sp)
+            Spacer(modifier = Modifier.width(10.dp))
+            Text("Compare Academic Programs", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color(0xFF2563EB))
         }
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // School Matching Preference Section
+        // Perfect Matches Section
         SchoolSection(
-            title = "School Matching Preference",
-            subtitle = "Personalized picks based on your saved preferences",
+            title = "Perfect Matches",
+            subtitle = "Institutions matching your academic profile",
             schools = listOf(
-                SchoolData(
-                    name = "Lincoln High School",
-                    type = "Public • Grades 9-12",
-                    distance = "2.3 miles away",
-                    rating = "4.5",
-                    match = "98% match",
-                    gradient = listOf(Color(0xFF667EEA), Color(0xFF764BA2))
-                )
+                SchoolData("St. Xavier's College", "Maitighar • +2 Science/A-Levels", "0.8 km", "4.9", "98% match", "https://images.unsplash.com/photo-1562774053-701939374585?w=400"),
+                SchoolData("Budhanilkantha School", "Kathmandu • National Curriculum", "5.4 km", "4.8", "95% match", "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=400"),
+                SchoolData("Ullens School", "Khumaltar • IB Diploma Program", "3.2 km", "4.7", "92% match", "https://images.unsplash.com/photo-1498243691581-b145c3f54a5a?w=400")
             )
         )
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // School Matching Preference in the City Section
+        // Top Rated in Kathmandu Section
         SchoolSection(
-            title = "School Matching Preference in the City",
-            subtitle = "Top-rated schools in your metropolitan area",
+            title = "Top Rated in Kathmandu",
+            subtitle = "Highest academic standing in the capital",
             schools = listOf(
-                SchoolData(
-                    name = "Downtown Charter",
-                    type = "Charter • Grades 6-12",
-                    distance = "5.2 miles away",
-                    rating = "4.4",
-                    match = "90% match",
-                    gradient = listOf(Color(0xFFFA709A), Color(0xFFFEE140))
-                )
+                SchoolData("Little Angels' School", "Hattiban • School to Bachelors", "4.5 km", "4.7", "90% rank", "https://images.unsplash.com/photo-1509062522246-3755977927d7?w=400"),
+                SchoolData("Trinity International", "Dillibazar • +2 & A-Levels", "1.1 km", "4.6", "88% rank", "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=400"),
+                SchoolData("Rato Bangala School", "Patan • A-Levels Center", "2.9 km", "4.8", "87% rank", "https://images.unsplash.com/photo-1546410531-bb4caa6b424d?w=400")
             )
         )
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // Board Schools Nearby Section
+        // Regional Leaders Section
         SchoolSection(
-            title = "Board schools nearby",
-            subtitle = "Schools near your preferred locations",
+            title = "Regional Leaders",
+            subtitle = "Top schools outside the capital valley",
             schools = listOf(
-                SchoolData(
-                    name = "Greenwood Academy",
-                    type = "Private • Grades K-8",
-                    distance = "1.8 miles away",
-                    rating = "4.6",
-                    match = "Nearby",
-                    gradient = listOf(Color(0xFFFFECD2), Color(0xFFFCB69F))
-                )
+                SchoolData("Gandaki Boarding", "Pokhara • National Curriculum", "200 km", "4.7", "Elite", "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=400"),
+                SchoolData("Siddhartha Boarding", "Butwal • Science/Management", "260 km", "4.5", "Top Pick", "https://images.unsplash.com/photo-1571260899304-425eee4c7efc?w=400"),
+                SchoolData("SOS Hermann Gmeiner", "Pokhara • Science Streams", "198 km", "4.6", "Scholarship", "https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=400")
             )
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(40.dp))
     }
 }
 
 @Composable
-fun SchoolSection(
-    title: String,
-    subtitle: String,
-    schools: List<SchoolData>
-) {
+fun SchoolSection(title: String, subtitle: String, schools: List<SchoolData>) {
     Column {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -254,35 +243,30 @@ fun SchoolSection(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = title,
-                    fontSize = 18.sp,
+                    fontSize = 22.sp,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = Color(0xFF0F172A)
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = subtitle,
                     fontSize = 14.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = Color(0xFF64748B),
+                    lineHeight = 20.sp
                 )
             }
-            TextButton(onClick = { /* Handle view all */ }) {
+            TextButton(onClick = { }) {
                 Text(
-                    text = "View all →",
+                    "View all →",
                     color = Color(0xFF2563EB),
                     fontSize = 14.sp,
-                    fontWeight = FontWeight.SemiBold
+                    fontWeight = FontWeight.Bold
                 )
             }
         }
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        LazyRow(
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            items(schools) { school ->
-                SchoolCard(school)
-            }
+        Spacer(modifier = Modifier.height(16.dp))
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            items(schools) { school -> SchoolCard(school) }
         }
     }
 }
@@ -291,61 +275,100 @@ fun SchoolSection(
 fun SchoolCard(school: SchoolData) {
     Card(
         modifier = Modifier
-            .width(200.dp)
-            .height(160.dp),
-        shape = RoundedCornerShape(12.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            .width(280.dp)
+            .height(240.dp)
+            .shadow(8.dp, RoundedCornerShape(16.dp)),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    Brush.linearGradient(
-                        colors = school.gradient
-                    )
+        Column(modifier = Modifier.fillMaxSize()) {
+            // Image Section
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(120.dp)
+                    .background(Color(0xFFE2E8F0))
+            ) {
+                // In a real app, use AsyncImage or Coil to load from school.imageUrl
+                // For now, showing a colored overlay to represent the image
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            Brush.verticalGradient(
+                                colors = listOf(
+                                    Color(0xFF2563EB).copy(alpha = 0.1f),
+                                    Color(0xFF2563EB).copy(alpha = 0.05f)
+                                )
+                            )
+                        )
                 )
-                .padding(20.dp)
-        ) {
+
+                // Match badge
+                Box(
+                    modifier = Modifier
+                        .padding(12.dp)
+                        .background(Color(0xFF2563EB), RoundedCornerShape(8.dp))
+                        .padding(horizontal = 10.dp, vertical = 5.dp)
+                        .align(Alignment.TopEnd)
+                ) {
+                    Text(
+                        text = school.match,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                }
+            }
+
+            // Content Section
             Column(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
                 Column {
                     Text(
                         text = school.name,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color.White
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = school.type,
-                        fontSize = 13.sp,
-                        color = Color.White.copy(alpha = 0.9f)
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF0F172A),
+                        lineHeight = 22.sp
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "📍 ${school.distance}",
+                        text = school.type,
                         fontSize = 13.sp,
-                        color = Color.White.copy(alpha = 0.9f)
+                        color = Color(0xFF64748B),
+                        lineHeight = 18.sp
                     )
                 }
 
                 Row(
-                    verticalAlignment = Alignment.CenterVertically
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text(
-                        text = "⭐ ${school.rating}",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color.White
-                    )
-                    Text(
-                        text = " • ${school.match}",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color.White
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(text = "📍", fontSize = 14.sp)
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = school.distance,
+                            fontSize = 13.sp,
+                            color = Color(0xFF64748B),
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(text = "⭐", fontSize = 14.sp)
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = school.rating,
+                            fontSize = 13.sp,
+                            color = Color(0xFF0F172A),
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
             }
         }
@@ -358,18 +381,11 @@ data class SchoolData(
     val distance: String,
     val rating: String,
     val match: String,
-    val gradient: List<Color>
+    val imageUrl: String
 )
 
-@Preview(showBackground = true, showSystemUi = true)
+@Preview(showBackground = true)
 @Composable
 fun DashboardPreview() {
-    UNICKTheme {
-        Surface(
-            modifier = Modifier.fillMaxSize(),
-            color = Color(0xFFF5F7FA)
-        ) {
-            DashboardScreen()
-        }
-    }
+    UNICKTheme { DashboardScreen() }
 }
