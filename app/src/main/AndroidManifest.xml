@@ -12,6 +12,31 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.UNICK">
         <activity
+            android:name=".view.Form2Activity"
+            android:exported="false"
+            android:label="@string/title_activity_form2"
+            android:theme="@style/Theme.UNICK" />
+        <activity
+            android:name=".view.FormActivity"
+            android:exported="false"
+            android:label="@string/title_activity_form"
+            android:theme="@style/Theme.UNICK" />
+        <activity
+            android:name=".view.SchoolCard"
+            android:exported="false"
+            android:label="@string/title_activity_school_card"
+            android:theme="@style/Theme.UNICK" />
+        <activity
+            android:name=".view.ShortlistScreen"
+            android:exported="false"
+            android:label="@string/title_activity_shortlist_screen"
+            android:theme="@style/Theme.UNICK" />
+        <activity
+            android:name=".view.ShortlistActivity"
+            android:exported="false"
+            android:label="@string/title_activity_shortlist"
+            android:theme="@style/Theme.UNICK" />
+        <activity
             android:name=".UserRegistrationActivity"
             android:exported="false"
             android:label="@string/title_activity_user_registration"
