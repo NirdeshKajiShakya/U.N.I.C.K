@@ -12,23 +12,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.UNICK">
         <activity
-            android:name=".EditUserProfileActivity"
-            android:exported="true"
-            android:label="@string/title_activity_edit_user_profile"
-            android:theme="@style/Theme.UNICK"
-            tools:ignore="MissingClass" />
-        <activity
-            android:name=".UserProfileActivity"
-            android:exported="true"
-            android:label="@string/title_activity_user_profile"
-            android:theme="@style/Theme.UNICK" />
-        <activity
-            android:name=".MainActivity2"
-            android:exported="true"
-            android:label="@string/title_activity_main2"
-            android:theme="@style/Theme.UNICK" />
-        <activity
-            android:name=".SchoolDetailActivity"
+            android:name=".view.SchoolDetailActivity"
             android:exported="true"
             android:label="@string/title_activity_school_profile"
             android:theme="@style/Theme.UNICK">
