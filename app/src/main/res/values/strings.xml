@@ -1,4 +1,7 @@
 <resources>
     <string name="app_name">UNICK</string>
     <string name="title_activity_school_profile">SchoolProfileActivity</string>
+    <string name="title_activity_main2">MainActivity2</string>
+    <string name="title_activity_user_profile">UserProfileActivity</string>
+    <string name="title_activity_edit_user_profile">EditUserProfileActivity</string>
 </resources>
