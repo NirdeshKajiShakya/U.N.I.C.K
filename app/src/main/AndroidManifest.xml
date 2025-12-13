@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+<manifest package="com.example.unick" xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
     <application
@@ -11,13 +11,9 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.UNICK">
+        <!-- StudentApplicationActivity (the form screen implemented in code) -->
         <activity
-            android:name=".view.Form2Activity"
-            android:exported="false"
-            android:label="@string/title_activity_form2"
-            android:theme="@style/Theme.UNICK" />
-        <activity
-            android:name=".view.FormActivity"
+            android:name=".view.StudentApplicationActivity"
             android:exported="false"
             android:label="@string/title_activity_form"
             android:theme="@style/Theme.UNICK" />

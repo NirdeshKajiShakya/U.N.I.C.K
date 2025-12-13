@@ -6,20 +6,26 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.RadioButton
-import androidx.compose.runtime.*
+import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -44,140 +50,177 @@ class RegisterActivity : ComponentActivity() {
 
 @Composable
 fun RegisterScreen() {
-
-    var selectedRole by remember { mutableStateOf("Parent") }
-    var fullName by remember { mutableStateOf("") }
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.White)
-            .verticalScroll(rememberScrollState())
-            .padding(24.dp),
-        horizontalAlignment = Alignment.Start
-    ) {
-
-        // Title
-        Text(
-            text = "Create an Account",
-            fontSize = 26.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color.Black,
+    Scaffold() { padding ->
+        LazyColumn(
             modifier = Modifier
-                .align(Alignment.CenterHorizontally)
-                .padding(bottom = 24.dp)
-        )
-
-        // Role Selection
-        Text(
-            text = "I am a:",
-            fontSize = 15.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = Color.Black,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
-
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(bottom = 24.dp)
+                .fillMaxSize()
+                .background(Color.White)
+                .padding(padding),
+            horizontalAlignment = Alignment.Start,
+            verticalArrangement = Arrangement.Top
         ) {
-
-            RadioButton(
-                selected = selectedRole == "Parent",
-                onClick = { selectedRole = "Parent" }
-            )
-            Text(
-                text = "Parent",
-                modifier = Modifier.padding(end = 16.dp)
-            )
-
-            RadioButton(
-                selected = selectedRole == "Student",
-                onClick = { selectedRole = "Student" }
-            )
-            Text(
-                text = "Student",
-                modifier = Modifier.padding(end = 16.dp)
-            )
-
-            RadioButton(
-                selected = selectedRole == "School",
-                onClick = { selectedRole = "School" }
-            )
-            Text(text = "School")
+            item { HeadingTextForRegister() }
+            item { RoleSelectionForRegister() }
+            item { FullNameLabelAndField() }
+            item { EmailLabelAndField() }
+            item { PasswordLabelAndField() }
+            item { SignUpButtonForRegister() }
+            item { AlreadyHaveAccountLinkForRegister() }
         }
+    }
+}
 
-        // Full Name Label
+@Composable
+fun HeadingTextForRegister(){
+    Text(
+        text = "Create an Account",
+        fontSize = 26.sp,
+        fontWeight = FontWeight.Bold,
+        color = Color.Black,
+        modifier = Modifier
+            .padding(start = 24.dp, top = 24.dp, bottom = 24.dp)
+    )
+}
+
+@Composable
+fun RoleSelectionForRegister(){
+    var selectedRole by remember { mutableStateOf("Parent") }
+
+    Text(
+        text = "I am a:",
+        fontSize = 15.sp,
+        fontWeight = FontWeight.SemiBold,
+        color = Color.Black,
+        modifier = Modifier.padding(start = 24.dp, bottom = 8.dp)
+    )
+
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .padding(start = 24.dp, bottom = 24.dp)
+            .fillMaxWidth(),
+        horizontalArrangement = Arrangement.Start
+    ) {
+        RadioButton(
+            selected = selectedRole == "Parent",
+            onClick = { selectedRole = "Parent" }
+        )
         Text(
-            text = "Full Name",
-            fontSize = 14.sp,
-            color = Color.Black,
-            modifier = Modifier.padding(bottom = 8.dp)
+            text = "Parent",
+            modifier = Modifier.padding(end = 16.dp)
         )
 
-        // Full Name Input
+        RadioButton(
+            selected = selectedRole == "Student",
+            onClick = { selectedRole = "Student" }
+        )
+        Text(
+            text = "Student",
+            modifier = Modifier.padding(end = 16.dp)
+        )
+
+        RadioButton(
+            selected = selectedRole == "School",
+            onClick = { selectedRole = "School" }
+        )
+        Text(text = "School")
+    }
+}
+
+@Composable
+fun FullNameLabelAndField(){
+    var fullName by remember { mutableStateOf("") }
+    Text(
+        text = "Full Name",
+        fontSize = 14.sp,
+        color = Color.Black,
+        modifier = Modifier.padding(start = 24.dp, bottom = 8.dp)
+    )
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 24.dp, end = 24.dp, bottom = 16.dp)
+    ) {
         OutlinedTextField(
             value = fullName,
             onValueChange = { fullName = it },
             modifier = Modifier
                 .fillMaxWidth()
-                .height(48.dp)
-                .padding(bottom = 16.dp)
-                .background(Color(0xFFE0E0E0)),
+                .height(48.dp),
             placeholder = { Text("Enter your full name", color = Color.Gray) },
             singleLine = true
         )
+    }
+}
 
-        // Email Label
-        Text(
-            text = "Email address",
-            fontSize = 14.sp,
-            color = Color.Black,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
+@Composable
+fun EmailLabelAndField(){
+    var email by remember { mutableStateOf("") }
+    Text(
+        text = "Email address",
+        fontSize = 14.sp,
+        color = Color.Black,
+        modifier = Modifier.padding(start = 24.dp, bottom = 8.dp)
+    )
 
-        // Email Input
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 24.dp, end = 24.dp, bottom = 16.dp)
+    ) {
         OutlinedTextField(
             value = email,
             onValueChange = { email = it },
             modifier = Modifier
                 .fillMaxWidth()
-                .height(48.dp)
-                .padding(bottom = 16.dp)
-                .background(Color(0xFFE0E0E0)),
+                .height(48.dp),
             placeholder = { Text("Enter your email", color = Color.Gray) },
             singleLine = true
         )
+    }
+}
 
-        // Password Label
-        Text(
-            text = "Password",
-            fontSize = 14.sp,
-            color = Color.Black,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
+@Composable
+fun PasswordLabelAndField(){
+    var password by remember { mutableStateOf("") }
+    Text(
+        text = "Password",
+        fontSize = 14.sp,
+        color = Color.Black,
+        modifier = Modifier.padding(start = 24.dp, bottom = 8.dp)
+    )
 
-        // Password Input
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 24.dp, end = 24.dp, bottom = 24.dp)
+    ) {
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
             modifier = Modifier
                 .fillMaxWidth()
-                .height(48.dp)
-                .padding(bottom = 24.dp)
-                .background(Color(0xFFE0E0E0)),
+                .height(48.dp),
             placeholder = { Text("Enter password", color = Color.Gray) },
             visualTransformation = PasswordVisualTransformation(),
             singleLine = true
         )
+    }
+}
 
-        // Sign Up Button
+@Composable
+fun SignUpButtonForRegister(){
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 24.dp, end = 24.dp, bottom = 8.dp),
+        horizontalArrangement = Arrangement.Center
+    ) {
         Button(
             onClick = { /* Handle sign up */ },
             modifier = Modifier
-                .fillMaxWidth()
+                .width(300.dp)
                 .height(50.dp),
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color(0xFF0B36F7)
@@ -190,26 +233,29 @@ fun RegisterScreen() {
                 color = Color.White
             )
         }
+    }
+}
 
-        // Already have account
-        Row(
-            modifier = Modifier
-                .align(Alignment.CenterHorizontally)
-                .padding(top = 24.dp)
-        ) {
-            Text(
-                text = "Already have an account?",
-                fontSize = 14.sp,
-                color = Color.Black
-            )
-            Text(
-                text = " Sign In",
-                fontSize = 14.sp,
-                color = Color(0xFF2563EB),
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.clickable { /* Navigate to login */ }
-            )
-        }
+@Composable
+fun AlreadyHaveAccountLinkForRegister(){
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 24.dp, bottom = 24.dp),
+        horizontalArrangement = Arrangement.Center
+    ) {
+        Text(
+            text = "Already have an account?",
+            fontSize = 14.sp,
+            color = Color.Black
+        )
+        Text(
+            text = " Sign In",
+            fontSize = 14.sp,
+            color = Color(0xFF2563EB),
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.clickable { /* Navigate to login */ }
+        )
     }
 }
 
