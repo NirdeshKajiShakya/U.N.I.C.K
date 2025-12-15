@@ -8,4 +8,5 @@
     <string name="title_activity_school_card">SchoolCard</string>
     <string name="title_activity_form">FormActivity</string>
     <string name="title_activity_form2">Form2Activity</string>
+    <string name="title_activity_form3">Form3Activity</string>
 </resources>

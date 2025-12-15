@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest package="com.example.unick" xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    package="com.example.unick">
 
     <application
         android:allowBackup="true"
@@ -11,29 +12,24 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.UNICK">
-        <!-- StudentApplicationActivity (the form screen implemented in code) -->
+        <activity
+            android:name=".view.Form3Activity"
+            android:exported="false"
+            android:label="@string/title_activity_form3"
+            android:theme="@style/Theme.UNICK" />
+        <!-- Student application form screens -->
         <activity
             android:name=".view.StudentApplicationActivity"
             android:exported="false"
             android:label="@string/title_activity_form"
             android:theme="@style/Theme.UNICK" />
         <activity
-            android:name=".view.SchoolCard"
+            android:name=".view.PreviousSchoolDetailsActivity"
             android:exported="false"
-            android:label="@string/title_activity_school_card"
-            android:theme="@style/Theme.UNICK" />
+            android:label="@string/title_activity_form2"
+            android:theme="@style/Theme.UNICK" /> <!-- Auth / user screens -->
         <activity
-            android:name=".view.ShortlistScreen"
-            android:exported="false"
-            android:label="@string/title_activity_shortlist_screen"
-            android:theme="@style/Theme.UNICK" />
-        <activity
-            android:name=".view.ShortlistActivity"
-            android:exported="false"
-            android:label="@string/title_activity_shortlist"
-            android:theme="@style/Theme.UNICK" />
-        <activity
-            android:name=".UserRegistrationActivity"
+            android:name=".view.RegisterActivity"
             android:exported="false"
             android:label="@string/title_activity_user_registration"
             android:theme="@style/Theme.UNICK" />
@@ -46,7 +42,7 @@
             android:name=".view.AdminLoginActivity"
             android:exported="false"
             android:label="@string/title_activity_admin_login"
-            android:theme="@style/Theme.UNICK" />
+            android:theme="@style/Theme.UNICK" /> <!-- Main / launcher activity -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
