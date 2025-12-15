@@ -13,23 +13,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.UNICK">
         <activity
-            android:name=".view.Form3Activity"
-            android:exported="false"
-            android:label="@string/title_activity_form3"
-            android:theme="@style/Theme.UNICK" />
-        <!-- Student application form screens -->
-        <activity
-            android:name=".view.StudentApplicationActivity"
-            android:exported="false"
-            android:label="@string/title_activity_form"
-            android:theme="@style/Theme.UNICK" />
-        <activity
-            android:name=".view.PreviousSchoolDetailsActivity"
-            android:exported="false"
-            android:label="@string/title_activity_form2"
-            android:theme="@style/Theme.UNICK" /> <!-- Auth / user screens -->
-        <activity
-            android:name=".view.RegisterActivity"
+            android:name=".UserRegistrationActivity"
             android:exported="false"
             android:label="@string/title_activity_user_registration"
             android:theme="@style/Theme.UNICK" />
