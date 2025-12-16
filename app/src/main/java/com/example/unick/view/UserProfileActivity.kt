@@ -1,4 +1,4 @@
-package com.example.unick
+package com.example.unick.view
 
 import android.content.Intent
 import android.os.Bundle
@@ -29,6 +29,8 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.Dp
+import com.example.unick.R
 
 
 // -------------------- DATA MODELS --------------------
@@ -281,7 +283,7 @@ fun ApplicationsListSectionForUserProfile(
 @Composable
 fun ApplicationCardForUserProfile(
     application: ApplicationItemForUserProfile,
-    width: androidx.compose.ui.unit.Dp,
+    width: Dp,
     onViewSchoolClick: () -> Unit,
     onViewPdfClick: () -> Unit
 ) {
