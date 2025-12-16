@@ -12,6 +12,11 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.UNICK">
         <activity
+            android:name=".view.SettingsActivity"
+            android:exported="true"
+            android:label="@string/title_activity_settings"
+            android:theme="@style/Theme.UNICK" />
+        <activity
             android:name=".view.SchoolDetailActivity"
             android:exported="true"
             android:label="@string/title_activity_school_profile"
