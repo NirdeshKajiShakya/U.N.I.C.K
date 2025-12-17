@@ -2,4 +2,5 @@
     <string name="app_name">UNICK</string>
     <string name="title_activity_dashboard">DashboardActivity</string>
     <string name="title_activity_filter">FilterActivity</string>
+    <string name="title_activity_shortlist">ShortlistActivity</string>
 </resources>
