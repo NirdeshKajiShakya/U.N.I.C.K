@@ -19,4 +19,7 @@
     <string name="title_activity_user_profile">UserProfileActivity</string>
     <string name="title_activity_edit_user_profile">EditUserProfileActivity</string>
     <string name="title_activity_settings">SettingsActivity</string>
+    <string name="title_activity_dashboard">DashboardActivity</string>
+    <string name="title_activity_filter">FilterActivity</string>
+    <string name="title_activity_shortlist">ShortlistActivity</string>
 </resources>
