@@ -30,21 +30,11 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             UNICKTheme {
-                Scaffold(
-                    topBar = { TopSearchBar() }
-                ) { innerPadding ->
-                    Column(
-                        modifier = Modifier
-                            .padding(innerPadding)
-                            .fillMaxSize()
-                            .background(Color.White)
-                    ) {
-                        // Your main content goes here
-                        Text(
-                            text = "Main Content",
-                            modifier = Modifier.padding(16.dp)
-                        )
-                    }
+                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                    Greeting(
+                        name = "Android",
+                        modifier = Modifier.padding(innerPadding)
+                    )
                 }
             }
         }
@@ -52,85 +42,17 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun TopSearchBar() {
-    var searchText by remember { mutableStateOf("") }
-    val context = LocalContext.current
-    val interactionSource = remember { MutableInteractionSource() }
+fun Greeting(name: String, modifier: Modifier = Modifier) {
+    Text(
+        text = "Hello $name!",
+        modifier = modifier
+    )
+}
 
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(70.dp)
-            .background(Color(0xFFB6C9EE))
-            .statusBarsPadding()  // This adds padding for the status bar
-            .padding(horizontal = 12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-
-        // MENU ICON
-        Icon(
-            imageVector = Icons.Default.Menu,
-            contentDescription = "Menu",
-            modifier = Modifier
-                .size(32.dp)
-                .clickable {
-                    Toast.makeText(context, "Menu Clicked", Toast.LENGTH_SHORT).show()
-                }
-        )
-
-        Spacer(modifier = Modifier.width(12.dp))
-
-        // SEARCH FIELD (editable + clickable)
-        Box(
-            modifier = Modifier
-                .weight(1f)
-                .height(48.dp)
-                .clip(RoundedCornerShape(50.dp))
-                .background(Color(0xFFEFF2F7))
-                .clickable(
-                    interactionSource = interactionSource,
-                    indication = null
-                ) {
-                    Toast.makeText(context, "Search Bar Clicked", Toast.LENGTH_SHORT).show()
-                },
-            contentAlignment = Alignment.CenterStart
-        ) {
-            TextField(
-                value = searchText,
-                onValueChange = { searchText = it },
-                placeholder = { Text("Search") },
-                singleLine = true,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                colors = TextFieldDefaults.colors(
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent,
-                    disabledIndicatorColor = Color.Transparent,
-                    cursorColor = Color.Black,
-                    focusedContainerColor = Color.Transparent,
-                    unfocusedContainerColor = Color.Transparent
-                )
-            )
-        }
-
-        Spacer(modifier = Modifier.width(12.dp))
-
-        // PROFILE ICON
-        Box(
-            modifier = Modifier
-                .size(40.dp)
-                .clip(CircleShape)
-                .background(Color.White)
-                .clickable {
-                    Toast.makeText(context, "Profile Clicked", Toast.LENGTH_SHORT).show()
-                },
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = Icons.Default.Person,
-                contentDescription = "Profile"
-            )
-        }
+@Preview(showBackground = true)
+@Composable
+fun GreetingPreview() {
+    UNICKTheme {
+        Greeting("Android")
     }
 }

@@ -14,4 +14,9 @@
     <string name="title_activity_code_confirm">CodeConfirmActivity</string>
     <string name="title_activity_reset_password">ResetPasswordActivity</string>
     <string name="title_activity_compare">CompareActivity</string>
+    <string name="title_activity_school_profile">SchoolProfileActivity</string>
+    <string name="title_activity_main2">MainActivity2</string>
+    <string name="title_activity_user_profile">UserProfileActivity</string>
+    <string name="title_activity_edit_user_profile">EditUserProfileActivity</string>
+    <string name="title_activity_settings">SettingsActivity</string>
 </resources>

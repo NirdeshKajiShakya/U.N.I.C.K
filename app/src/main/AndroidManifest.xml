@@ -12,6 +12,22 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.UNICK">
         <activity
+            android:name=".view.SettingsActivity"
+            android:exported="true"
+            android:label="@string/title_activity_settings"
+            android:theme="@style/Theme.UNICK" />
+        <activity
+            android:name=".view.SchoolDetailActivity"
+            android:exported="true"
+            android:label="@string/title_activity_school_profile"
+            android:theme="@style/Theme.UNICK">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity
             android:name=".view.CompareActivity"
             android:exported="true"
             android:label="@string/title_activity_compare"
