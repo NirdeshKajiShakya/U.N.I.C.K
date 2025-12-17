@@ -56,6 +56,8 @@ dependencies {
     implementation("io.coil-kt:coil-compose:2.4.0")
     implementation("androidx.compose.material:material-icons-extended:1.5.0") // Add this
     implementation("androidx.navigation:navigation-compose:2.7.0")
+    implementation(libs.androidx.compose.foundation)
+    implementation(libs.androidx.foundation)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -63,6 +65,4 @@ dependencies {
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
-    // add inside dependencies { ... } in module (app) build.gradle
-    implementation("androidx.compose.material:material-icons-extended:1.5.0")
 }

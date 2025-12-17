@@ -10,4 +10,8 @@
     <string name="title_activity_form2">Form2Activity</string>
     <string name="title_activity_form3">Form3Activity</string>
     <string name="title_activity_top_bar">TopBarActivity</string>
+    <string name="title_activity_send_code_to_email">SendCodeToEmailActivity</string>
+    <string name="title_activity_code_confirm">CodeConfirmActivity</string>
+    <string name="title_activity_reset_password">ResetPasswordActivity</string>
+    <string name="title_activity_compare">CompareActivity</string>
 </resources>
