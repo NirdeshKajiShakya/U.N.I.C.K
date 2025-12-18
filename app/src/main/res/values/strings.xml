@@ -1,7 +1,24 @@
 <resources>
     <string name="app_name">UNICK</string>
+    <string name="title_activity_admin_login">AdminLoginActivity</string>
+    <string name="title_activity_user_login">UserLoginActivity</string>
+    <string name="title_activity_user_registration">UserRegistrationActivity</string>
+    <string name="title_activity_shortlist">ShortlistActivity</string>
+    <string name="title_activity_shortlist_screen">ShortlistScreen</string>
+    <string name="title_activity_school_card">SchoolCard</string>
+    <string name="title_activity_form">FormActivity</string>
+    <string name="title_activity_form2">Form2Activity</string>
+    <string name="title_activity_form3">Form3Activity</string>
+    <string name="title_activity_top_bar">TopBarActivity</string>
     <string name="title_activity_send_code_to_email">SendCodeToEmailActivity</string>
     <string name="title_activity_code_confirm">CodeConfirmActivity</string>
     <string name="title_activity_reset_password">ResetPasswordActivity</string>
     <string name="title_activity_compare">CompareActivity</string>
+    <string name="title_activity_school_profile">SchoolProfileActivity</string>
+    <string name="title_activity_main2">MainActivity2</string>
+    <string name="title_activity_user_profile">UserProfileActivity</string>
+    <string name="title_activity_edit_user_profile">EditUserProfileActivity</string>
+    <string name="title_activity_settings">SettingsActivity</string>
+    <string name="title_activity_dashboard">DashboardActivity</string>
+    <string name="title_activity_filter">FilterActivity</string>
 </resources>

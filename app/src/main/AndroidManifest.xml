@@ -12,6 +12,17 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.UNICK">
         <activity
+            android:name=".view.SettingsActivity"
+            android:exported="true"
+            android:label="@string/title_activity_settings"
+            android:theme="@style/Theme.UNICK" />
+        <activity
+            android:name=".view.SchoolDetailActivity"
+            android:exported="true"
+            android:label="@string/title_activity_school_profile"
+            android:theme="@style/Theme.UNICK">
+        </activity>
+        <activity
             android:name=".view.CompareActivity"
             android:exported="true"
             android:label="@string/title_activity_compare"
@@ -30,6 +41,41 @@
             android:name=".view.SendCodeToEmailActivity"
             android:exported="true"
             android:label="@string/title_activity_send_code_to_email"
+            android:theme="@style/Theme.UNICK" />
+        <activity
+            android:name=".view.UserRegistrationActivity"
+            android:exported="false"
+            android:label="@string/title_activity_user_registration"
+            android:theme="@style/Theme.UNICK" />
+        <activity
+            android:name=".view.UserLoginActivity"
+            android:exported="false"
+            android:label="@string/title_activity_user_login"
+            android:theme="@style/Theme.UNICK" />
+        <activity
+            android:name=".view.AdminLoginActivity"
+            android:exported="false"
+            android:label="@string/title_activity_admin_login"
+            android:theme="@style/Theme.UNICK" /> <!-- Main / launcher activity -->
+        <activity
+            android:name=".view.TopBarActivity"
+            android:exported="false"
+            android:label="@string/title_activity_top_bar"
+            android:theme="@style/Theme.UNICK" />
+        <activity
+            android:name=".view.ShortlistActivity"
+            android:exported="true"
+            android:label="@string/title_activity_shortlist"
+            android:theme="@style/Theme.UNICK" />
+        <activity
+            android:name=".view.FilterActivity"
+            android:exported="true"
+            android:label="@string/title_activity_filter"
+            android:theme="@style/Theme.UNICK" />
+        <activity
+            android:name=".view.DashboardActivity"
+            android:exported="true"
+            android:label="@string/title_activity_dashboard"
             android:theme="@style/Theme.UNICK" />
         <activity
             android:name=".MainActivity"
