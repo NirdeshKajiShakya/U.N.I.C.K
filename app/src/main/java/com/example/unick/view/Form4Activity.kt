@@ -37,7 +37,7 @@ import androidx.compose.ui.unit.sp
 import com.example.unick.ui.theme.UNICKTheme
 
 
-class Form3Activity : ComponentActivity() {
+class Form4Activity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()

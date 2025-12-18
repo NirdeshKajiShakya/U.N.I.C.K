@@ -1,4 +1,4 @@
-package com.example.unick
+package com.example.unick.view
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -17,7 +17,7 @@ import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Divider
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
@@ -31,6 +31,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.unick.R
+import java.util.Locale
 import kotlin.math.roundToInt
 
 // ---------------- DATA CLASSES (FIREBASE-FRIENDLY) ----------------
@@ -89,7 +91,7 @@ fun SchoolDetailsScreenForSchoolDetail() {
             selected = selectedTab,
             onSelect = { selectedTab = it }
         )
-        Divider(color = Color.LightGray, thickness = 1.dp)
+        HorizontalDivider(color = Color.LightGray, thickness = 1.dp)
 
         when (selectedTab) {
             "Overview" -> OverviewSectionForSchoolDetail()
@@ -238,7 +240,7 @@ fun OverviewItemForSchoolDetail(title: String) {
         }
     }
 
-    Divider()
+    HorizontalDivider()
 }
 
 // ---------------- ACADEMICS TAB (CARD STYLE) ----------------
@@ -527,7 +529,7 @@ fun ReviewsSummaryForSchoolDetail(
                 modifier = Modifier.weight(1f)
             ) {
                 Text(
-                    text = String.format("%.1f", averageRating),
+                    text = String.format(Locale.US, "%.1f", averageRating),
                     fontSize = 32.sp,
                     fontWeight = FontWeight.Bold
                 )

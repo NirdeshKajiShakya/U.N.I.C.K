@@ -21,11 +21,6 @@
             android:exported="true"
             android:label="@string/title_activity_school_profile"
             android:theme="@style/Theme.UNICK">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
         </activity>
         <activity
             android:name=".view.CompareActivity"
@@ -48,7 +43,7 @@
             android:label="@string/title_activity_send_code_to_email"
             android:theme="@style/Theme.UNICK" />
         <activity
-            android:name=".UserRegistrationActivity"
+            android:name=".view.UserRegistrationActivity"
             android:exported="false"
             android:label="@string/title_activity_user_registration"
             android:theme="@style/Theme.UNICK" />
@@ -71,35 +66,17 @@
             android:name=".view.ShortlistActivity"
             android:exported="true"
             android:label="@string/title_activity_shortlist"
-            android:theme="@style/Theme.UNICK">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
+            android:theme="@style/Theme.UNICK" />
         <activity
             android:name=".view.FilterActivity"
             android:exported="true"
             android:label="@string/title_activity_filter"
-            android:theme="@style/Theme.UNICK">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
+            android:theme="@style/Theme.UNICK" />
         <activity
             android:name=".view.DashboardActivity"
             android:exported="true"
             android:label="@string/title_activity_dashboard"
-            android:theme="@style/Theme.UNICK">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
+            android:theme="@style/Theme.UNICK" />
         <activity
             android:name=".MainActivity"
             android:exported="true"
