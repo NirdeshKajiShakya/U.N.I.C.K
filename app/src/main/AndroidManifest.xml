@@ -59,7 +59,7 @@
             android:theme="@style/Theme.UNICK" /> <!-- Main / launcher activity -->
         <activity
             android:name=".view.TopBarActivity"
-            android:exported="false"
+            android:exported="true"
             android:label="@string/title_activity_top_bar"
             android:theme="@style/Theme.UNICK" />
         <activity
