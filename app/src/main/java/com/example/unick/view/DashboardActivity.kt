@@ -1,5 +1,6 @@
 package com.example.unick.view
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -22,10 +23,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.example.unick.ui.theme.UNICKTheme
 
 class DashboardActivity : ComponentActivity() {
@@ -36,7 +40,7 @@ class DashboardActivity : ComponentActivity() {
             UNICKTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    color = Color(0xFFF8F9FA)
+                    color = MaterialTheme.colorScheme.background
                 ) {
                     DashboardScreen()
                 }
@@ -49,11 +53,12 @@ class DashboardActivity : ComponentActivity() {
 fun DashboardScreen() {
     var isSearchActive by remember { mutableStateOf(false) }
     var searchText by remember { mutableStateOf("") }
+    val context = LocalContext.current
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF8F9FA))
+            .background(MaterialTheme.colorScheme.background)
             .verticalScroll(rememberScrollState())
             .padding(20.dp)
     ) {
@@ -69,14 +74,14 @@ fun DashboardScreen() {
                 Text(
                     text = "Namaste,",
                     fontSize = 16.sp,
-                    color = Color(0xFF64748B),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontWeight = FontWeight.Medium
                 )
                 Text(
                     text = "Student",
                     fontSize = 32.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF0F172A)
+                    color = MaterialTheme.colorScheme.onSurface
                 )
             }
 
@@ -106,7 +111,7 @@ fun DashboardScreen() {
         Text(
             text = "Explore the best colleges in Nepal tailored to your SEE/SLC results and interests.",
             fontSize = 15.sp,
-            color = Color(0xFF64748B),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             lineHeight = 22.sp
         )
 
@@ -152,7 +157,9 @@ fun DashboardScreen() {
 
             // Filter Button
             OutlinedButton(
-                onClick = { /* Handle filter */ },
+                onClick = {
+                    context.startActivity(Intent(context, ShortlistActivity::class.java))
+                },
                 modifier = Modifier
                     .size(58.dp)
                     .shadow(4.dp, RoundedCornerShape(14.dp)),
@@ -245,13 +252,13 @@ fun SchoolSection(title: String, subtitle: String, schools: List<SchoolData>) {
                     text = title,
                     fontSize = 22.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF0F172A)
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = subtitle,
                     fontSize = 14.sp,
-                    color = Color(0xFF64748B),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     lineHeight = 20.sp
                 )
             }
@@ -276,34 +283,22 @@ fun SchoolCard(school: SchoolData) {
     Card(
         modifier = Modifier
             .width(280.dp)
-            .height(240.dp)
             .shadow(8.dp, RoundedCornerShape(16.dp)),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            // Image Section
+        Column {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(120.dp)
-                    .background(Color(0xFFE2E8F0))
             ) {
-                // In a real app, use AsyncImage or Coil to load from school.imageUrl
-                // For now, showing a colored overlay to represent the image
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(
-                            Brush.verticalGradient(
-                                colors = listOf(
-                                    Color(0xFF2563EB).copy(alpha = 0.1f),
-                                    Color(0xFF2563EB).copy(alpha = 0.05f)
-                                )
-                            )
-                        )
+                AsyncImage(
+                    model = school.imageUrl,
+                    contentDescription = school.name,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
                 )
-
                 // Match badge
                 Box(
                     modifier = Modifier
@@ -324,30 +319,27 @@ fun SchoolCard(school: SchoolData) {
             // Content Section
             Column(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.SpaceBetween
+                    .padding(16.dp)
             ) {
-                Column {
-                    Text(
-                        text = school.name,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF0F172A),
-                        lineHeight = 22.sp
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = school.type,
-                        fontSize = 13.sp,
-                        color = Color(0xFF64748B),
-                        lineHeight = 18.sp
-                    )
-                }
-
+                Text(
+                    text = school.name,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    lineHeight = 22.sp
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = school.details,
+                    fontSize = 13.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    lineHeight = 18.sp
+                )
+                Spacer(modifier = Modifier.height(12.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(text = "📍", fontSize = 14.sp)
@@ -355,7 +347,7 @@ fun SchoolCard(school: SchoolData) {
                         Text(
                             text = school.distance,
                             fontSize = 13.sp,
-                            color = Color(0xFF64748B),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontWeight = FontWeight.Medium
                         )
                     }
@@ -365,7 +357,7 @@ fun SchoolCard(school: SchoolData) {
                         Text(
                             text = school.rating,
                             fontSize = 13.sp,
-                            color = Color(0xFF0F172A),
+                            color = MaterialTheme.colorScheme.onSurface,
                             fontWeight = FontWeight.Bold
                         )
                     }
@@ -377,7 +369,7 @@ fun SchoolCard(school: SchoolData) {
 
 data class SchoolData(
     val name: String,
-    val type: String,
+    val details: String,
     val distance: String,
     val rating: String,
     val match: String,
@@ -387,5 +379,7 @@ data class SchoolData(
 @Preview(showBackground = true)
 @Composable
 fun DashboardPreview() {
-    UNICKTheme { DashboardScreen() }
+    UNICKTheme {
+        DashboardScreen()
+    }
 }
