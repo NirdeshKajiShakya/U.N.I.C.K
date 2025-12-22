@@ -1,4 +1,4 @@
-package com.example.unick.view
+git package com.example.unick.view
 
 import android.content.Intent
 import android.os.Bundle
