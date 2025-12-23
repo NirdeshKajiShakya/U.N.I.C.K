@@ -22,4 +22,5 @@
     <string name="title_activity_dashboard">DashboardActivity</string>
     <string name="title_activity_filter">FilterActivity</string>
     <string name="title_activity_user_registration_school">UserRegistrationSchoolActivity</string>
+    <string name="title_activity_user_login_school">UserLoginSchoolActivity</string>
 </resources>

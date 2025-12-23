@@ -2,7 +2,6 @@ package com.example.unick.view
 
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -25,108 +24,76 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.unick.ui.theme.UNICKTheme
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.FirebaseDatabase
 
-class UserRegistrationSchoolActivity : ComponentActivity() {
+class UserLoginSchoolActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             UNICKTheme {
-                UserRegistrationSchoolScreen()
+                UserLoginSchoolScreen()
             }
         }
     }
 }
 
-data class School(
-    val name: String = "",
-    val location: String = "",
-    val email: String = ""
-)
-
 @Composable
-fun UserRegistrationSchoolScreen() {
-    var schoolName by remember { mutableStateOf("") }
-    var location by remember { mutableStateOf("") }
+fun UserLoginSchoolScreen() {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     val context = LocalContext.current
     val isInPreview = LocalInspectionMode.current
 
-    Scaffold { padding ->
+    Scaffold {
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color.White)
-                .padding(padding),
+                .padding(it),
             horizontalAlignment = Alignment.Start,
             verticalArrangement = Arrangement.Top
         ) {
-            item { SchoolHeadingText() }
+            item { SchoolLoginHeadingText() }
             item {
-                SchoolInputField(label = "School Name", value = schoolName, placeholder = "Enter school name") {
-                    schoolName = it
-                }
-            }
-            item {
-                SchoolInputField(label = "School Location", value = location, placeholder = "City, State or Address") {
-                    location = it
-                }
-            }
-            item {
-                SchoolInputField(label = "School Email Address", value = email, placeholder = "admin@school.com") {
+                SchoolLoginInputField(label = "School Email Address", value = email, placeholder = "admin@school.com") {
                     email = it
                 }
             }
             item {
-                SchoolPasswordField(value = password) {
+                SchoolLoginPasswordField(value = password) {
                     password = it
                 }
             }
             item {
-                SchoolSignUpButton {
-                    if (email.isNotBlank() && password.isNotBlank() && schoolName.isNotBlank() && location.isNotBlank()) {
+                SchoolLoginButton {
+                    if (email.isNotBlank() && password.isNotBlank()) {
                         if (!isInPreview) {
-                            val auth = FirebaseAuth.getInstance()
-                            val database = FirebaseDatabase.getInstance().getReference("schools")
-                            auth.createUserWithEmailAndPassword(email, password)
+                            FirebaseAuth.getInstance().signInWithEmailAndPassword(email, password)
                                 .addOnCompleteListener { task ->
                                     if (task.isSuccessful) {
-                                        val user = auth.currentUser
-                                        user?.let {
-                                            val school = School(schoolName, location, email)
-                                            database.child(it.uid).setValue(school)
-                                                .addOnSuccessListener {
-                                                    Log.d("UserRegistrationSchool", "School data saved successfully.")
-                                                    Toast.makeText(context, "Registration successful!", Toast.LENGTH_SHORT).show()
-                                                }
-                                                .addOnFailureListener { e ->
-                                                    Log.w("UserRegistrationSchool", "Error saving school data", e)
-                                                    Toast.makeText(context, "Error saving school data.", Toast.LENGTH_SHORT).show()
-                                                }
-                                        }
+                                        Toast.makeText(context, "Login Successful", Toast.LENGTH_SHORT).show()
                                     } else {
-                                        Log.w("UserRegistrationSchool", "createUserWithEmail:failure", task.exception)
-                                        Toast.makeText(context, "Registration failed: ${task.exception?.message}", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(context, "Login failed: ${task.exception?.message}", Toast.LENGTH_SHORT).show()
                                     }
                                 }
+                        } else {
+                            // In preview mode, just show the success toast
+                            Toast.makeText(context, "Login Successful", Toast.LENGTH_SHORT).show()
                         }
                     } else {
-                        Toast.makeText(context, "All fields are required", Toast.LENGTH_SHORT).show()
-                        Log.w("UserRegistrationSchool", "All fields are required")
+                        Toast.makeText(context, "Please fill in all fields", Toast.LENGTH_SHORT).show()
                     }
                 }
             }
-            item { AlreadyHaveSchoolAccountLink() }
+            item { NoSchoolAccountLink() }
         }
     }
 }
 
 @Composable
-fun SchoolHeadingText() {
+fun SchoolLoginHeadingText() {
     Text(
-        text = "Register Your School",
+        text = "Login to Your School Account",
         fontSize = 26.sp,
         fontWeight = FontWeight.Bold,
         color = Color.Black,
@@ -135,7 +102,7 @@ fun SchoolHeadingText() {
 }
 
 @Composable
-fun SchoolPasswordField(value: String, onValueChange: (String) -> Unit) {
+fun SchoolLoginPasswordField(value: String, onValueChange: (String) -> Unit) {
     Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)) {
         Text(text = "Password", fontSize = 14.sp, color = Color.Black, modifier = Modifier.padding(bottom = 8.dp))
         OutlinedTextField(
@@ -144,16 +111,15 @@ fun SchoolPasswordField(value: String, onValueChange: (String) -> Unit) {
             modifier = Modifier
                 .fillMaxWidth()
                 .height(52.dp),
-            placeholder = { Text("Create school account password", color = Color.Gray) },
+            placeholder = { Text("Enter your password", color = Color.Gray) },
             visualTransformation = PasswordVisualTransformation(),
             singleLine = true
         )
     }
 }
 
-// Reusable Input Field for consistency
 @Composable
-fun SchoolInputField(label: String, value: String, placeholder: String, onValueChange: (String) -> Unit) {
+fun SchoolLoginInputField(label: String, value: String, placeholder: String, onValueChange: (String) -> Unit) {
     Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)) {
         Text(text = label, fontSize = 14.sp, color = Color.Black, modifier = Modifier.padding(bottom = 8.dp))
         OutlinedTextField(
@@ -169,10 +135,13 @@ fun SchoolInputField(label: String, value: String, placeholder: String, onValueC
 }
 
 @Composable
-fun SchoolSignUpButton(onClick: () -> Unit) {
-    Box(modifier = Modifier
-        .fillMaxWidth()
-        .padding(top = 32.dp), contentAlignment = Alignment.Center) {
+fun SchoolLoginButton(onClick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 32.dp),
+        contentAlignment = Alignment.Center
+    ) {
         Button(
             onClick = onClick,
             modifier = Modifier
@@ -180,13 +149,13 @@ fun SchoolSignUpButton(onClick: () -> Unit) {
                 .height(50.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0B36F7))
         ) {
-            Text(text = "Register School", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            Text(text = "Login", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
         }
     }
 }
 
 @Composable
-fun AlreadyHaveSchoolAccountLink() {
+fun NoSchoolAccountLink() {
     val context = LocalContext.current
     Row(
         modifier = Modifier
@@ -194,21 +163,21 @@ fun AlreadyHaveSchoolAccountLink() {
             .padding(vertical = 32.dp),
         horizontalArrangement = Arrangement.Center
     ) {
-        Text(text = "Already registered?", fontSize = 14.sp, color = Color.Black)
+        Text(text = "Don't have an account?", fontSize = 14.sp, color = Color.Black)
         Text(
-            text = " Sign In",
+            text = " Sign Up",
             fontSize = 14.sp,
             color = Color(0xFF2563EB),
             fontWeight = FontWeight.Bold,
-            modifier = Modifier.clickable { context.startActivity(Intent(context, UserLoginSchoolActivity::class.java)) }
+            modifier = Modifier.clickable { context.startActivity(Intent(context, UserRegistrationSchoolActivity::class.java)) }
         )
     }
 }
 
 @Preview(showBackground = true)
 @Composable
-fun UserRegistrationSchoolPreview() {
+fun UserLoginSchoolPreview() {
     UNICKTheme {
-        UserRegistrationSchoolScreen()
+        UserLoginSchoolScreen()
     }
 }
