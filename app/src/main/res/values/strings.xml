@@ -9,4 +9,7 @@
     <string name="title_activity_form">FormActivity</string>
     <string name="title_activity_form2">Form2Activity</string>
     <string name="title_activity_form3">Form3Activity</string>
+    <string name="title_activity_student_registration">StudentRegistrationActivity</string>
+    <string name="title_activity_student_application">Student Application Form</string>
+
 </resources>

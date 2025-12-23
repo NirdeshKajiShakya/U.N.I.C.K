@@ -13,7 +13,13 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.UNICK">
         <activity
-            android:name=".UserRegistrationActivity"
+            android:name=".view.StudentApplicationActivity"
+            android:exported="true"
+            android:label="@string/title_activity_student_application"
+            android:theme="@style/Theme.UNICK" />
+
+        <activity
+            android:name=".view.UserRegistrationActivity"
             android:exported="false"
             android:label="@string/title_activity_user_registration"
             android:theme="@style/Theme.UNICK" />
