@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -40,6 +41,13 @@ import androidx.compose.ui.unit.sp
 import com.example.unick.R
 import com.example.unick.ui.theme.Blue
 import com.example.unick.ui.theme.LightGray
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.unick.viewmodel.ForgotPasswordViewModel
+
 
 class SendCodeToEmailActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -53,9 +61,22 @@ class SendCodeToEmailActivity : ComponentActivity() {
 
 
 @Composable
-fun CodeToEmail() {
-    Scaffold() {
-        padding ->
+fun CodeToEmail(
+    viewModel: ForgotPasswordViewModel = viewModel()
+) {
+    val emailState = remember { mutableStateOf("") }
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(viewModel.message.value) {
+        viewModel.message.value?.let {
+            snackbarHostState.showSnackbar(it)
+            viewModel.clearMessage()
+        }
+    }
+
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { padding ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
@@ -64,13 +85,13 @@ fun CodeToEmail() {
             item { Logo() }
             item { HeadingTextForSendCodeToEmail() }
             item { SubTextForSendCodeToEmail() }
-            item { EmailInputField() }
-            item { ButtonForOTP() }
-            item { BackToLoginText()}
-
+            item { EmailInputField(emailState) }
+            item { ButtonForOTP(emailState.value, viewModel) }
+            item { BackToLoginText() }
         }
     }
 }
+
 
 @Composable
 fun Logo() {
@@ -132,8 +153,7 @@ fun SubTextForSendCodeToEmail(){
 }
 
 @Composable
-fun EmailInputField() {
-    var email by remember { mutableStateOf("") }
+fun EmailInputField(emailState: MutableState<String>) {
     Row(
         modifier = Modifier
             .fillMaxSize()
@@ -141,17 +161,20 @@ fun EmailInputField() {
         horizontalArrangement = Arrangement.Center
     ) {
         OutlinedTextField(
-            value = email,
-            onValueChange = {email = it},
+            value = emailState.value,
+            onValueChange = { emailState.value = it },
             label = { Text("Email Address") },
             modifier = Modifier.fillMaxSize(0.9f)
         )
     }
 }
 
+
 @Composable
-fun ButtonForOTP(){
-    val context = LocalContext.current
+fun ButtonForOTP(
+    email: String,
+    viewModel: ForgotPasswordViewModel
+) {
     Row(
         modifier = Modifier
             .fillMaxSize()
@@ -159,20 +182,27 @@ fun ButtonForOTP(){
         horizontalArrangement = Arrangement.Center
     ) {
         Button(
-            onClick = {
-                val intent = Intent(context, CodeConfirmActivity::class.java)
-            context.startActivity(intent)
-            },
-            colors = ButtonDefaults.buttonColors(containerColor = Blue)
+            onClick = { viewModel.sendResetLink(email) },
+            colors = ButtonDefaults.buttonColors(containerColor = Blue),
+            enabled = !viewModel.isLoading.value
         ) {
-            Text(
-                "Send OTP",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.SemiBold
-            )
+            if (viewModel.isLoading.value) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp),
+                    strokeWidth = 2.dp,
+                    color = Color.White
+                )
+            } else {
+                Text(
+                    "Send Reset Link",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
         }
     }
 }
+
 
 @Composable
 fun BackToLoginText(){
