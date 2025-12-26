@@ -1,18 +1,24 @@
 package com.example.unick.view
 
+import android.app.DatePickerDialog
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
@@ -20,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.unick.ui.theme.UNICKTheme
 import kotlinx.coroutines.delay
+import java.util.Calendar
 
 class StudentApplicationActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -50,7 +57,7 @@ data class FormData(
     val classCompleted: String = "",
     val lastAcademicYear: String = "",
     val reasonForLeaving: String = "",
-    val board: String = "",
+    val standard: String = "",
     val fatherName: String = "",
     val fatherAge: String = "",
     val fatherQualification: String = "",
@@ -71,7 +78,10 @@ data class FormData(
     val presentAddress: String = "",
     val permanentAddress: String = "",
     val languageSpoken: String = "",
-    val schoolBudget: String = ""
+    val schoolBudget: String = "",
+    val siblingSex: String = "",
+    val siblingAge: String = "",
+    val siblingName: String = ""
 )
 
 data class FormErrors(val errors: Map<String, String> = emptyMap()) {
@@ -107,14 +117,14 @@ fun StudentRegistrationForm() {
                 .padding(padding),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Top,
-            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 24.dp)
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 20.dp)
         ) {
             item {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(Color.White, RoundedCornerShape(12.dp))
-                        .padding(24.dp),
+                        .padding(20.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     FormHeaderIcon()
@@ -132,7 +142,7 @@ fun StudentRegistrationForm() {
             }
 
             item {
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(20.dp))
                 NavigationButtons(
                     currentStep = currentStep,
                     isSubmitting = (uiState is UiState.Submitting),
@@ -150,6 +160,7 @@ fun StudentRegistrationForm() {
                         }
                     }
                 )
+                Spacer(modifier = Modifier.height(20.dp))
             }
         }
     }
@@ -167,7 +178,7 @@ private fun FormHeaderIcon() {
     Text(
         text = "📋",
         fontSize = 48.sp,
-        modifier = Modifier.padding(bottom = 14.dp)
+        modifier = Modifier.padding(bottom = 12.dp)
     )
 }
 
@@ -178,7 +189,7 @@ private fun FormTitle() {
         fontSize = 24.sp,
         fontWeight = FontWeight.Bold,
         color = Color(0xFF1F2937),
-        modifier = Modifier.padding(bottom = 16.dp)
+        modifier = Modifier.padding(bottom = 12.dp)
     )
 }
 
@@ -221,7 +232,7 @@ private fun DividerLine() {
             .fillMaxWidth()
             .height(1.dp)
             .background(Color(0xFFE5E7EB))
-            .padding(top = 16.dp)
+            .padding(top = 12.dp)
     )
 }
 
@@ -292,7 +303,7 @@ fun validateStep(step: Int, data: FormData): FormErrors {
 fun SectionHeading(title: String) {
     Text(
         text = title,
-        fontSize = 18.sp,
+        fontSize = 17.sp,
         fontWeight = FontWeight.Bold,
         color = Color(0xFF1F2937),
         modifier = Modifier.padding(bottom = 20.dp)
@@ -304,8 +315,8 @@ fun StepContainer(content: @Composable () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color.White, RoundedCornerShape(16.dp))
-            .padding(24.dp)
+            .background(Color.White, RoundedCornerShape(12.dp))
+            .padding(20.dp)
     ) {
         content()
     }
@@ -318,26 +329,20 @@ fun Step1PersonalDetails(formData: FormData, errors: FormErrors, onDataChange: (
 
         TextInputField("Full Name*", formData.fullName, { onDataChange(formData.copy(fullName = it)) }, error = errors.getError("fullName"))
         TextInputField("Location", formData.location, { onDataChange(formData.copy(location = it)) })
-        TextInputField("Date Of Birth", formData.dob, { onDataChange(formData.copy(dob = it)) }, placeholder = "mm/dd/yyyy")
+        // replaced plain text field with DatePickerField so user can pick via calendar
+        DatePickerField("Date Of Birth", formData.dob, { onDataChange(formData.copy(dob = it)) }, placeholder = "mm/dd/yyyy", error = errors.getError("dob"))
         TextInputField("Age", formData.age, { onDataChange(formData.copy(age = it)) })
 
-        Row(modifier = Modifier.fillMaxWidth().gap(12.dp)) {
-            StudentDropdownField("Gender", formData.gender, listOf("Female", "Male", "Other"), { onDataChange(formData.copy(gender = it)) }, Modifier.weight(1f), allowInput = true)
-            StudentDropdownField("Nationality", formData.nationality, listOf("Nepali", "Other"), { onDataChange(formData.copy(nationality = it)) }, Modifier.weight(1f), allowInput = true)
-        }
+        StudentDropdownField("Gender", formData.gender, listOf("Female", "Male", "Other"), { onDataChange(formData.copy(gender = it)) }, error = errors.getError("gender"))
+        StudentDropdownField("Nationality", formData.nationality, listOf("Nepali", "Other"), { onDataChange(formData.copy(nationality = it)) })
 
         TextInputField("Place Of Birth", formData.placeOfBirth, { onDataChange(formData.copy(placeOfBirth = it)) })
 
-        Row(modifier = Modifier.fillMaxWidth().gap(12.dp)) {
-            StudentDropdownField("Religion", formData.religion, listOf("Hinduism", "Islam", "Christianity", "Sikhism", "Buddhism", "Jainism", "Other"), { onDataChange(formData.copy(religion = it)) }, Modifier.weight(1f), allowInput = true)
-            TextInputField("Caste", formData.caste, { onDataChange(formData.copy(caste = it)) }, modifier = Modifier.weight(1f))
-        }
+        StudentDropdownField("Religion", formData.religion, listOf("Hinduism", "Islam", "Christianity", "Sikhism", "Buddhism", "Jainism", "Other"), { onDataChange(formData.copy(religion = it)) })
+        TextInputField("Caste", formData.caste, { onDataChange(formData.copy(caste = it)) })
 
-        Row(modifier = Modifier.fillMaxWidth().gap(12.dp)) {
-            StudentDropdownField("Blood Group*", formData.bloodGroup, listOf("A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"), { onDataChange(formData.copy(bloodGroup = it)) }, Modifier.weight(1f), error = errors.getError("bloodGroup"), allowInput = true)
-            TextInputField("Any Allergies", formData.allergies, { onDataChange(formData.copy(allergies = it)) }, modifier = Modifier.weight(1f))
-        }
-
+        StudentDropdownField("Blood Group*", formData.bloodGroup, listOf("A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"), { onDataChange(formData.copy(bloodGroup = it)) }, error = errors.getError("bloodGroup"))
+        TextInputField("Any Allergies", formData.allergies, { onDataChange(formData.copy(allergies = it)) })
         TextInputField("Interests/Hobbies*", formData.interests, { onDataChange(formData.copy(interests = it)) }, error = errors.getError("interests"))
     }
 }
@@ -348,9 +353,9 @@ fun Step2SchoolDetails(formData: FormData, errors: FormErrors, onDataChange: (Fo
         SectionHeading("📚 Previous School Details")
         TextInputField("Last School Name", formData.lastSchoolName, { onDataChange(formData.copy(lastSchoolName = it)) })
         TextInputField("Class Completed", formData.classCompleted, { onDataChange(formData.copy(classCompleted = it)) })
+        StudentDropdownField("Standard", formData.standard, listOf("Nursery", "LKG", "UKG", "Grade 1", "Grade 2", "Grade 3", "Grade 4", "Grade 5", "Grade 6", "Grade 7", "Grade 8", "Grade 9", "Grade 10"), { onDataChange(formData.copy(standard = it)) })
         TextInputField("Last Academic Year", formData.lastAcademicYear, { onDataChange(formData.copy(lastAcademicYear = it)) }, placeholder = "e.g., 2024")
         TextInputField("Reason For Leaving", formData.reasonForLeaving, { onDataChange(formData.copy(reasonForLeaving = it)) })
-        TextInputField("Board", formData.board, { onDataChange(formData.copy(board = it)) }, placeholder = "e.g., CBSE, NEB")
     }
 }
 
@@ -359,45 +364,29 @@ fun Step3ParentsDetails(formData: FormData, errors: FormErrors, onDataChange: (F
     StepContainer {
         SectionHeading("👥 Parents' & Guardian's Details")
 
-        Text("Father's Details", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF374151), modifier = Modifier.padding(bottom = 16.dp))
-        Row(modifier = Modifier.fillMaxWidth().gap(12.dp)) {
-            TextInputField("Father's Name*", formData.fatherName, { onDataChange(formData.copy(fatherName = it)) }, modifier = Modifier.weight(1f), error = errors.getError("fatherName"))
-            TextInputField("Father's Age*", formData.fatherAge, { onDataChange(formData.copy(fatherAge = it)) }, modifier = Modifier.weight(1f), error = errors.getError("fatherAge"))
-        }
-        Row(modifier = Modifier.fillMaxWidth().gap(12.dp)) {
-            TextInputField("Father's Qualification*", formData.fatherQualification, { onDataChange(formData.copy(fatherQualification = it)) }, modifier = Modifier.weight(1f))
-            TextInputField("Father's Profession*", formData.fatherProfession, { onDataChange(formData.copy(fatherProfession = it)) }, modifier = Modifier.weight(1f))
-        }
-        Row(modifier = Modifier.fillMaxWidth().gap(12.dp)) {
-            TextInputField("Father's Annual Income*", formData.fatherIncome, { onDataChange(formData.copy(fatherIncome = it)) }, modifier = Modifier.weight(1f))
-            TextInputField("Father's Phone No*", formData.fatherPhone, { onDataChange(formData.copy(fatherPhone = it)) }, modifier = Modifier.weight(1f))
-        }
-        Row(modifier = Modifier.fillMaxWidth().gap(12.dp)) {
-            TextInputField("Father's Aadhar No*", formData.fatherAadhar, { onDataChange(formData.copy(fatherAadhar = it)) }, modifier = Modifier.weight(1f))
-            TextInputField("Father's Email*", formData.fatherEmail, { onDataChange(formData.copy(fatherEmail = it)) }, modifier = Modifier.weight(1f))
-        }
+        Text("Father's Details", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF5B5BFF), modifier = Modifier.padding(bottom = 16.dp))
+        TextInputField("Father's Name*", formData.fatherName, { onDataChange(formData.copy(fatherName = it)) }, error = errors.getError("fatherName"))
+        TextInputField("Father's Age*", formData.fatherAge, { onDataChange(formData.copy(fatherAge = it)) }, error = errors.getError("fatherAge"))
+        TextInputField("Father's Qualification*", formData.fatherQualification, { onDataChange(formData.copy(fatherQualification = it)) })
+        TextInputField("Father's Profession*", formData.fatherProfession, { onDataChange(formData.copy(fatherProfession = it)) })
+        TextInputField("Father's Annual Income*", formData.fatherIncome, { onDataChange(formData.copy(fatherIncome = it)) })
+        TextInputField("Father's Phone No*", formData.fatherPhone, { onDataChange(formData.copy(fatherPhone = it)) })
+        TextInputField("Father's Aadhar No*", formData.fatherAadhar, { onDataChange(formData.copy(fatherAadhar = it)) })
+        TextInputField("Father's Email*", formData.fatherEmail, { onDataChange(formData.copy(fatherEmail = it)) })
 
         Spacer(modifier = Modifier.height(24.dp))
-        Text("Mother's Details", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF374151), modifier = Modifier.padding(bottom = 16.dp))
-        Row(modifier = Modifier.fillMaxWidth().gap(12.dp)) {
-            TextInputField("Mother's Name*", formData.motherName, { onDataChange(formData.copy(motherName = it)) }, modifier = Modifier.weight(1f), error = errors.getError("motherName"))
-            TextInputField("Mother's Age*", formData.motherAge, { onDataChange(formData.copy(motherAge = it)) }, modifier = Modifier.weight(1f), error = errors.getError("motherAge"))
-        }
-        Row(modifier = Modifier.fillMaxWidth().gap(12.dp)) {
-            TextInputField("Mother's Qualification*", formData.motherQualification, { onDataChange(formData.copy(motherQualification = it)) }, modifier = Modifier.weight(1f))
-            TextInputField("Mother's Profession*", formData.motherProfession, { onDataChange(formData.copy(motherProfession = it)) }, modifier = Modifier.weight(1f))
-        }
-        Row(modifier = Modifier.fillMaxWidth().gap(12.dp)) {
-            TextInputField("Mother's Annual Income*", formData.motherIncome, { onDataChange(formData.copy(motherIncome = it)) }, modifier = Modifier.weight(1f))
-            TextInputField("Mother's Phone No*", formData.motherPhone, { onDataChange(formData.copy(motherPhone = it)) }, modifier = Modifier.weight(1f))
-        }
-        Row(modifier = Modifier.fillMaxWidth().gap(12.dp)) {
-            TextInputField("Mother's Aadhar No*", formData.motherAadhar, { onDataChange(formData.copy(motherAadhar = it)) }, modifier = Modifier.weight(1f))
-            TextInputField("Mother's Email*", formData.motherEmail, { onDataChange(formData.copy(motherEmail = it)) }, modifier = Modifier.weight(1f))
-        }
+        Text("Mother's Details", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF5B5BFF), modifier = Modifier.padding(bottom = 16.dp))
+        TextInputField("Mother's Name*", formData.motherName, { onDataChange(formData.copy(motherName = it)) }, error = errors.getError("motherName"))
+        TextInputField("Mother's Age*", formData.motherAge, { onDataChange(formData.copy(motherAge = it)) }, error = errors.getError("motherAge"))
+        TextInputField("Mother's Qualification*", formData.motherQualification, { onDataChange(formData.copy(motherQualification = it)) })
+        TextInputField("Mother's Profession*", formData.motherProfession, { onDataChange(formData.copy(motherProfession = it)) })
+        TextInputField("Mother's Annual Income*", formData.motherIncome, { onDataChange(formData.copy(motherIncome = it)) })
+        TextInputField("Mother's Phone No*", formData.motherPhone, { onDataChange(formData.copy(motherPhone = it)) })
+        TextInputField("Mother's Aadhar No*", formData.motherAadhar, { onDataChange(formData.copy(motherAadhar = it)) })
+        TextInputField("Mother's Email*", formData.motherEmail, { onDataChange(formData.copy(motherEmail = it)) })
 
         Spacer(modifier = Modifier.height(16.dp))
-        StudentDropdownField("Parents' Relationship Status*", formData.relationshipStatus, listOf("Married", "Divorced", "Separated", "Widow/Widower", "Single", "Other"), { onDataChange(formData.copy(relationshipStatus = it)) }, error = errors.getError("relationshipStatus"), allowInput = true)
+        StudentDropdownField("Parents' Relationship Status*", formData.relationshipStatus, listOf("Married", "Divorced", "Separated", "Widow/Widower", "Single", "Other"), { onDataChange(formData.copy(relationshipStatus = it)) }, error = errors.getError("relationshipStatus"))
     }
 }
 
@@ -405,17 +394,16 @@ fun Step3ParentsDetails(formData: FormData, errors: FormErrors, onDataChange: (F
 fun Step4AddressSiblings(formData: FormData, errors: FormErrors, onDataChange: (FormData) -> Unit) {
     StepContainer {
         SectionHeading("📍 Address & Sibling Details")
-        Row(modifier = Modifier.fillMaxWidth().gap(12.dp)) {
-            TextInputField("Present Address*", formData.presentAddress, { onDataChange(formData.copy(presentAddress = it)) }, modifier = Modifier.weight(1f), error = errors.getError("presentAddress"))
-            TextInputField("Permanent Address*", formData.permanentAddress, { onDataChange(formData.copy(permanentAddress = it)) }, modifier = Modifier.weight(1f), error = errors.getError("permanentAddress"))
-        }
-        Row(modifier = Modifier.fillMaxWidth().gap(12.dp)) {
-            TextInputField("Language Spoken at Home*", formData.languageSpoken, { onDataChange(formData.copy(languageSpoken = it)) }, modifier = Modifier.weight(1f), error = errors.getError("languageSpoken"))
-            TextInputField("Yearly School Budget (INR)*", formData.schoolBudget, { onDataChange(formData.copy(schoolBudget = it)) }, modifier = Modifier.weight(1f), error = errors.getError("schoolBudget"))
-        }
-        Spacer(modifier = Modifier.height(20.dp))
-        Text("👨‍👩‍👧‍👦 Sibling Information (if any)", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF374151), modifier = Modifier.padding(bottom = 8.dp))
-        Text("Sibling feature to be implemented", fontSize = 13.sp, color = Color(0xFF9CA3AF))
+        TextInputField("Present Address*", formData.presentAddress, { onDataChange(formData.copy(presentAddress = it)) }, error = errors.getError("presentAddress"))
+        TextInputField("Permanent Address*", formData.permanentAddress, { onDataChange(formData.copy(permanentAddress = it)) }, error = errors.getError("permanentAddress"))
+        TextInputField("Language Spoken at Home*", formData.languageSpoken, { onDataChange(formData.copy(languageSpoken = it)) }, error = errors.getError("languageSpoken"))
+        TextInputField("Yearly School Budget (INR)*", formData.schoolBudget, { onDataChange(formData.copy(schoolBudget = it)) }, error = errors.getError("schoolBudget"))
+
+        Spacer(modifier = Modifier.height(24.dp))
+        Text("👨‍👩‍👧‍👦 Sibling Information (if any)", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF5B5BFF), modifier = Modifier.padding(bottom = 16.dp))
+        TextInputField("Sibling Name", formData.siblingName, { onDataChange(formData.copy(siblingName = it)) })
+        StudentDropdownField("Sex", formData.siblingSex, listOf("Male", "Female"), { onDataChange(formData.copy(siblingSex = it)) })
+        TextInputField("Age", formData.siblingAge, { onDataChange(formData.copy(siblingAge = it)) })
     }
 }
 
@@ -428,34 +416,109 @@ fun TextInputField(
     placeholder: String = "",
     error: String = ""
 ) {
-    Column(modifier = modifier.fillMaxWidth().padding(bottom = 16.dp)) {
+    Column(modifier = modifier.fillMaxWidth().padding(bottom = 14.dp)) {
+        Text(
+            text = label,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Medium,
+            color = if (error.isNotEmpty()) Color(0xFFEF4444) else Color(0xFF374151),
+            modifier = Modifier.padding(bottom = 6.dp)
+        )
         OutlinedTextField(
             value = value,
             onValueChange = onValueChange,
-            label = { Text(label) },
             modifier = Modifier
                 .fillMaxWidth()
-                .height(56.dp),
+                .height(58.dp),
             placeholder = if (placeholder.isNotEmpty()) { { Text(placeholder, fontSize = 13.sp, color = Color(0xFFD1D5DB)) } } else null,
             textStyle = LocalTextStyle.current.copy(fontSize = 14.sp),
             isError = error.isNotEmpty(),
             shape = RoundedCornerShape(8.dp),
             singleLine = true,
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = Color(0xFF5B5BFF),
-                unfocusedBorderColor = Color(0xFFE5E7EB),
+                focusedBorderColor = if (error.isNotEmpty()) Color(0xFFEF4444) else Color(0xFF5B5BFF),
+                unfocusedBorderColor = if (error.isNotEmpty()) Color(0xFFEF4444) else Color(0xFFE5E7EB),
                 errorBorderColor = Color(0xFFEF4444),
-                focusedLabelColor = Color(0xFF5B5BFF),
-                unfocusedLabelColor = Color(0xFF6B7280)
+                focusedTextColor = Color(0xFF1F2937),
+                unfocusedTextColor = Color(0xFF1F2937)
             )
         )
         if (error.isNotEmpty()) {
-            Text(error, fontSize = 11.sp, color = Color(0xFFEF4444), modifier = Modifier.padding(top = 6.dp, start = 8.dp))
+            Text(error, fontSize = 11.sp, color = Color(0xFFEF4444), modifier = Modifier.padding(top = 4.dp, start = 4.dp))
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DatePickerField(
+    label: String,
+    value: String,
+    onValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    placeholder: String = "",
+    error: String = ""
+) {
+    val context = LocalContext.current
+    val calendar = remember { Calendar.getInstance() }
+    var openDialog by remember { mutableStateOf(false) }
+
+    Column(modifier = modifier.fillMaxWidth().padding(bottom = 14.dp)) {
+        Text(
+            text = label,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Medium,
+            color = if (error.isNotEmpty()) Color(0xFFEF4444) else Color(0xFF374151),
+            modifier = Modifier.padding(bottom = 6.dp)
+        )
+
+        OutlinedTextField(
+            value = value,
+            onValueChange = {}, // read-only; value updated via date picker
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(58.dp)
+                .clickable { openDialog = true },
+            placeholder = if (placeholder.isNotEmpty()) { { Text(placeholder, fontSize = 13.sp, color = Color(0xFFD1D5DB)) } } else null,
+            textStyle = LocalTextStyle.current.copy(fontSize = 14.sp),
+            isError = error.isNotEmpty(),
+            shape = RoundedCornerShape(8.dp),
+            singleLine = true,
+            trailingIcon = {
+                IconButton(onClick = { openDialog = true }) {
+                    Icon(Icons.Filled.CalendarToday, contentDescription = "Pick date")
+                }
+            },
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = if (error.isNotEmpty()) Color(0xFFEF4444) else Color(0xFF5B5BFF),
+                unfocusedBorderColor = if (error.isNotEmpty()) Color(0xFFEF4444) else Color(0xFFE5E7EB),
+                errorBorderColor = Color(0xFFEF4444),
+                focusedTextColor = Color(0xFF1F2937),
+                unfocusedTextColor = Color(0xFF1F2937)
+            )
+        )
+
+        if (openDialog) {
+            val year = calendar.get(Calendar.YEAR)
+            val month = calendar.get(Calendar.MONTH)
+            val day = calendar.get(Calendar.DAY_OF_MONTH)
+
+            DatePickerDialog(context, { _, y, m, d ->
+                // m is 0-based
+                val formatted = String.format("%02d/%02d/%04d", m + 1, d, y)
+                onValueChange(formatted)
+                openDialog = false
+            }, year, month, day).apply {
+                setOnCancelListener { openDialog = false }
+                show()
+            }
+        }
+
+        if (error.isNotEmpty()) {
+            Text(error, fontSize = 11.sp, color = Color(0xFFEF4444), modifier = Modifier.padding(top = 4.dp, start = 4.dp))
+        }
+    }
+}
+
 @Composable
 fun StudentDropdownField(
     label: String,
@@ -463,52 +526,82 @@ fun StudentDropdownField(
     options: List<String>,
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
-    error: String = "",
-    allowInput: Boolean = false
+    error: String = ""
 ) {
     var expanded by remember { mutableStateOf(false) }
 
-    Column(modifier = modifier.fillMaxWidth().padding(bottom = 16.dp)) {
-        ExposedDropdownMenuBox(
-            expanded = expanded,
-            onExpandedChange = { expanded = it },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            OutlinedTextField(
-                value = value,
-                onValueChange = { if (allowInput) onValueChange(it) },
-                label = { Text(label) },
-                readOnly = !allowInput,
+    Column(modifier = modifier.fillMaxWidth().padding(bottom = 14.dp)) {
+        Text(
+            text = label,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Medium,
+            color = if (error.isNotEmpty()) Color(0xFFEF4444) else Color(0xFF374151),
+            modifier = Modifier.padding(bottom = 6.dp)
+        )
+
+        Box(modifier = Modifier.fillMaxWidth()) {
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(56.dp)
-                    .menuAnchor(),
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                textStyle = LocalTextStyle.current.copy(fontSize = 14.sp),
-                isError = error.isNotEmpty(),
-                shape = RoundedCornerShape(8.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color(0xFF5B5BFF),
-                    unfocusedBorderColor = Color(0xFFE5E7EB),
-                    errorBorderColor = Color(0xFFEF4444),
-                    focusedLabelColor = Color(0xFF5B5BFF),
-                    unfocusedLabelColor = Color(0xFF6B7280)
-                )
-            )
-            ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                    .height(48.dp)
+                    .background(Color.White, RoundedCornerShape(8.dp))
+                    .border(
+                        width = 1.dp,
+                        color = if (error.isNotEmpty()) Color(0xFFEF4444) else Color(0xFFE5E7EB),
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                    .clickable { expanded = !expanded }
+                    .padding(horizontal = 12.dp),
+                contentAlignment = Alignment.CenterStart
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = if (value.isEmpty()) "Select..." else value,
+                        fontSize = 14.sp,
+                        color = if (value.isEmpty()) Color(0xFFD1D5DB) else Color(0xFF1F2937),
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(end = 8.dp)
+                    )
+                    Icon(
+                        Icons.Filled.ArrowDropDown,
+                        contentDescription = null,
+                        tint = Color(0xFF6B7280),
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+                modifier = Modifier
+                    .fillMaxWidth(0.95f)
+                    .align(Alignment.TopStart)
+            ) {
                 options.forEach { option ->
                     DropdownMenuItem(
-                        text = { Text(option, fontSize = 13.sp) },
+                        text = {
+                            Text(option, fontSize = 14.sp, color = Color(0xFF1F2937))
+                        },
                         onClick = {
                             onValueChange(option)
                             expanded = false
-                        }
+                        },
+                        modifier = Modifier.height(40.dp)
                     )
                 }
             }
         }
+
         if (error.isNotEmpty()) {
-            Text(error, fontSize = 11.sp, color = Color(0xFFEF4444), modifier = Modifier.padding(top = 6.dp, start = 8.dp))
+            Text(error, fontSize = 11.sp, color = Color(0xFFEF4444), modifier = Modifier.padding(top = 4.dp, start = 4.dp))
         }
     }
 }
@@ -524,8 +617,8 @@ fun NavigationButtons(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color.White, RoundedCornerShape(16.dp))
-            .padding(24.dp),
+            .background(Color.White, RoundedCornerShape(12.dp))
+            .padding(20.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.End),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -572,6 +665,12 @@ fun NavigationButtons(
 }
 
 fun Modifier.gap(space: Dp) = this.then(Modifier.padding(end = space))
+
+fun Modifier.border(width: Dp, color: Color, shape: RoundedCornerShape): Modifier {
+    return this.then(
+        Modifier.background(color, shape).padding(width)
+    )
+}
 
 @Preview(showBackground = true)
 @Composable
