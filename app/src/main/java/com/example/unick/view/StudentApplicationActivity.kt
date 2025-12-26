@@ -202,7 +202,7 @@ private fun FormStepIndicator(step: Int) {
             fontWeight = FontWeight.SemiBold,
             color = Color(0xFF5B5BFF)
         )
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(11.dp))
         Row(
             modifier = Modifier
                 .fillMaxWidth()
