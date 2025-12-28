@@ -15,6 +15,9 @@ class RegisterViewModel : ViewModel() {
         email: String,
         password: String,
         onSuccess: () -> Unit,
+
+
+
         onError: (String) -> Unit
     ) {
         if (fullName.isEmpty() || location.isEmpty() || email.isEmpty() || password.isEmpty()) {

@@ -1,6 +1,8 @@
 package com.example.unick.view
 
+import android.content.Intent
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -13,8 +15,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -28,7 +32,19 @@ class UserLoginActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             UNICKTheme {
-                UserLoginScreen()
+                UserLoginScreen(
+                    onLoginSuccess = {
+                        // Navigate to your main/home activity
+                        Toast.makeText(this, "Login successful!", Toast.LENGTH_SHORT).show()
+                        // TODO: Replace with your actual navigation
+                        // startActivity(Intent(this, MainActivity::class.java))
+                        // finish()
+                    },
+                    onNavigateToRegister = {
+                        // TODO: Navigate to registration
+                        // startActivity(Intent(this, UserRegisterActivity::class.java))
+                    }
+                )
             }
         }
     }
@@ -36,13 +52,24 @@ class UserLoginActivity : ComponentActivity() {
 
 @Composable
 fun UserLoginScreen(
-    viewModel: UserLoginViewModel = viewModel()
+    viewModel: UserLoginViewModel = viewModel(),
+    onLoginSuccess: () -> Unit = {},
+    onNavigateToRegister: () -> Unit = {}
 ) {
     val email by viewModel.email.collectAsState()
     val password by viewModel.password.collectAsState()
     val rememberMe by viewModel.rememberMe.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
+    val loginSuccess by viewModel.loginSuccess.collectAsState()
+
+    // Handle successful login
+    LaunchedEffect(loginSuccess) {
+        if (loginSuccess) {
+            onLoginSuccess()
+            viewModel.resetLoginSuccess()
+        }
+    }
 
     Scaffold { padding ->
         LazyColumn(
@@ -60,14 +87,16 @@ fun UserLoginScreen(
             item {
                 UserEmailInputField(
                     email = email,
-                    onEmailChange = viewModel::onEmailChange
+                    onEmailChange = viewModel::onEmailChange,
+                    isError = errorMessage != null
                 )
             }
 
             item {
                 UserPasswordField(
                     password = password,
-                    onPasswordChange = viewModel::onPasswordChange
+                    onPasswordChange = viewModel::onPasswordChange,
+                    isError = errorMessage != null
                 )
             }
 
@@ -91,12 +120,16 @@ fun UserLoginScreen(
                         text = errorMessage!!,
                         color = Color.Red,
                         fontSize = 14.sp,
-                        modifier = Modifier.padding(top = 8.dp)
+                        modifier = Modifier.padding(top = 8.dp, start = 25.dp, end = 25.dp)
                     )
                 }
             }
 
-            item { RegisterLinkForUserLogin() }
+            item {
+                RegisterLinkForUserLogin(
+                    onClick = onNavigateToRegister
+                )
+            }
         }
     }
 }
@@ -124,7 +157,8 @@ fun SubHeadingTextForUserLogin() {
 @Composable
 fun UserEmailInputField(
     email: String,
-    onEmailChange: (String) -> Unit
+    onEmailChange: (String) -> Unit,
+    isError: Boolean = false
 ) {
     OutlinedTextField(
         value = email,
@@ -133,15 +167,19 @@ fun UserEmailInputField(
             .fillMaxWidth()
             .padding(horizontal = 25.dp),
         label = { Text("Email") },
-        singleLine = true
+        singleLine = true,
+        isError = isError
     )
 }
 
 @Composable
 fun UserPasswordField(
     password: String,
-    onPasswordChange: (String) -> Unit
+    onPasswordChange: (String) -> Unit,
+    isError: Boolean = false
 ) {
+    var passwordVisible by remember { mutableStateOf(false) }
+
     OutlinedTextField(
         value = password,
         onValueChange = onPasswordChange,
@@ -149,8 +187,9 @@ fun UserPasswordField(
             .fillMaxWidth()
             .padding(horizontal = 25.dp, vertical = 12.dp),
         label = { Text("Password") },
-        visualTransformation = PasswordVisualTransformation(),
-        singleLine = true
+        visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+        singleLine = true,
+        isError = isError
     )
 }
 
@@ -189,16 +228,23 @@ fun UserLoginButton(
             containerColor = Color(0xFF2563EB)
         )
     ) {
-        Text(
-            text = if (isLoading) "Logging in..." else "Login",
-            color = Color.White,
-            fontWeight = FontWeight.Bold
-        )
+        if (isLoading) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(24.dp),
+                color = Color.White
+            )
+        } else {
+            Text(
+                text = "Login",
+                color = Color.White,
+                fontWeight = FontWeight.Bold
+            )
+        }
     }
 }
 
 @Composable
-fun RegisterLinkForUserLogin() {
+fun RegisterLinkForUserLogin(onClick: () -> Unit = {}) {
     Row(
         modifier = Modifier.padding(bottom = 24.dp),
         horizontalArrangement = Arrangement.Center
@@ -208,7 +254,7 @@ fun RegisterLinkForUserLogin() {
             text = "Register",
             color = Color(0xFF2563EB),
             fontWeight = FontWeight.Bold,
-            modifier = Modifier.clickable { }
+            modifier = Modifier.clickable { onClick() }
         )
     }
 }

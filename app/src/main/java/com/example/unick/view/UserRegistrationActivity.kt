@@ -1,5 +1,6 @@
 package com.example.unick.view
 
+import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -32,18 +33,33 @@ class UserRegistrationActivity : ComponentActivity() {
         setContent {
             UNICKTheme {
                 val registerViewModel: RegisterViewModel = viewModel()
-                RegisterScreen(registerViewModel)
+                RegisterScreen(
+                    registerViewModel = registerViewModel,
+                    onNavigateToLogin = {
+                        startActivity(Intent(this, UserLoginActivity::class.java))
+                        finish()
+                    },
+                    onNavigateToDashboard = {
+                        startActivity(Intent(this, DashboardActivity::class.java))
+                        finish()
+                    }
+                )
             }
         }
     }
 }
 
 @Composable
-fun RegisterScreen(registerViewModel: RegisterViewModel) {
+fun RegisterScreen(
+    registerViewModel: RegisterViewModel,
+    onNavigateToLogin: () -> Unit = {},
+    onNavigateToDashboard: () -> Unit = {}
+) {
     var fullName by remember { mutableStateOf("") }
     var location by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var isLoading by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
     RegisterScreenContent(
@@ -51,31 +67,36 @@ fun RegisterScreen(registerViewModel: RegisterViewModel) {
         location = location,
         email = email,
         password = password,
+        isLoading = isLoading,
         onFullNameChange = { fullName = it },
         onLocationChange = { location = it },
         onEmailChange = { email = it },
         onPasswordChange = { password = it },
         onSignUpClick = {
+            if (fullName.isBlank() || email.isBlank() || password.isBlank() || location.isBlank()) {
+                Toast.makeText(context, "Please fill all fields", Toast.LENGTH_SHORT).show()
+                return@RegisterScreenContent
+            }
+
+            isLoading = true
             registerViewModel.registerUser(
                 fullName = fullName,
                 email = email,
                 password = password,
                 location = location,
                 onSuccess = {
-                    Toast.makeText(
-                        context,
-                        "Registration Successful!",
-                        Toast.LENGTH_LONG
-                    ).show()
-                    // TODO: Navigate to login screen
+                    isLoading = false
+                    Toast.makeText(context, "Registration Successful!", Toast.LENGTH_LONG).show()
+                    onNavigateToDashboard()
                 },
                 onError = { errorMsg ->
+                    isLoading = false
                     Toast.makeText(context, errorMsg, Toast.LENGTH_SHORT).show()
                 }
             )
         },
         onSignInClick = {
-            // TODO: Navigate to LoginActivity
+            onNavigateToLogin()
         }
     )
 }
@@ -86,6 +107,7 @@ fun RegisterScreenContent(
     location: String,
     email: String,
     password: String,
+    isLoading: Boolean = false,
     onFullNameChange: (String) -> Unit,
     onLocationChange: (String) -> Unit,
     onEmailChange: (String) -> Unit,
@@ -103,35 +125,46 @@ fun RegisterScreenContent(
             verticalArrangement = Arrangement.Top
         ) {
             item { HeadingTextForRegister() }
+
             item {
                 FullNameLabelAndField(
                     fullName = fullName,
                     onFullNameChange = onFullNameChange
                 )
             }
+
             item {
                 LocationLabelAndField(
                     location = location,
                     onLocationChange = onLocationChange
                 )
             }
+
             item {
                 EmailLabelAndField(
                     email = email,
                     onEmailChange = onEmailChange
                 )
             }
+
             item {
                 PasswordLabelAndField(
                     password = password,
                     onPasswordChange = onPasswordChange
                 )
             }
+
             item {
-                SignUpButtonForRegister(onClick = onSignUpClick)
+                SignUpButtonForRegister(
+                    onClick = onSignUpClick,
+                    isLoading = isLoading
+                )
             }
+
             item {
-                AlreadyHaveAccountLinkForRegister(onSignInClick = onSignInClick)
+                AlreadyHaveAccountLinkForRegister(
+                    onSignInClick = onSignInClick
+                )
             }
         }
     }
@@ -150,22 +183,22 @@ fun HeadingTextForRegister() {
 
 @Composable
 fun FullNameLabelAndField(fullName: String, onFullNameChange: (String) -> Unit) {
-    Text(
-        text = "Full Name",
-        fontSize = 14.sp,
-        color = Color.Black,
-        modifier = Modifier.padding(start = 24.dp, bottom = 8.dp)
-    )
-
-    Row(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(start = 24.dp, end = 24.dp, bottom = 16.dp)
     ) {
+        Text(
+            text = "Full Name",
+            fontSize = 14.sp,
+            color = Color.Black,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+
         OutlinedTextField(
             value = fullName,
             onValueChange = onFullNameChange,
-            modifier = Modifier.fillMaxWidth().height(48.dp),
+            modifier = Modifier.fillMaxWidth(),
             placeholder = { Text("Enter your full name", color = Color.Gray) },
             singleLine = true
         )
@@ -174,22 +207,22 @@ fun FullNameLabelAndField(fullName: String, onFullNameChange: (String) -> Unit) 
 
 @Composable
 fun LocationLabelAndField(location: String, onLocationChange: (String) -> Unit) {
-    Text(
-        text = "Location",
-        fontSize = 14.sp,
-        color = Color.Black,
-        modifier = Modifier.padding(start = 24.dp, bottom = 8.dp)
-    )
-
-    Row(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(start = 24.dp, end = 24.dp, bottom = 16.dp)
     ) {
+        Text(
+            text = "Location",
+            fontSize = 14.sp,
+            color = Color.Black,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+
         OutlinedTextField(
             value = location,
             onValueChange = onLocationChange,
-            modifier = Modifier.fillMaxWidth().height(48.dp),
+            modifier = Modifier.fillMaxWidth(),
             placeholder = { Text("Enter your location", color = Color.Gray) },
             singleLine = true
         )
@@ -198,22 +231,22 @@ fun LocationLabelAndField(location: String, onLocationChange: (String) -> Unit) 
 
 @Composable
 fun EmailLabelAndField(email: String, onEmailChange: (String) -> Unit) {
-    Text(
-        text = "Email address",
-        fontSize = 14.sp,
-        color = Color.Black,
-        modifier = Modifier.padding(start = 24.dp, bottom = 8.dp)
-    )
-
-    Row(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(start = 24.dp, end = 24.dp, bottom = 16.dp)
     ) {
+        Text(
+            text = "Email address",
+            fontSize = 14.sp,
+            color = Color.Black,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+
         OutlinedTextField(
             value = email,
             onValueChange = onEmailChange,
-            modifier = Modifier.fillMaxWidth().height(48.dp),
+            modifier = Modifier.fillMaxWidth(),
             placeholder = { Text("Enter your email", color = Color.Gray) },
             singleLine = true
         )
@@ -222,22 +255,22 @@ fun EmailLabelAndField(email: String, onEmailChange: (String) -> Unit) {
 
 @Composable
 fun PasswordLabelAndField(password: String, onPasswordChange: (String) -> Unit) {
-    Text(
-        text = "Password",
-        fontSize = 14.sp,
-        color = Color.Black,
-        modifier = Modifier.padding(start = 24.dp, bottom = 8.dp)
-    )
-
-    Row(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(start = 24.dp, end = 24.dp, bottom = 24.dp)
     ) {
+        Text(
+            text = "Password",
+            fontSize = 14.sp,
+            color = Color.Black,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+
         OutlinedTextField(
             value = password,
             onValueChange = onPasswordChange,
-            modifier = Modifier.fillMaxWidth().height(48.dp),
+            modifier = Modifier.fillMaxWidth(),
             placeholder = { Text("Enter password", color = Color.Gray) },
             visualTransformation = PasswordVisualTransformation(),
             singleLine = true
@@ -246,22 +279,39 @@ fun PasswordLabelAndField(password: String, onPasswordChange: (String) -> Unit) 
 }
 
 @Composable
-fun SignUpButtonForRegister(onClick: () -> Unit) {
+fun SignUpButtonForRegister(
+    onClick: () -> Unit,
+    isLoading: Boolean = false
+) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(start = 24.dp, end = 24.dp, bottom = 8.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 24.dp, end = 24.dp, bottom = 8.dp),
         horizontalArrangement = Arrangement.Center
     ) {
         Button(
             onClick = onClick,
-            modifier = Modifier.width(300.dp).height(50.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0B36F7))
-        ) {
-            Text(
-                text = "Sign Up",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.White
+            enabled = !isLoading,
+            modifier = Modifier
+                .width(300.dp)
+                .height(50.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color(0xFF0B36F7)
             )
+        ) {
+            if (isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(24.dp),
+                    color = Color.White
+                )
+            } else {
+                Text(
+                    text = "Sign Up",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
+            }
         }
     }
 }
@@ -269,7 +319,10 @@ fun SignUpButtonForRegister(onClick: () -> Unit) {
 @Composable
 fun AlreadyHaveAccountLinkForRegister(onSignInClick: () -> Unit) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(top = 24.dp, bottom = 24.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 24.dp, bottom = 24.dp)
+            .clickable { onSignInClick() },
         horizontalArrangement = Arrangement.Center
     ) {
         Text(
@@ -277,12 +330,12 @@ fun AlreadyHaveAccountLinkForRegister(onSignInClick: () -> Unit) {
             fontSize = 14.sp,
             color = Color.Black
         )
+        Spacer(modifier = Modifier.width(4.dp))
         Text(
-            text = " Sign In",
+            text = "Sign In",
             fontSize = 14.sp,
             color = Color(0xFF2563EB),
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.clickable { onSignInClick() }
+            fontWeight = FontWeight.Bold
         )
     }
 }
