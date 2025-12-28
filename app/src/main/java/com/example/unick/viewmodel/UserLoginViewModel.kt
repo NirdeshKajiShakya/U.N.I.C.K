@@ -3,14 +3,15 @@ package com.example.unick.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.FirebaseDatabase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
 
 class UserLoginViewModel : ViewModel() {
 
-    private val auth = FirebaseAuth.getInstance()
+    private val auth: FirebaseAuth = FirebaseAuth.getInstance()
+    private val db: FirebaseDatabase = FirebaseDatabase.getInstance("https://vidyakhoj-927fb-default-rtdb.firebaseio.com/")
 
     private val _email = MutableStateFlow("")
     val email: StateFlow<String> = _email
@@ -32,12 +33,12 @@ class UserLoginViewModel : ViewModel() {
 
     fun onEmailChange(value: String) {
         _email.value = value
-        _errorMessage.value = null // Clear error when user types
+        _errorMessage.value = null
     }
 
     fun onPasswordChange(value: String) {
         _password.value = value
-        _errorMessage.value = null // Clear error when user types
+        _errorMessage.value = null
     }
 
     fun onRememberMeChange(value: Boolean) {
@@ -45,13 +46,11 @@ class UserLoginViewModel : ViewModel() {
     }
 
     fun login() {
-        // Validate inputs
         if (_email.value.isBlank() || _password.value.isBlank()) {
             _errorMessage.value = "Email and password cannot be empty"
             return
         }
 
-        // Basic email validation
         if (!android.util.Patterns.EMAIL_ADDRESS.matcher(_email.value).matches()) {
             _errorMessage.value = "Please enter a valid email"
             return
@@ -60,30 +59,38 @@ class UserLoginViewModel : ViewModel() {
         _isLoading.value = true
         _errorMessage.value = null
 
-        viewModelScope.launch {
-            try {
-                auth.signInWithEmailAndPassword(
-                    _email.value.trim(),
-                    _password.value
-                ).await()
+        auth.signInWithEmailAndPassword(_email.value.trim(), _password.value)
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    val firebaseUser = auth.currentUser
+                    if (firebaseUser != null) {
+                        // Update last login time in Realtime Database
+                        val loginData = hashMapOf(
+                            "lastLogin" to System.currentTimeMillis()
+                        )
 
-                // Login successful
-                _isLoading.value = false
-                _loginSuccess.value = true
-
-            } catch (e: Exception) {
-                _isLoading.value = false
-                _errorMessage.value = when {
-                    e.message?.contains("network") == true ->
-                        "Network error. Please check your connection"
-                    e.message?.contains("password") == true ->
-                        "Invalid email or password"
-                    e.message?.contains("user") == true ->
-                        "No account found with this email"
-                    else -> e.message ?: "Login failed. Please try again"
+                        db.getReference("Users").child(firebaseUser.uid)
+                            .updateChildren(loginData as Map<String, Any>)
+                            .addOnSuccessListener {
+                                _isLoading.value = false
+                                _loginSuccess.value = true
+                                android.util.Log.d("LoginDebug", "Login successful and database updated")
+                            }
+                            .addOnFailureListener { e ->
+                                _isLoading.value = false
+                                _loginSuccess.value = true // Still allow login even if update fails
+                                android.util.Log.e("LoginDebug", "Database update failed: ${e.message}")
+                            }
+                    } else {
+                        _isLoading.value = false
+                        _errorMessage.value = "Login failed: user is null"
+                    }
+                } else {
+                    _isLoading.value = false
+                    _errorMessage.value = task.exception?.message ?: "Login failed"
+                    android.util.Log.e("LoginError", "Login error: ${task.exception?.message}")
                 }
             }
-        }
     }
 
     fun resetLoginSuccess() {

@@ -34,15 +34,13 @@ class UserLoginActivity : ComponentActivity() {
             UNICKTheme {
                 UserLoginScreen(
                     onLoginSuccess = {
-                        // Navigate to your main/home activity
-                        Toast.makeText(this, "Login successful!", Toast.LENGTH_SHORT).show()
-                        // TODO: Replace with your actual navigation
-                        // startActivity(Intent(this, MainActivity::class.java))
-                        // finish()
+                        // Navigate to Dashboard
+                        startActivity(Intent(this, DashboardActivity::class.java))
+                        finish() // Close login activity so user can't go back
                     },
                     onNavigateToRegister = {
-                        // TODO: Navigate to registration
-                        // startActivity(Intent(this, UserRegisterActivity::class.java))
+                        // Navigate to registration
+                        startActivity(Intent(this, UserRegistrationActivity::class.java))
                     }
                 )
             }
@@ -62,14 +60,63 @@ fun UserLoginScreen(
     val isLoading by viewModel.isLoading.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
     val loginSuccess by viewModel.loginSuccess.collectAsState()
+    var showSuccessDialog by remember { mutableStateOf(false) }
 
     // Handle successful login
     LaunchedEffect(loginSuccess) {
         if (loginSuccess) {
-            onLoginSuccess()
+            showSuccessDialog = true
             viewModel.resetLoginSuccess()
         }
     }
+
+    // Success Dialog
+    // Success Dialog
+    if (showSuccessDialog) {
+        AlertDialog(
+            onDismissRequest = { },
+            title = {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = "✓ ",
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF4CAF50)
+                    )
+                    Text(
+                        text = "Successfully Login",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp,
+                        color = Color.Black
+                    )
+                }
+            },
+            text = null,
+            confirmButton = { },
+            containerColor = Color.White,
+            shape = MaterialTheme.shapes.medium
+        )
+
+        // Navigate after showing dialog for 1.5 seconds
+        LaunchedEffect(Unit) {
+            kotlinx.coroutines.delay(1500)
+            showSuccessDialog = false
+            onLoginSuccess()
+        }
+    }
+
+// Handle loginSuccess state
+    LaunchedEffect(loginSuccess) {
+        if (loginSuccess) {
+            showSuccessDialog = true
+            viewModel.resetLoginSuccess()
+        }
+    }
+
 
     Scaffold { padding ->
         LazyColumn(
@@ -246,15 +293,16 @@ fun UserLoginButton(
 @Composable
 fun RegisterLinkForUserLogin(onClick: () -> Unit = {}) {
     Row(
-        modifier = Modifier.padding(bottom = 24.dp),
+        modifier = Modifier
+            .padding(bottom = 24.dp)
+            .clickable { onClick() },
         horizontalArrangement = Arrangement.Center
     ) {
         Text(text = "Don't have an account? ")
         Text(
             text = "Register",
             color = Color(0xFF2563EB),
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.clickable { onClick() }
+            fontWeight = FontWeight.Bold
         )
     }
 }
