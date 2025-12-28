@@ -1,40 +1,29 @@
 package com.example.unick.viewmodel
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
 
 class UserLoginViewModel : ViewModel() {
 
-    private val auth: FirebaseAuth = FirebaseAuth.getInstance()
+    private val auth = FirebaseAuth.getInstance()
 
-    // Input States
     private val _email = MutableStateFlow("")
-    val email: StateFlow<String> = _email.asStateFlow()
+    val email: StateFlow<String> = _email
 
     private val _password = MutableStateFlow("")
-    val password: StateFlow<String> = _password.asStateFlow()
+    val password: StateFlow<String> = _password
 
     private val _rememberMe = MutableStateFlow(false)
-    val rememberMe: StateFlow<Boolean> = _rememberMe.asStateFlow()
-
-    // UI States
+    val rememberMe: StateFlow<Boolean> = _rememberMe
 
     private val _isLoading = MutableStateFlow(false)
-    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
-
-    private val _loginSuccess = MutableStateFlow(false)
-    val loginSuccess: StateFlow<Boolean> = _loginSuccess.asStateFlow()
+    val isLoading: StateFlow<Boolean> = _isLoading
 
     private val _errorMessage = MutableStateFlow<String?>(null)
-    val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
+    val errorMessage: StateFlow<String?> = _errorMessage
 
-
-    // Update functions
     fun onEmailChange(value: String) {
         _email.value = value
     }
@@ -47,37 +36,24 @@ class UserLoginViewModel : ViewModel() {
         _rememberMe.value = value
     }
 
-
-    // Firebase Login
-    fun loginUser() {
-        val emailValue = _email.value
-        val passwordValue = _password.value
-
-        if (emailValue.isBlank() || passwordValue.isBlank()) {
-            _errorMessage.value = "Email and Password cannot be empty"
+    fun login() {
+        if (_email.value.isBlank() || _password.value.isBlank()) {
+            _errorMessage.value = "Email and password cannot be empty"
             return
         }
 
         _isLoading.value = true
-
-        auth.signInWithEmailAndPassword(emailValue, passwordValue)
-            .addOnSuccessListener {
-                _isLoading.value = false
-                _loginSuccess.value = true
-            }
-            .addOnFailureListener { e ->
-                _isLoading.value = false
-                _errorMessage.value = e.message ?: "Login failed"
-            }
-    }
-
-
-    fun clearError() {
         _errorMessage.value = null
-    }
 
-    fun logoutUser() {
-        auth.signOut()
-        _loginSuccess.value = false
+        auth.signInWithEmailAndPassword(
+            _email.value.trim(),
+            _password.value
+        ).addOnCompleteListener { task ->
+            _isLoading.value = false
+            if (!task.isSuccessful) {
+                _errorMessage.value =
+                    task.exception?.message ?: "Login failed"
+            }
+        }
     }
 }

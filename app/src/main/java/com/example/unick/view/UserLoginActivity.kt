@@ -6,25 +6,10 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -33,7 +18,9 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.unick.ui.theme.UNICKTheme
+import com.example.unick.viewmodel.UserLoginViewModel
 
 class UserLoginActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -48,8 +35,16 @@ class UserLoginActivity : ComponentActivity() {
 }
 
 @Composable
-fun UserLoginScreen(){
-    Scaffold() { padding ->
+fun UserLoginScreen(
+    viewModel: UserLoginViewModel = viewModel()
+) {
+    val email by viewModel.email.collectAsState()
+    val password by viewModel.password.collectAsState()
+    val rememberMe by viewModel.rememberMe.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    val errorMessage by viewModel.errorMessage.collectAsState()
+
+    Scaffold { padding ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
@@ -58,152 +53,169 @@ fun UserLoginScreen(){
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
+
             item { HeadingTextForUserLogin() }
             item { SubHeadingTextForUserLogin() }
-            item { UserEmailInputField() }
-            item { UserPasswordField() }
-            item { CheckBoxForUserLogin() }
-            item { UserLoginButton() }
+
+            item {
+                UserEmailInputField(
+                    email = email,
+                    onEmailChange = viewModel::onEmailChange
+                )
+            }
+
+            item {
+                UserPasswordField(
+                    password = password,
+                    onPasswordChange = viewModel::onPasswordChange
+                )
+            }
+
+            item {
+                CheckBoxForUserLogin(
+                    rememberMe = rememberMe,
+                    onCheckedChange = viewModel::onRememberMeChange
+                )
+            }
+
+            item {
+                UserLoginButton(
+                    isLoading = isLoading,
+                    onClick = { viewModel.login() }
+                )
+            }
+
+            if (errorMessage != null) {
+                item {
+                    Text(
+                        text = errorMessage!!,
+                        color = Color.Red,
+                        fontSize = 14.sp,
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                }
+            }
+
             item { RegisterLinkForUserLogin() }
         }
     }
 }
 
 @Composable
-fun HeadingTextForUserLogin(){
+fun HeadingTextForUserLogin() {
     Text(
         text = "Welcome Back",
         fontSize = 28.sp,
         fontWeight = FontWeight.Bold,
-        color = Color.Black,
         modifier = Modifier.padding(bottom = 8.dp)
     )
 }
 
 @Composable
-fun SubHeadingTextForUserLogin(){
+fun SubHeadingTextForUserLogin() {
     Text(
         text = "Please enter your details to login",
         fontSize = 14.sp,
-        color = Color(0xFF666666),
+        color = Color.Gray,
         modifier = Modifier.padding(bottom = 24.dp)
     )
 }
 
 @Composable
-fun UserEmailInputField(){
-    var email by remember { mutableStateOf("") }
-    Row(
+fun UserEmailInputField(
+    email: String,
+    onEmailChange: (String) -> Unit
+) {
+    OutlinedTextField(
+        value = email,
+        onValueChange = onEmailChange,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 25.dp)
-    ) {
-        OutlinedTextField(
-            value = email,
-            onValueChange = { email = it },
-            modifier = Modifier.fillMaxWidth(),
-            label = { Text("Email") },
-            singleLine = true
-        )
-    }
+            .padding(horizontal = 25.dp),
+        label = { Text("Email") },
+        singleLine = true
+    )
 }
 
 @Composable
-fun UserPasswordField(){
-    var password by remember { mutableStateOf("") }
-    Row(
+fun UserPasswordField(
+    password: String,
+    onPasswordChange: (String) -> Unit
+) {
+    OutlinedTextField(
+        value = password,
+        onValueChange = onPasswordChange,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 25.dp, vertical = 13.dp)
-    ) {
-        OutlinedTextField(
-            value = password,
-            onValueChange = { password = it },
-            modifier = Modifier.fillMaxWidth(),
-            label = { Text("Password") },
-            visualTransformation = PasswordVisualTransformation(),
-            singleLine = true
-        )
-    }
+            .padding(horizontal = 25.dp, vertical = 12.dp),
+        label = { Text("Password") },
+        visualTransformation = PasswordVisualTransformation(),
+        singleLine = true
+    )
 }
 
 @Composable
-fun CheckBoxForUserLogin(){
-    var rememberMe by remember { mutableStateOf(false) }
+fun CheckBoxForUserLogin(
+    rememberMe: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 15.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Start
+            .padding(horizontal = 20.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
         Checkbox(
             checked = rememberMe,
-            onCheckedChange = { rememberMe = it }
+            onCheckedChange = onCheckedChange
         )
+        Text(text = "Remember Me")
+    }
+}
+
+@Composable
+fun UserLoginButton(
+    isLoading: Boolean,
+    onClick: () -> Unit
+) {
+    Button(
+        onClick = onClick,
+        enabled = !isLoading,
+        modifier = Modifier
+            .padding(vertical = 20.dp)
+            .width(200.dp)
+            .height(50.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = Color(0xFF2563EB)
+        )
+    ) {
         Text(
-            text = "Remember Me",
-            fontSize = 14.sp,
-            color = Color(0xFF333333),
-            modifier = Modifier.padding(start = 8.dp)
+            text = if (isLoading) "Logging in..." else "Login",
+            color = Color.White,
+            fontWeight = FontWeight.Bold
         )
     }
 }
 
 @Composable
-fun UserLoginButton(){
+fun RegisterLinkForUserLogin() {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 25.dp, vertical = 20.dp),
+        modifier = Modifier.padding(bottom = 24.dp),
         horizontalArrangement = Arrangement.Center
     ) {
-        Button(
-            onClick = { /* Handle login */ },
-            modifier = Modifier
-                .width(200.dp)
-                .height(50.dp)
-                .padding(bottom = 16.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFF2563EB)
-            )
-        ) {
-            Text(
-                text = "Login",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.White
-            )
-        }
-    }
-}
-
-@Composable
-fun RegisterLinkForUserLogin(){
-    Row(
-        modifier = Modifier
-            .padding(bottom = 32.dp)
-            .fillMaxWidth(),
-        horizontalArrangement = Arrangement.Center
-    ) {
-        Text(
-            text = "Don't have an account? ",
-            fontSize = 14.sp,
-            color = Color(0xFF666666)
-        )
+        Text(text = "Don't have an account? ")
         Text(
             text = "Register",
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Bold,
             color = Color(0xFF2563EB),
-            modifier = Modifier.clickable { /* Navigate to register screen */ }
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.clickable { }
         )
     }
 }
 
 @Preview(showBackground = true)
 @Composable
-fun UserLoginScreenPreview() {
+fun PreviewLogin() {
     UNICKTheme {
         UserLoginScreen()
     }

@@ -31,10 +31,7 @@ class UserRegistrationActivity : ComponentActivity() {
 
         setContent {
             UNICKTheme {
-                // Get the ViewModel instance
                 val registerViewModel: RegisterViewModel = viewModel()
-
-                // Pass the ViewModel to the composable
                 RegisterScreen(registerViewModel)
             }
         }
@@ -44,10 +41,58 @@ class UserRegistrationActivity : ComponentActivity() {
 @Composable
 fun RegisterScreen(registerViewModel: RegisterViewModel) {
     var fullName by remember { mutableStateOf("") }
+    var location by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     val context = LocalContext.current
 
+    RegisterScreenContent(
+        fullName = fullName,
+        location = location,
+        email = email,
+        password = password,
+        onFullNameChange = { fullName = it },
+        onLocationChange = { location = it },
+        onEmailChange = { email = it },
+        onPasswordChange = { password = it },
+        onSignUpClick = {
+            registerViewModel.registerUser(
+                fullName = fullName,
+                email = email,
+                password = password,
+                location = location,
+                onSuccess = {
+                    Toast.makeText(
+                        context,
+                        "Registration Successful!",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    // TODO: Navigate to login screen
+                },
+                onError = { errorMsg ->
+                    Toast.makeText(context, errorMsg, Toast.LENGTH_SHORT).show()
+                }
+            )
+        },
+        onSignInClick = {
+            // TODO: Navigate to LoginActivity
+        }
+    )
+}
+
+@Composable
+fun RegisterScreenContent(
+    fullName: String,
+    location: String,
+    email: String,
+    password: String,
+    onFullNameChange: (String) -> Unit,
+    onLocationChange: (String) -> Unit,
+    onEmailChange: (String) -> Unit,
+    onPasswordChange: (String) -> Unit,
+    onSignUpClick: () -> Unit,
+    onSignInClick: () -> Unit
+) {
     Scaffold { padding ->
         LazyColumn(
             modifier = Modifier
@@ -61,48 +106,36 @@ fun RegisterScreen(registerViewModel: RegisterViewModel) {
             item {
                 FullNameLabelAndField(
                     fullName = fullName,
-                    onFullNameChange = { fullName = it }
+                    onFullNameChange = onFullNameChange
+                )
+            }
+            item {
+                LocationLabelAndField(
+                    location = location,
+                    onLocationChange = onLocationChange
                 )
             }
             item {
                 EmailLabelAndField(
                     email = email,
-                    onEmailChange = { email = it }
+                    onEmailChange = onEmailChange
                 )
             }
             item {
                 PasswordLabelAndField(
                     password = password,
-                    onPasswordChange = { password = it }
+                    onPasswordChange = onPasswordChange
                 )
             }
             item {
-                SignUpButtonForRegister(
-                    onClick = {
-                        registerViewModel.registerUser(
-                            fullName = fullName,
-                            email = email,
-                            password = password,
-                            onSuccess = {
-                                Toast.makeText(
-                                    context,
-                                    "Registration Successful!",
-                                    Toast.LENGTH_LONG
-                                ).show()
-                                // TODO: Navigate to login screen
-                            },
-                            onError = { errorMsg ->
-                                Toast.makeText(context, errorMsg, Toast.LENGTH_SHORT).show()
-                            }
-                        )
-                    }
-                )
+                SignUpButtonForRegister(onClick = onSignUpClick)
             }
-            item { AlreadyHaveAccountLinkForRegister() }
+            item {
+                AlreadyHaveAccountLinkForRegister(onSignInClick = onSignInClick)
+            }
         }
     }
 }
-
 
 @Composable
 fun HeadingTextForRegister() {
@@ -134,6 +167,30 @@ fun FullNameLabelAndField(fullName: String, onFullNameChange: (String) -> Unit) 
             onValueChange = onFullNameChange,
             modifier = Modifier.fillMaxWidth().height(48.dp),
             placeholder = { Text("Enter your full name", color = Color.Gray) },
+            singleLine = true
+        )
+    }
+}
+
+@Composable
+fun LocationLabelAndField(location: String, onLocationChange: (String) -> Unit) {
+    Text(
+        text = "Location",
+        fontSize = 14.sp,
+        color = Color.Black,
+        modifier = Modifier.padding(start = 24.dp, bottom = 8.dp)
+    )
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 24.dp, end = 24.dp, bottom = 16.dp)
+    ) {
+        OutlinedTextField(
+            value = location,
+            onValueChange = onLocationChange,
+            modifier = Modifier.fillMaxWidth().height(48.dp),
+            placeholder = { Text("Enter your location", color = Color.Gray) },
             singleLine = true
         )
     }
@@ -210,7 +267,7 @@ fun SignUpButtonForRegister(onClick: () -> Unit) {
 }
 
 @Composable
-fun AlreadyHaveAccountLinkForRegister() {
+fun AlreadyHaveAccountLinkForRegister(onSignInClick: () -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(top = 24.dp, bottom = 24.dp),
         horizontalArrangement = Arrangement.Center
@@ -225,7 +282,7 @@ fun AlreadyHaveAccountLinkForRegister() {
             fontSize = 14.sp,
             color = Color(0xFF2563EB),
             fontWeight = FontWeight.Bold,
-            modifier = Modifier.clickable { /* TODO: Navigate to LoginActivity */ }
+            modifier = Modifier.clickable { onSignInClick() }
         )
     }
 }
@@ -234,7 +291,22 @@ fun AlreadyHaveAccountLinkForRegister() {
 @Composable
 fun RegisterScreenPreview() {
     UNICKTheme {
-        val dummyViewModel: RegisterViewModel = viewModel()
-        RegisterScreen(dummyViewModel)
+        var fullName by remember { mutableStateOf("") }
+        var location by remember { mutableStateOf("") }
+        var email by remember { mutableStateOf("") }
+        var password by remember { mutableStateOf("") }
+
+        RegisterScreenContent(
+            fullName = fullName,
+            location = location,
+            email = email,
+            password = password,
+            onFullNameChange = { fullName = it },
+            onLocationChange = { location = it },
+            onEmailChange = { email = it },
+            onPasswordChange = { password = it },
+            onSignUpClick = { /* Preview - no action */ },
+            onSignInClick = { /* Preview - no action */ }
+        )
     }
 }
