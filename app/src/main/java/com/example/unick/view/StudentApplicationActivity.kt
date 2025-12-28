@@ -24,8 +24,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.unick.model.StudentApplication
+import com.example.unick.repo.ApplicationRepoImpl
 import com.example.unick.ui.theme.UNICKTheme
-import kotlinx.coroutines.delay
+import com.example.unick.viewmodel.StudentApplicationViewModel
+import com.example.unick.viewmodel.SubmitState
 import java.util.Calendar
 
 class StudentApplicationActivity : ComponentActivity() {
@@ -89,21 +93,46 @@ data class FormErrors(val errors: Map<String, String> = emptyMap()) {
     fun isEmpty() = errors.isEmpty()
 }
 
-sealed class UiState {
-    object Idle : UiState()
-    object Submitting : UiState()
-    object Success : UiState()
+// Mapping function: Convert FormData to StudentApplication
+fun FormData.toStudentApplication(): StudentApplication {
+    return StudentApplication(
+        fullName = fullName,
+        dob = dob,
+        gender = gender,
+        bloodGroup = bloodGroup,
+        interests = interests,
+        lastSchoolName = lastSchoolName,
+        standard = standard,
+        fatherName = fatherName,
+        fatherPhone = fatherPhone,
+        motherName = motherName,
+        motherPhone = motherPhone,
+        presentAddress = presentAddress,
+        permanentAddress = permanentAddress,
+        schoolBudget = schoolBudget,
+        timestamp = System.currentTimeMillis()
+    )
 }
 
 @Composable
 fun StudentRegistrationForm() {
+    // ViewModel integration - ADDED
+    val viewModel = viewModel<StudentApplicationViewModel>(
+        factory = StudentApplicationViewModel.Factory(ApplicationRepoImpl())
+    )
+    val submitState by viewModel.submitState.collectAsState()
+
     var currentStep by remember { mutableStateOf(1) }
     var formData by remember { mutableStateOf(FormData()) }
     var formErrors by remember { mutableStateOf(FormErrors()) }
-    var uiState by remember { mutableStateOf<UiState>(UiState.Idle) }
 
-    if (uiState is UiState.Success) {
-        StudentSuccessScreen { uiState = UiState.Idle }
+    // Show success screen - UPDATED
+    if (submitState is SubmitState.Success) {
+        StudentSuccessScreen {
+            currentStep = 1
+            formData = FormData()
+            formErrors = FormErrors()
+        }
         return
     }
 
@@ -141,11 +170,31 @@ fun StudentRegistrationForm() {
                 4 -> item { Step4AddressSiblings(formData, formErrors) { formData = it } }
             }
 
+            // Show error dialog if submission fails - ADDED
+            if (submitState is SubmitState.Error) {
+                item {
+                    AlertDialog(
+                        onDismissRequest = { /* Cannot dismiss */ },
+                        title = { Text("Submission Failed") },
+                        text = { Text((submitState as SubmitState.Error).message) },
+                        confirmButton = {
+                            Button(onClick = {
+                                currentStep = 1
+                                formData = FormData()
+                                formErrors = FormErrors()
+                            }) {
+                                Text("Try Again")
+                            }
+                        }
+                    )
+                }
+            }
+
             item {
                 Spacer(modifier = Modifier.height(20.dp))
                 NavigationButtons(
                     currentStep = currentStep,
-                    isSubmitting = (uiState is UiState.Submitting),
+                    isSubmitting = (submitState is SubmitState.Loading),  // UPDATED
                     onPrevious = { if (currentStep > 1) currentStep-- },
                     onNext = {
                         formErrors = validateStep(currentStep, formData)
@@ -156,19 +205,13 @@ fun StudentRegistrationForm() {
                     onSubmit = {
                         formErrors = validateStep(currentStep, formData)
                         if (formErrors.isEmpty()) {
-                            uiState = UiState.Submitting
+                            // UPDATED - call ViewModel instead of fake delay
+                            viewModel.submitApplication(formData.toStudentApplication())
                         }
                     }
                 )
                 Spacer(modifier = Modifier.height(20.dp))
             }
-        }
-    }
-
-    LaunchedEffect(key1 = uiState) {
-        if (uiState is UiState.Submitting) {
-            delay(2000)
-            uiState = UiState.Success
         }
     }
 }
@@ -329,7 +372,6 @@ fun Step1PersonalDetails(formData: FormData, errors: FormErrors, onDataChange: (
 
         TextInputField("Full Name*", formData.fullName, { onDataChange(formData.copy(fullName = it)) }, error = errors.getError("fullName"))
         TextInputField("Location", formData.location, { onDataChange(formData.copy(location = it)) })
-        // replaced plain text field with DatePickerField so user can pick via calendar
         DatePickerField("Date Of Birth", formData.dob, { onDataChange(formData.copy(dob = it)) }, placeholder = "mm/dd/yyyy", error = errors.getError("dob"))
         TextInputField("Age", formData.age, { onDataChange(formData.copy(age = it)) })
 
@@ -473,7 +515,8 @@ fun DatePickerField(
 
         OutlinedTextField(
             value = value,
-            onValueChange = {}, // read-only; value updated via date picker
+            onValueChange = {},
+            readOnly = true,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(58.dp)
@@ -503,7 +546,6 @@ fun DatePickerField(
             val day = calendar.get(Calendar.DAY_OF_MONTH)
 
             DatePickerDialog(context, { _, y, m, d ->
-                // m is 0-based
                 val formatted = String.format("%02d/%02d/%04d", m + 1, d, y)
                 onValueChange(formatted)
                 openDialog = false
