@@ -1,56 +1,54 @@
 package com.example.unick.view
 
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.material3.RadioButton
-import androidx.compose.material3.Scaffold
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.unick.ui.theme.UNICKTheme
+import com.example.unick.viewmodel.RegisterViewModel
 
 class UserRegistrationActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
         setContent {
             UNICKTheme {
-                RegisterScreen()
+                // Get the ViewModel instance
+                val registerViewModel: RegisterViewModel = viewModel()
+
+                // Pass the ViewModel to the composable
+                RegisterScreen(registerViewModel)
             }
         }
     }
 }
 
 @Composable
-fun RegisterScreen() {
-    Scaffold() { padding ->
+fun RegisterScreen(registerViewModel: RegisterViewModel) {
+    var fullName by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    val context = LocalContext.current
+
+    Scaffold { padding ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
@@ -60,76 +58,65 @@ fun RegisterScreen() {
             verticalArrangement = Arrangement.Top
         ) {
             item { HeadingTextForRegister() }
-            item { RoleSelectionForRegister() }
-            item { FullNameLabelAndField() }
-            item { EmailLabelAndField() }
-            item { PasswordLabelAndField() }
-            item { SignUpButtonForRegister() }
+            item {
+                FullNameLabelAndField(
+                    fullName = fullName,
+                    onFullNameChange = { fullName = it }
+                )
+            }
+            item {
+                EmailLabelAndField(
+                    email = email,
+                    onEmailChange = { email = it }
+                )
+            }
+            item {
+                PasswordLabelAndField(
+                    password = password,
+                    onPasswordChange = { password = it }
+                )
+            }
+            item {
+                SignUpButtonForRegister(
+                    onClick = {
+                        registerViewModel.registerUser(
+                            fullName = fullName,
+                            email = email,
+                            password = password,
+                            onSuccess = {
+                                Toast.makeText(
+                                    context,
+                                    "Registration Successful!",
+                                    Toast.LENGTH_LONG
+                                ).show()
+                                // TODO: Navigate to login screen
+                            },
+                            onError = { errorMsg ->
+                                Toast.makeText(context, errorMsg, Toast.LENGTH_SHORT).show()
+                            }
+                        )
+                    }
+                )
+            }
             item { AlreadyHaveAccountLinkForRegister() }
         }
     }
 }
 
+
 @Composable
-fun HeadingTextForRegister(){
+fun HeadingTextForRegister() {
     Text(
         text = "Create an Account",
         fontSize = 26.sp,
         fontWeight = FontWeight.Bold,
         color = Color.Black,
-        modifier = Modifier
-            .padding(start = 24.dp, top = 24.dp, bottom = 24.dp)
+        modifier = Modifier.padding(start = 24.dp, top = 24.dp, bottom = 24.dp)
     )
 }
 
 @Composable
-fun RoleSelectionForRegister(){
-    var selectedRole by remember { mutableStateOf("Parent") }
-
-    Text(
-        text = "I am a:",
-        fontSize = 15.sp,
-        fontWeight = FontWeight.SemiBold,
-        color = Color.Black,
-        modifier = Modifier.padding(start = 24.dp, bottom = 8.dp)
-    )
-
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .padding(start = 24.dp, bottom = 24.dp)
-            .fillMaxWidth(),
-        horizontalArrangement = Arrangement.Start
-    ) {
-        RadioButton(
-            selected = selectedRole == "Parent",
-            onClick = { selectedRole = "Parent" }
-        )
-        Text(
-            text = "Parent",
-            modifier = Modifier.padding(end = 16.dp)
-        )
-
-        RadioButton(
-            selected = selectedRole == "Student",
-            onClick = { selectedRole = "Student" }
-        )
-        Text(
-            text = "Student",
-            modifier = Modifier.padding(end = 16.dp)
-        )
-
-        RadioButton(
-            selected = selectedRole == "School",
-            onClick = { selectedRole = "School" }
-        )
-        Text(text = "School")
-    }
-}
-
-@Composable
-fun FullNameLabelAndField(){
-    var fullName by remember { mutableStateOf("") }
+fun FullNameLabelAndField(fullName: String, onFullNameChange: (String) -> Unit) {
     Text(
         text = "Full Name",
         fontSize = 14.sp,
@@ -144,10 +131,8 @@ fun FullNameLabelAndField(){
     ) {
         OutlinedTextField(
             value = fullName,
-            onValueChange = { fullName = it },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(48.dp),
+            onValueChange = onFullNameChange,
+            modifier = Modifier.fillMaxWidth().height(48.dp),
             placeholder = { Text("Enter your full name", color = Color.Gray) },
             singleLine = true
         )
@@ -155,8 +140,7 @@ fun FullNameLabelAndField(){
 }
 
 @Composable
-fun EmailLabelAndField(){
-    var email by remember { mutableStateOf("") }
+fun EmailLabelAndField(email: String, onEmailChange: (String) -> Unit) {
     Text(
         text = "Email address",
         fontSize = 14.sp,
@@ -171,10 +155,8 @@ fun EmailLabelAndField(){
     ) {
         OutlinedTextField(
             value = email,
-            onValueChange = { email = it },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(48.dp),
+            onValueChange = onEmailChange,
+            modifier = Modifier.fillMaxWidth().height(48.dp),
             placeholder = { Text("Enter your email", color = Color.Gray) },
             singleLine = true
         )
@@ -182,8 +164,7 @@ fun EmailLabelAndField(){
 }
 
 @Composable
-fun PasswordLabelAndField(){
-    var password by remember { mutableStateOf("") }
+fun PasswordLabelAndField(password: String, onPasswordChange: (String) -> Unit) {
     Text(
         text = "Password",
         fontSize = 14.sp,
@@ -198,10 +179,8 @@ fun PasswordLabelAndField(){
     ) {
         OutlinedTextField(
             value = password,
-            onValueChange = { password = it },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(48.dp),
+            onValueChange = onPasswordChange,
+            modifier = Modifier.fillMaxWidth().height(48.dp),
             placeholder = { Text("Enter password", color = Color.Gray) },
             visualTransformation = PasswordVisualTransformation(),
             singleLine = true
@@ -210,21 +189,15 @@ fun PasswordLabelAndField(){
 }
 
 @Composable
-fun SignUpButtonForRegister(){
+fun SignUpButtonForRegister(onClick: () -> Unit) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(start = 24.dp, end = 24.dp, bottom = 8.dp),
+        modifier = Modifier.fillMaxWidth().padding(start = 24.dp, end = 24.dp, bottom = 8.dp),
         horizontalArrangement = Arrangement.Center
     ) {
         Button(
-            onClick = { /* Handle sign up */ },
-            modifier = Modifier
-                .width(300.dp)
-                .height(50.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFF0B36F7)
-            )
+            onClick = onClick,
+            modifier = Modifier.width(300.dp).height(50.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0B36F7))
         ) {
             Text(
                 text = "Sign Up",
@@ -237,11 +210,9 @@ fun SignUpButtonForRegister(){
 }
 
 @Composable
-fun AlreadyHaveAccountLinkForRegister(){
+fun AlreadyHaveAccountLinkForRegister() {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 24.dp, bottom = 24.dp),
+        modifier = Modifier.fillMaxWidth().padding(top = 24.dp, bottom = 24.dp),
         horizontalArrangement = Arrangement.Center
     ) {
         Text(
@@ -254,7 +225,7 @@ fun AlreadyHaveAccountLinkForRegister(){
             fontSize = 14.sp,
             color = Color(0xFF2563EB),
             fontWeight = FontWeight.Bold,
-            modifier = Modifier.clickable { /* Navigate to login */ }
+            modifier = Modifier.clickable { /* TODO: Navigate to LoginActivity */ }
         )
     }
 }
@@ -263,6 +234,7 @@ fun AlreadyHaveAccountLinkForRegister(){
 @Composable
 fun RegisterScreenPreview() {
     UNICKTheme {
-        RegisterScreen()
+        val dummyViewModel: RegisterViewModel = viewModel()
+        RegisterScreen(dummyViewModel)
     }
 }
