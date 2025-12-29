@@ -116,7 +116,7 @@ fun FormData.toStudentApplication(): StudentApplication {
 
 @Composable
 fun StudentRegistrationForm() {
-    // ViewModel integration - ADDED
+    // ViewModel integration
     val viewModel = viewModel<StudentApplicationViewModel>(
         factory = StudentApplicationViewModel.Factory(ApplicationRepoImpl())
     )
@@ -126,14 +126,29 @@ fun StudentRegistrationForm() {
     var formData by remember { mutableStateOf(FormData()) }
     var formErrors by remember { mutableStateOf(FormErrors()) }
 
-    // Show success screen - UPDATED
+    // Show success screen
     if (submitState is SubmitState.Success) {
         StudentSuccessScreen {
             currentStep = 1
             formData = FormData()
             formErrors = FormErrors()
+            viewModel.resetState()  // Reset state to Idle
         }
         return
+    }
+
+    // Show error dialog if submission fails
+    if (submitState is SubmitState.Error) {
+        ErrorDialog(
+            errorMessage = (submitState as SubmitState.Error).message,
+            onDismiss = {
+                viewModel.resetState()  // Reset to Idle to allow retry
+            },
+            onRetry = {
+                // Retry submission
+                viewModel.submitApplication(formData.toStudentApplication())
+            }
+        )
     }
 
     Scaffold(
@@ -170,31 +185,11 @@ fun StudentRegistrationForm() {
                 4 -> item { Step4AddressSiblings(formData, formErrors) { formData = it } }
             }
 
-            // Show error dialog if submission fails - ADDED
-            if (submitState is SubmitState.Error) {
-                item {
-                    AlertDialog(
-                        onDismissRequest = { /* Cannot dismiss */ },
-                        title = { Text("Submission Failed") },
-                        text = { Text((submitState as SubmitState.Error).message) },
-                        confirmButton = {
-                            Button(onClick = {
-                                currentStep = 1
-                                formData = FormData()
-                                formErrors = FormErrors()
-                            }) {
-                                Text("Try Again")
-                            }
-                        }
-                    )
-                }
-            }
-
             item {
                 Spacer(modifier = Modifier.height(20.dp))
                 NavigationButtons(
                     currentStep = currentStep,
-                    isSubmitting = (submitState is SubmitState.Loading),  // UPDATED
+                    isSubmitting = (submitState is SubmitState.Loading),
                     onPrevious = { if (currentStep > 1) currentStep-- },
                     onNext = {
                         formErrors = validateStep(currentStep, formData)
@@ -205,7 +200,6 @@ fun StudentRegistrationForm() {
                     onSubmit = {
                         formErrors = validateStep(currentStep, formData)
                         if (formErrors.isEmpty()) {
-                            // UPDATED - call ViewModel instead of fake delay
                             viewModel.submitApplication(formData.toStudentApplication())
                         }
                     }
@@ -314,6 +308,69 @@ fun StudentSuccessScreen(onBackClick: () -> Unit) {
             Text("Submit Another", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
         }
     }
+}
+
+@Composable
+fun ErrorDialog(
+    errorMessage: String,
+    onDismiss: () -> Unit,
+    onRetry: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = {
+            Text("⚠️", fontSize = 48.sp)
+        },
+        title = {
+            Text(
+                "Submission Failed",
+                fontWeight = FontWeight.Bold,
+                fontSize = 20.sp,
+                color = Color(0xFFEF4444)
+            )
+        },
+        text = {
+            Column {
+                Text(
+                    errorMessage,
+                    fontSize = 14.sp,
+                    color = Color(0xFF374151)
+                )
+
+                // Add helpful instructions if it's a permission error
+                if (errorMessage.contains("Permission Denied", ignoreCase = true)) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        "📌 Quick Fix:",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 13.sp,
+                        color = Color(0xFF5B5BFF)
+                    )
+                    Text(
+                        "Open Firebase Console → Realtime Database → Rules → Use test mode for development",
+                        fontSize = 12.sp,
+                        color = Color(0xFF6B7280),
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = onRetry,
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF5B5BFF))
+            ) {
+                Text("Retry")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Close", color = Color(0xFF6B7280))
+            }
+        },
+        containerColor = Color.White,
+        shape = RoundedCornerShape(16.dp)
+    )
 }
 
 fun validateStep(step: Int, data: FormData): FormErrors {
