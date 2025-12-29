@@ -21,4 +21,7 @@
     <string name="title_activity_settings">SettingsActivity</string>
     <string name="title_activity_dashboard">DashboardActivity</string>
     <string name="title_activity_filter">FilterActivity</string>
+    <string name="title_activity_student_registration">StudentRegistrationActivity</string>
+    <string name="title_activity_student_application">Student Application Form</string>
+
 </resources>

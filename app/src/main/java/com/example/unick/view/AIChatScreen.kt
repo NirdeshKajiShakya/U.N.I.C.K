@@ -15,7 +15,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.activity.compose.LocalActivity
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -30,8 +29,8 @@ data class ChatMessage(val text: String, val isUser: Boolean)
 @Composable
 fun AiChatScreen() {
 
-    val activity: Activity? = LocalActivity.current
     val context = LocalContext.current
+    val activity: Activity? = context as? Activity
 
 
     var inputText by rememberSaveable { mutableStateOf("") }
