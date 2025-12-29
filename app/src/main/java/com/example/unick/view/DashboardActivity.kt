@@ -1,5 +1,6 @@
 package com.example.unick.view
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -15,6 +16,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -22,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -49,6 +52,7 @@ class DashboardActivity : ComponentActivity() {
 fun DashboardScreen() {
     var isSearchActive by remember { mutableStateOf(false) }
     var searchText by remember { mutableStateOf("") }
+    val context = LocalContext.current
 
     Column(
         modifier = Modifier
@@ -189,7 +193,31 @@ fun DashboardScreen() {
             Text("Compare Academic Programs", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color(0xFF2563EB))
         }
 
+        Spacer(modifier = Modifier.height(14.dp))
+
+        // Add School Button - Navigate to DataFormActivity
+        Button(
+            onClick = {
+                val intent = Intent(context, DataFormAcitivity::class.java)
+                context.startActivity(intent)
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(58.dp)
+                .shadow(8.dp, RoundedCornerShape(14.dp)),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color(0xFF10B981) // Green color for add action
+            ),
+            shape = RoundedCornerShape(14.dp)
+        ) {
+            Icon(Icons.Default.Add, "Add School", modifier = Modifier.size(22.dp), tint = Color.White)
+            Spacer(modifier = Modifier.width(10.dp))
+            Text("Add Your School", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+        }
+
         Spacer(modifier = Modifier.height(32.dp))
+
+        /* SCHOOL CARDS SECTION - COMMENTED OUT
 
         // Perfect Matches Section
         SchoolSection(
@@ -228,9 +256,13 @@ fun DashboardScreen() {
             )
         )
 
+        */
+
         Spacer(modifier = Modifier.height(40.dp))
     }
 }
+
+/* SCHOOL SECTION AND CARD COMPOSABLES - COMMENTED OUT
 
 @Composable
 fun SchoolSection(title: String, subtitle: String, schools: List<SchoolData>) {
@@ -383,6 +415,8 @@ data class SchoolData(
     val match: String,
     val imageUrl: String
 )
+
+*/
 
 @Preview(showBackground = true)
 @Composable

@@ -6,6 +6,10 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     <application
         android:name=".UnickApplication"
         android:allowBackup="true"
@@ -13,9 +17,43 @@
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
+        tools:replace="android:fullBackupContent"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.UNICK">
+        <activity
+            android:name=".view.DataFormAcitivity"
+            android:exported="true"
+            android:label="@string/title_activity_data_form_acitivity"
+            android:theme="@style/Theme.UNICK">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".view.UserLoginSchoolActivity"
+            android:exported="true"
+            android:label="@string/title_activity_user_login_school"
+            android:theme="@style/Theme.UNICK">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".view.UserRegistrationSchoolActivity"
+            android:exported="true"
+            android:label="@string/title_activity_user_registration_school"
+            android:theme="@style/Theme.UNICK">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
         <activity
             android:name=".view.SettingsActivity"
             android:exported="true"
@@ -25,8 +63,7 @@
             android:name=".view.SchoolDetailActivity"
             android:exported="true"
             android:label="@string/title_activity_school_profile"
-            android:theme="@style/Theme.UNICK">
-        </activity>
+            android:theme="@style/Theme.UNICK" />
         <activity
             android:name=".view.CompareActivity"
             android:exported="true"
@@ -62,6 +99,10 @@
             android:name=".view.UserLoginActivity"
             android:exported="false"
             android:label="@string/title_activity_user_login"
+            android:theme="@style/Theme.UNICK" />
+        <activity
+            android:name=".view.UserSchoolRegistrationActivity"
+            android:exported="true"
             android:theme="@style/Theme.UNICK" />
         <activity
             android:name=".view.AdminLoginActivity"
