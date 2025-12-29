@@ -44,6 +44,7 @@ android {
 
 dependencies {
     implementation(libs.androidx.core.ktx)
+
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))
@@ -59,6 +60,10 @@ dependencies {
     implementation(platform("com.google.firebase:firebase-bom:33.1.0"))
     implementation("com.google.firebase:firebase-database-ktx")
     implementation("com.google.firebase:firebase-auth-ktx")
+
+//cloudinary
+    implementation("com.cloudinary:cloudinary-android:2.1.0")
+    implementation("com.squareup.picasso:picasso:2.8")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
