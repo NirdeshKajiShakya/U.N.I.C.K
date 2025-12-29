@@ -1,5 +1,6 @@
 package com.example.unick.view
 
+import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.widget.Toast
@@ -8,6 +9,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -33,13 +35,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
-import com.example.unick.model.School
-import com.example.unick.utils.ImageUtils
 import com.example.unick.view.ui.theme.UNICKTheme
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.FirebaseDatabase
+import com.example.unick.viewmodel.SchoolViewModel
 
 class DataFormAcitivity : ComponentActivity() {
+    private val viewModel: SchoolViewModel by viewModels()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -49,7 +49,7 @@ class DataFormAcitivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = Color(0xFFF8F9FA)
                 ) {
-                    SchoolDataForm()
+                    SchoolDataForm(viewModel)
                 }
             }
         }
@@ -58,36 +58,25 @@ class DataFormAcitivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SchoolDataForm() {
+fun SchoolDataForm(viewModel: SchoolViewModel) {
     val context = LocalContext.current
+    val isLoading by viewModel.isLoading.collectAsState()
+    val isDataSaved by viewModel.isDataSaved.collectAsState()
 
-    // Form state variables
-    var imageUri by remember { mutableStateOf<Uri?>(null) }
-    var schoolName by remember { mutableStateOf("") }
-    var location by remember { mutableStateOf("") }
-    var totalStudents by remember { mutableStateOf("") }
-    var establishedYear by remember { mutableStateOf("") }
-    var principalName by remember { mutableStateOf("") }
-    var contactNumber by remember { mutableStateOf("") }
-    var email by remember { mutableStateOf("") }
-    var website by remember { mutableStateOf("") }
-    var curriculum by remember { mutableStateOf("") }
-    var programsOffered by remember { mutableStateOf("") }
-    var facilities by remember { mutableStateOf("") }
-    var tuitionFee by remember { mutableStateOf("") }
-    var admissionFee by remember { mutableStateOf("") }
-    var scholarshipAvailable by remember { mutableStateOf(false) }
-    var transportFacility by remember { mutableStateOf(false) }
-    var hostelFacility by remember { mutableStateOf(false) }
-    var extracurricular by remember { mutableStateOf("") }
-    var description by remember { mutableStateOf("") }
-    var isLoading by remember { mutableStateOf(false) }
+    LaunchedEffect(isDataSaved) {
+        if (isDataSaved) {
+            Toast.makeText(context, "School data saved successfully", Toast.LENGTH_SHORT).show()
+            val intent = Intent(context, DashboardActivity::class.java)
+            context.startActivity(intent)
+            (context as? ComponentActivity)?.finish()
+        }
+    }
 
     // Image picker launcher
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
-        imageUri = uri
+        viewModel.imageUri = uri
     }
 
     Column(
@@ -146,7 +135,7 @@ fun SchoolDataForm() {
                         .height(200.dp)
                         .clip(RoundedCornerShape(16.dp))
                         .background(
-                            if (imageUri == null) {
+                            if (viewModel.imageUri == null) {
                                 Brush.linearGradient(
                                     colors = listOf(
                                         Color(0xFFE2E8F0),
@@ -165,9 +154,9 @@ fun SchoolDataForm() {
                         .clickable { imagePickerLauncher.launch("image/*") },
                     contentAlignment = Alignment.Center
                 ) {
-                    if (imageUri != null) {
+                    if (viewModel.imageUri != null) {
                         AsyncImage(
-                            model = imageUri,
+                            model = viewModel.imageUri,
                             contentDescription = "School Image",
                             modifier = Modifier.fillMaxSize(),
                             contentScale = ContentScale.Crop
@@ -201,29 +190,29 @@ fun SchoolDataForm() {
                 Spacer(modifier = Modifier.height(12.dp))
 
                 FormTextField(
-                    value = schoolName,
-                    onValueChange = { schoolName = it },
+                    value = viewModel.schoolName,
+                    onValueChange = { viewModel.schoolName = it },
                     label = "School Name *",
                     placeholder = "e.g., St. Xavier's College"
                 )
 
                 FormTextField(
-                    value = location,
-                    onValueChange = { location = it },
+                    value = viewModel.location,
+                    onValueChange = { viewModel.location = it },
                     label = "Location *",
                     placeholder = "e.g., Maitighar, Kathmandu"
                 )
 
                 FormTextField(
-                    value = totalStudents,
-                    onValueChange = { totalStudents = it },
+                    value = viewModel.totalStudents,
+                    onValueChange = { viewModel.totalStudents = it },
                     label = "Total Students",
                     placeholder = "e.g., 1500"
                 )
 
                 FormTextField(
-                    value = establishedYear,
-                    onValueChange = { establishedYear = it },
+                    value = viewModel.establishedYear,
+                    onValueChange = { viewModel.establishedYear = it },
                     label = "Established Year",
                     placeholder = "e.g., 1988"
                 )
@@ -235,29 +224,29 @@ fun SchoolDataForm() {
                 Spacer(modifier = Modifier.height(12.dp))
 
                 FormTextField(
-                    value = principalName,
-                    onValueChange = { principalName = it },
+                    value = viewModel.principalName,
+                    onValueChange = { viewModel.principalName = it },
                     label = "Principal Name",
                     placeholder = "e.g., Dr. John Smith"
                 )
 
                 FormTextField(
-                    value = contactNumber,
-                    onValueChange = { contactNumber = it },
+                    value = viewModel.contactNumber,
+                    onValueChange = { viewModel.contactNumber = it },
                     label = "Contact Number *",
                     placeholder = "e.g., +977-01-4123456"
                 )
 
                 FormTextField(
-                    value = email,
-                    onValueChange = { email = it },
+                    value = viewModel.email,
+                    onValueChange = { viewModel.email = it },
                     label = "Email",
                     placeholder = "e.g., info@school.edu.np"
                 )
 
                 FormTextField(
-                    value = website,
-                    onValueChange = { website = it },
+                    value = viewModel.website,
+                    onValueChange = { viewModel.website = it },
                     label = "Website",
                     placeholder = "e.g., www.school.edu.np"
                 )
@@ -269,15 +258,15 @@ fun SchoolDataForm() {
                 Spacer(modifier = Modifier.height(12.dp))
 
                 FormTextField(
-                    value = curriculum,
-                    onValueChange = { curriculum = it },
+                    value = viewModel.curriculum,
+                    onValueChange = { viewModel.curriculum = it },
                     label = "Curriculum Type *",
                     placeholder = "e.g., National, A-Levels, IB"
                 )
 
                 FormTextField(
-                    value = programsOffered,
-                    onValueChange = { programsOffered = it },
+                    value = viewModel.programsOffered,
+                    onValueChange = { viewModel.programsOffered = it },
                     label = "Programs Offered",
                     placeholder = "e.g., Science, Management, Humanities",
                     multiline = true
@@ -290,8 +279,8 @@ fun SchoolDataForm() {
                 Spacer(modifier = Modifier.height(12.dp))
 
                 FormTextField(
-                    value = facilities,
-                    onValueChange = { facilities = it },
+                    value = viewModel.facilities,
+                    onValueChange = { viewModel.facilities = it },
                     label = "Facilities",
                     placeholder = "e.g., Library, Labs, Sports Ground, Cafeteria",
                     multiline = true
@@ -303,8 +292,8 @@ fun SchoolDataForm() {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Checkbox(
-                        checked = transportFacility,
-                        onCheckedChange = { transportFacility = it },
+                        checked = viewModel.transportFacility,
+                        onCheckedChange = { viewModel.transportFacility = it },
                         colors = CheckboxDefaults.colors(checkedColor = Color(0xFF2563EB))
                     )
                     Text(
@@ -319,8 +308,8 @@ fun SchoolDataForm() {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Checkbox(
-                        checked = hostelFacility,
-                        onCheckedChange = { hostelFacility = it },
+                        checked = viewModel.hostelFacility,
+                        onCheckedChange = { viewModel.hostelFacility = it },
                         colors = CheckboxDefaults.colors(checkedColor = Color(0xFF2563EB))
                     )
                     Text(
@@ -335,8 +324,8 @@ fun SchoolDataForm() {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Checkbox(
-                        checked = scholarshipAvailable,
-                        onCheckedChange = { scholarshipAvailable = it },
+                        checked = viewModel.scholarshipAvailable,
+                        onCheckedChange = { viewModel.scholarshipAvailable = it },
                         colors = CheckboxDefaults.colors(checkedColor = Color(0xFF2563EB))
                     )
                     Text(
@@ -349,8 +338,8 @@ fun SchoolDataForm() {
                 Spacer(modifier = Modifier.height(12.dp))
 
                 FormTextField(
-                    value = extracurricular,
-                    onValueChange = { extracurricular = it },
+                    value = viewModel.extracurricular,
+                    onValueChange = { viewModel.extracurricular = it },
                     label = "Extracurricular Activities",
                     placeholder = "e.g., Sports, Music, Drama, Art",
                     multiline = true
@@ -363,15 +352,15 @@ fun SchoolDataForm() {
                 Spacer(modifier = Modifier.height(12.dp))
 
                 FormTextField(
-                    value = tuitionFee,
-                    onValueChange = { tuitionFee = it },
+                    value = viewModel.tuitionFee,
+                    onValueChange = { viewModel.tuitionFee = it },
                     label = "Annual Tuition Fee",
                     placeholder = "e.g., NPR 500,000"
                 )
 
                 FormTextField(
-                    value = admissionFee,
-                    onValueChange = { admissionFee = it },
+                    value = viewModel.admissionFee,
+                    onValueChange = { viewModel.admissionFee = it },
                     label = "Admission Fee",
                     placeholder = "e.g., NPR 50,000"
                 )
@@ -383,8 +372,8 @@ fun SchoolDataForm() {
                 Spacer(modifier = Modifier.height(12.dp))
 
                 FormTextField(
-                    value = description,
-                    onValueChange = { description = it },
+                    value = viewModel.description,
+                    onValueChange = { viewModel.description = it },
                     label = "School Description",
                     placeholder = "Provide a brief description about the school, its vision, mission, and unique features...",
                     multiline = true,
@@ -395,71 +384,7 @@ fun SchoolDataForm() {
 
                 // Submit Button
                 Button(
-                    onClick = {
-                        isLoading = true
-                        val uid = FirebaseAuth.getInstance().currentUser?.uid
-                        if (uid != null) {
-                            if (imageUri != null) {
-                                ImageUtils.uploadToCloudinary(context, imageUri!!) { imageUrl ->
-                                    val school = School(
-                                        uid = uid,
-                                        imageUrl = imageUrl,
-                                        schoolName = schoolName,
-                                        location = location,
-                                        totalStudents = totalStudents,
-                                        establishedYear = establishedYear,
-                                        principalName = principalName,
-                                        contactNumber = contactNumber,
-                                        email = email,
-                                        website = website,
-                                        curriculum = curriculum,
-                                        programsOffered = programsOffered,
-                                        facilities = facilities,
-                                        tuitionFee = tuitionFee,
-                                        admissionFee = admissionFee,
-                                        scholarshipAvailable = scholarshipAvailable,
-                                        transportFacility = transportFacility,
-                                        hostelFacility = hostelFacility,
-                                        extracurricular = extracurricular,
-                                        description = description
-                                    )
-                                    saveSchoolData(school) {
-                                        isLoading = false
-                                        Toast.makeText(context, "School data saved successfully", Toast.LENGTH_SHORT).show()
-                                        (context as? ComponentActivity)?.finish()
-                                    }
-                                }
-                            } else {
-                                val school = School(
-                                    uid = uid,
-                                    schoolName = schoolName,
-                                    location = location,
-                                    totalStudents = totalStudents,
-                                    establishedYear = establishedYear,
-                                    principalName = principalName,
-                                    contactNumber = contactNumber,
-                                    email = email,
-                                    website = website,
-                                    curriculum = curriculum,
-                                    programsOffered = programsOffered,
-                                    facilities = facilities,
-                                    tuitionFee = tuitionFee,
-                                    admissionFee = admissionFee,
-                                    scholarshipAvailable = scholarshipAvailable,
-                                    transportFacility = transportFacility,
-                                    hostelFacility = hostelFacility,
-                                    extracurricular = extracurricular,
-                                    description = description
-                                )
-                                saveSchoolData(school) {
-                                    isLoading = false
-                                    Toast.makeText(context, "School data saved successfully", Toast.LENGTH_SHORT).show()
-                                    (context as? ComponentActivity)?.finish()
-                                }
-                            }
-                        }
-
-                    },
+                    onClick = { viewModel.saveSchoolData(context) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(56.dp)
@@ -479,13 +404,6 @@ fun SchoolDataForm() {
                 Spacer(modifier = Modifier.height(32.dp))
             }
         }
-    }
-}
-
-fun saveSchoolData(school: School, onComplete: () -> Unit) {
-    val database = FirebaseDatabase.getInstance().getReference("SchoolForm")
-    database.child(school.uid).setValue(school).addOnCompleteListener {
-        onComplete()
     }
 }
 
@@ -560,6 +478,6 @@ fun FormTextField(
 @Composable
 fun SchoolDataFormPreview() {
     UNICKTheme {
-        SchoolDataForm()
+        // SchoolDataForm(viewModel = SchoolViewModel()) // This will not work in preview
     }
 }

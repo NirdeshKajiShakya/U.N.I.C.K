@@ -1,6 +1,6 @@
 package com.example.unick.model
 
-data class School(
+data class SchoolForm(
     val uid: String = "",
     val imageUrl: String? = null,
     val schoolName: String = "",
