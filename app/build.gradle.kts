@@ -54,8 +54,8 @@ android {
         unitTests.isIncludeAndroidResources = false
     }
 }
-
 dependencies {
+
     // AndroidX Core
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -68,27 +68,43 @@ dependencies {
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
+
+    // Images
     implementation("io.coil-kt:coil-compose:2.4.0")
+    implementation("com.squareup.picasso:picasso:2.8")
+
+    // Material Icons + Navigation
     implementation("androidx.compose.material:material-icons-extended:1.5.0")
     implementation("androidx.navigation:navigation-compose:2.7.0")
 
-    // Firebase - Use single BOM for consistent versions
+    // Firebase (ONE BOM ONLY — no versions on individual firebase deps)
     implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-auth-ktx")
     implementation("com.google.firebase:firebase-database-ktx")
     implementation("com.google.firebase:firebase-firestore-ktx")
 
-    // AI/ML
-    implementation(libs.generativeai)
-    implementation(libs.firebase.ai)
+    // Coroutines support for Firebase Tasks (await())
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
+
+    // ViewModel
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.6")
 
     // Cloudinary
     implementation("com.cloudinary:cloudinary-android:2.1.0")
-    implementation("com.squareup.picasso:picasso:2.8")
 
-    // Coroutines for Firebase Tasks
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
+    // Retrofit + OkHttp
+    implementation("com.squareup.retrofit2:retrofit:2.11.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.11.0")
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
+
+    // For Multipart (images)
+    implementation("com.squareup.retrofit2:converter-scalars:2.11.0")
+
+    // AI/ML (kept as you had; if build breaks, comment them temporarily)
+    implementation(libs.generativeai)
+    implementation(libs.firebase.ai)
 
     // Testing
     testImplementation(libs.junit)
@@ -96,7 +112,7 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
-
 }
