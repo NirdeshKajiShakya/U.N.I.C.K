@@ -56,9 +56,9 @@ class SchoolDetailActivity : ComponentActivity() {
                         Intent(this, SchoolGalleryActivity::class.java).putExtra("schoolId", schoolId)
                     )
                 },
-                onEditProfile = {
+                onSchoolSetting = {
                     startActivity(
-                        Intent(this, SchoolEditProfileActivity::class.java).putExtra("schoolId", schoolId)
+                        Intent(this, SchoolSettingsActivity::class.java).putExtra("schoolId", schoolId)
                     )
                 }
             )
@@ -73,7 +73,7 @@ fun SchoolDetailScreen(
     schoolId: String,
     onBack: () -> Unit,
     onOpenGallery: () -> Unit,
-    onEditProfile: () -> Unit
+    onSchoolSetting: () -> Unit,
 ) {
     val context = LocalContext.current
     var selectedTab by remember { mutableStateOf("Overview") }
@@ -93,8 +93,8 @@ fun SchoolDetailScreen(
                     }
                 },
                 actions = {
-                    TextButton(onClick = onEditProfile) {
-                        Text("Edit", fontWeight = FontWeight.Bold)
+                    TextButton(onClick = onSchoolSetting) {
+                        Text("Settings", fontWeight = FontWeight.Bold)
                     }
                 }
             )
