@@ -7,6 +7,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -54,7 +55,15 @@ class SendCodeToEmailActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            CodeToEmail()
+            CodeToEmail(
+                onNavigateToCodeConfirm = {
+                    startActivity(Intent(this, CodeConfirmActivity::class.java))
+                },
+                onNavigateToLogin = {
+                    startActivity(Intent(this, UserLoginActivity::class.java))
+                    finish()
+                }
+            )
         }
     }
 }
@@ -62,7 +71,9 @@ class SendCodeToEmailActivity : ComponentActivity() {
 
 @Composable
 fun CodeToEmail(
-    viewModel: ForgotPasswordViewModel = viewModel()
+    viewModel: ForgotPasswordViewModel = viewModel(),
+    onNavigateToCodeConfirm: () -> Unit = {},
+    onNavigateToLogin: () -> Unit = {}
 ) {
     val emailState = remember { mutableStateOf("") }
     val snackbarHostState = remember { SnackbarHostState() }
@@ -71,6 +82,11 @@ fun CodeToEmail(
         viewModel.message.value?.let {
             snackbarHostState.showSnackbar(it)
             viewModel.clearMessage()
+            // Navigate to code confirm after successful email send
+            if (it.contains("sent", ignoreCase = true)) {
+                kotlinx.coroutines.delay(1000)
+                onNavigateToCodeConfirm()
+            }
         }
     }
 
@@ -87,7 +103,7 @@ fun CodeToEmail(
             item { SubTextForSendCodeToEmail() }
             item { EmailInputField(emailState) }
             item { ButtonForOTP(emailState.value, viewModel) }
-            item { BackToLoginText() }
+            item { BackToLoginText(onClick = onNavigateToLogin) }
         }
     }
 }
@@ -205,8 +221,7 @@ fun ButtonForOTP(
 
 
 @Composable
-fun BackToLoginText(){
-    val context = LocalContext.current
+fun BackToLoginText(onClick: () -> Unit = {}){
     Row(
         modifier = Modifier
             .fillMaxSize()
@@ -219,11 +234,8 @@ fun BackToLoginText(){
             fontSize = 16.sp,
             fontStyle = Italic,
             color = Blue,
-//            modifier = Modifier
-//                .clickable{
-//                    val intent = Intent(context, LoginActivity::class.java)
-//                    context.startActivity(intent)
-//                }
+            modifier = Modifier
+                .clickable { onClick() }
         )
     }
 }

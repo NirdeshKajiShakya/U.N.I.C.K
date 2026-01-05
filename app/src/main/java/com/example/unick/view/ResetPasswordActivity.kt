@@ -1,5 +1,6 @@
 package com.example.unick.view
 
+import android.content.Intent
 import android.graphics.Outline
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -34,14 +35,21 @@ class ResetPasswordActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             UNICKTheme {
-                ResetPassword()
+                ResetPassword(
+                    onPasswordReset = {
+                        startActivity(Intent(this, UserLoginActivity::class.java).apply {
+                            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                        })
+                        finish()
+                    }
+                )
             }
         }
     }
 }
 
 @Composable
-fun ResetPassword() {
+fun ResetPassword(onPasswordReset: () -> Unit = {}) {
     Scaffold { padding ->
         LazyColumn(
             modifier = Modifier
@@ -53,7 +61,7 @@ fun ResetPassword() {
             item { Spacer(modifier = Modifier.padding(top = 32.dp))}
             item { NewPasswordInputField() }
             item { Spacer(modifier = Modifier.padding(top = 32.dp))}
-            item { ButtonForResetPasswordConfirm() }
+            item { ButtonForResetPasswordConfirm(onClick = onPasswordReset) }
         }
     }
 }
@@ -132,7 +140,7 @@ fun NewPasswordInputField(){
 }
 
 @Composable
-fun ButtonForResetPasswordConfirm(){
+fun ButtonForResetPasswordConfirm(onClick: () -> Unit = {}){
     Row(
         modifier = Modifier
             .fillMaxSize()
@@ -140,7 +148,7 @@ fun ButtonForResetPasswordConfirm(){
         horizontalArrangement = Arrangement.Center
     ) {
         androidx.compose.material3.Button(
-            onClick = {},
+            onClick = onClick,
             modifier = Modifier.fillMaxWidth(0.9f),
             colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = com.example.unick.ui.theme.Blue)
         ) {
