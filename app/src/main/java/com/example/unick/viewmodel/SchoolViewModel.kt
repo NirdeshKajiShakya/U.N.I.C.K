@@ -10,9 +10,19 @@ import androidx.lifecycle.viewModelScope
 import com.example.unick.model.SchoolForm
 import com.example.unick.repository.SchoolRepository
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+
+sealed class UserType {
+    object Normal : UserType()
+    object School : UserType()
+    object Unknown : UserType()
+}
 
 class SchoolViewModel : ViewModel() {
 
@@ -44,17 +54,51 @@ class SchoolViewModel : ViewModel() {
     private val _isDataSaved = MutableStateFlow(false)
     val isDataSaved = _isDataSaved.asStateFlow()
 
-    // NEW: Schools list for dashboard
     private val _schools = MutableStateFlow<List<SchoolForm>>(emptyList())
     val schools = _schools.asStateFlow()
 
-    // NEW: Loading state for fetching schools
     private val _isLoadingSchools = MutableStateFlow(false)
     val isLoadingSchools = _isLoadingSchools.asStateFlow()
 
-    // NEW: Fetch schools when ViewModel is created
+    private val _userType = MutableStateFlow<UserType>(UserType.Unknown)
+    val userType = _userType.asStateFlow()
+
     init {
         fetchSchools()
+        checkUserType()
+    }
+
+    fun checkUserType() {
+        val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        val usersRef = FirebaseDatabase.getInstance().getReference("Users")
+        val schoolsRef = FirebaseDatabase.getInstance().getReference("schools")
+
+        usersRef.child(uid).addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                if (snapshot.exists()) {
+                    _userType.value = UserType.Normal
+                } else {
+                    // If not in Users, check in schools
+                    schoolsRef.child(uid).addListenerForSingleValueEvent(object : ValueEventListener {
+                        override fun onDataChange(snapshot: DataSnapshot) {
+                            if (snapshot.exists()) {
+                                _userType.value = UserType.School
+                            } else {
+                                _userType.value = UserType.Unknown
+                            }
+                        }
+
+                        override fun onCancelled(error: DatabaseError) {
+                            _userType.value = UserType.Unknown
+                        }
+                    })
+                }
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                _userType.value = UserType.Unknown
+            }
+        })
     }
 
     fun saveSchoolData(context: Context) {
@@ -67,7 +111,6 @@ class SchoolViewModel : ViewModel() {
                     _isLoading.value = false
                     if (success) {
                         _isDataSaved.value = true
-                        // NEW: Refresh schools list after saving
                         fetchSchools()
                     }
                 }
@@ -75,7 +118,6 @@ class SchoolViewModel : ViewModel() {
         }
     }
 
-    // NEW: Fetch all schools from Firebase for dashboard
     fun fetchSchools() {
         viewModelScope.launch {
             _isLoadingSchools.value = true

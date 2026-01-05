@@ -1,5 +1,6 @@
 package com.example.unick.view
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -33,6 +34,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -41,8 +43,8 @@ import coil.compose.SubcomposeAsyncImage
 import com.example.unick.model.SchoolForm
 import com.example.unick.ui.theme.UNICKTheme
 import com.example.unick.viewmodel.SchoolViewModel
+import com.example.unick.viewmodel.UserType
 
-// Sealed class for Bottom Navigation items
 sealed class BottomNavItem(
     val title: String,
     val icon: androidx.compose.ui.graphics.vector.ImageVector,
@@ -76,7 +78,7 @@ fun MainScreen(viewModel: SchoolViewModel) {
 
     Scaffold(
         bottomBar = {
-            BottomNavigationBar(navController = navController)
+            BottomNavigationBar(navController = navController, viewModel = viewModel)
         }
     ) { innerPadding ->
         Box(modifier = Modifier.padding(innerPadding)) {
@@ -86,7 +88,7 @@ fun MainScreen(viewModel: SchoolViewModel) {
 }
 
 @Composable
-fun BottomNavigationBar(navController: NavController) {
+fun BottomNavigationBar(navController: NavController, viewModel: SchoolViewModel) {
     val navItems = listOf(
         BottomNavItem.Home,
         BottomNavItem.Search,
@@ -94,6 +96,8 @@ fun BottomNavigationBar(navController: NavController) {
         BottomNavItem.Notification,
         BottomNavItem.Profile
     )
+    val context = LocalContext.current
+    val userType by viewModel.userType.collectAsState()
 
     NavigationBar(containerColor = Color.White) {
         val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -103,12 +107,13 @@ fun BottomNavigationBar(navController: NavController) {
             NavigationBarItem(
                 selected = currentRoute == item.route,
                 onClick = {
-                    navController.navigate(item.route) {
-                        // Pop up to the start destination of the graph to
-                        // avoid building up a large stack of destinations
-                        // on the back stack as users select items
-                        popUpTo(navController.graph.startDestinationId)
-                        launchSingleTop = true
+                    if (item.route == "profile") {
+                        handleProfileClick(userType, context, navController)
+                    } else {
+                        navController.navigate(item.route) {
+                            popUpTo(navController.graph.startDestinationId)
+                            launchSingleTop = true
+                        }
                     }
                 },
                 icon = { Icon(item.icon, contentDescription = item.title) },
@@ -118,9 +123,27 @@ fun BottomNavigationBar(navController: NavController) {
     }
 }
 
+private fun handleProfileClick(userType: UserType, context: Context, navController: NavController) {
+    when (userType) {
+        is UserType.Normal -> {
+            navController.navigate(BottomNavItem.Profile.route) {
+                popUpTo(navController.graph.startDestinationId)
+                launchSingleTop = true
+            }
+        }
+        is UserType.School -> {
+            val intent = Intent(context, SchoolDetailActivity::class.java)
+            context.startActivity(intent)
+        }
+        is UserType.Unknown -> {
+            // Optional: Show a toast or do nothing while user type is being determined
+        }
+    }
+}
+
 @Composable
-fun NavigationHost(navController: NavController, viewModel: SchoolViewModel) {
-    NavHost(navController = navController as androidx.navigation.NavHostController, startDestination = BottomNavItem.Home.route) {
+fun NavigationHost(navController: NavHostController, viewModel: SchoolViewModel) {
+    NavHost(navController = navController, startDestination = BottomNavItem.Home.route) {
         composable(BottomNavItem.Home.route) {
             val schools by viewModel.schools.collectAsState()
             val isLoading by viewModel.isLoadingSchools.collectAsState()

@@ -13,13 +13,24 @@
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
-        android:usesCleartextTraffic="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
-        tools:replace="android:fullBackupContent"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.UNICK">
+        android:theme="@style/Theme.UNICK"
+        android:usesCleartextTraffic="true"
+        tools:replace="android:fullBackupContent">
+        <activity
+            android:name=".view.DashboardCard"
+            android:exported="true"
+            android:label="@string/title_activity_dashboard_card"
+            android:theme="@style/Theme.UNICK">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
         <activity
             android:name=".view.DataFormAcitivity"
             android:exported="true"
@@ -27,6 +38,7 @@
             android:theme="@style/Theme.UNICK">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
@@ -37,6 +49,7 @@
             android:theme="@style/Theme.UNICK">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
@@ -47,6 +60,7 @@
             android:theme="@style/Theme.UNICK">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
@@ -85,7 +99,6 @@
             android:exported="true"
             android:label="@string/title_activity_student_application"
             android:theme="@style/Theme.UNICK" />
-
         <activity
             android:name=".view.UserRegistrationActivity"
             android:exported="true"
@@ -93,6 +106,7 @@
             android:theme="@style/Theme.UNICK">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
