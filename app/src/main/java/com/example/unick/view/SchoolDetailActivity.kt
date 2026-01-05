@@ -38,7 +38,10 @@ class SchoolDetailActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         // get schoolId from intent
-        val schoolId = intent.getStringExtra("schoolId") ?: ""
+        var schoolId = intent.getStringExtra("uid") ?: ""
+        if (schoolId == "") {
+            schoolId = "XcfjtBIHVfdpHeh8QSMy7j3VGiU2"
+        }
 
         setContent {
             val vm = remember { SchoolDetailViewModel() }
