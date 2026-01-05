@@ -10,9 +10,19 @@ import androidx.lifecycle.viewModelScope
 import com.example.unick.model.SchoolForm
 import com.example.unick.repository.SchoolRepository
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+
+sealed class UserType {
+    object Normal : UserType()
+    object School : UserType()
+    object Unknown : UserType()
+}
 
 class SchoolViewModel : ViewModel() {
 
@@ -44,6 +54,53 @@ class SchoolViewModel : ViewModel() {
     private val _isDataSaved = MutableStateFlow(false)
     val isDataSaved = _isDataSaved.asStateFlow()
 
+    private val _schools = MutableStateFlow<List<SchoolForm>>(emptyList())
+    val schools = _schools.asStateFlow()
+
+    private val _isLoadingSchools = MutableStateFlow(false)
+    val isLoadingSchools = _isLoadingSchools.asStateFlow()
+
+    private val _userType = MutableStateFlow<UserType>(UserType.Unknown)
+    val userType = _userType.asStateFlow()
+
+    init {
+        fetchSchools()
+        checkUserType()
+    }
+
+    fun checkUserType() {
+        val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        val usersRef = FirebaseDatabase.getInstance().getReference("Users")
+        val schoolsRef = FirebaseDatabase.getInstance().getReference("schools")
+
+        usersRef.child(uid).addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                if (snapshot.exists()) {
+                    _userType.value = UserType.Normal
+                } else {
+                    // If not in Users, check in schools
+                    schoolsRef.child(uid).addListenerForSingleValueEvent(object : ValueEventListener {
+                        override fun onDataChange(snapshot: DataSnapshot) {
+                            if (snapshot.exists()) {
+                                _userType.value = UserType.School
+                            } else {
+                                _userType.value = UserType.Unknown
+                            }
+                        }
+
+                        override fun onCancelled(error: DatabaseError) {
+                            _userType.value = UserType.Unknown
+                        }
+                    })
+                }
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                _userType.value = UserType.Unknown
+            }
+        })
+    }
+
     fun saveSchoolData(context: Context) {
         viewModelScope.launch {
             _isLoading.value = true
@@ -54,8 +111,19 @@ class SchoolViewModel : ViewModel() {
                     _isLoading.value = false
                     if (success) {
                         _isDataSaved.value = true
+                        fetchSchools()
                     }
                 }
+            }
+        }
+    }
+
+    fun fetchSchools() {
+        viewModelScope.launch {
+            _isLoadingSchools.value = true
+            repository.fetchAllSchools { schoolsList ->
+                _schools.value = schoolsList
+                _isLoadingSchools.value = false
             }
         }
     }

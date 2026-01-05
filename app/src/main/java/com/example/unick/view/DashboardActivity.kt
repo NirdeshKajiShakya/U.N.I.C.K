@@ -1,11 +1,15 @@
 package com.example.unick.view
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -14,42 +18,163 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
+import coil.compose.SubcomposeAsyncImage
+import com.example.unick.model.SchoolForm
 import com.example.unick.ui.theme.UNICKTheme
+import com.example.unick.viewmodel.SchoolViewModel
+import com.example.unick.viewmodel.UserType
+
+sealed class BottomNavItem(
+    val title: String,
+    val icon: androidx.compose.ui.graphics.vector.ImageVector,
+    val route: String
+) {
+    object Home : BottomNavItem("Home", Icons.Default.Home, "home")
+    object Profile : BottomNavItem("Profile", Icons.Default.Person, "profile")
+    object Search : BottomNavItem("Search", Icons.Default.Search, "search")
+    object AIChat : BottomNavItem("AI Chat", Icons.Default.Chat, "aichat")
+    object Notification : BottomNavItem("Notification", Icons.Default.Notifications, "notification")
+}
 
 class DashboardActivity : ComponentActivity() {
+    private val viewModel: SchoolViewModel by viewModels()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             UNICKTheme {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = Color(0xFFF8F9FA)
-                ) {
-                    DashboardScreen()
-                }
+                MainScreen(viewModel = viewModel)
             }
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DashboardScreen() {
+fun MainScreen(viewModel: SchoolViewModel) {
+    val navController = rememberNavController()
+
+    Scaffold(
+        bottomBar = {
+            BottomNavigationBar(navController = navController, viewModel = viewModel)
+        }
+    ) { innerPadding ->
+        Box(modifier = Modifier.padding(innerPadding)) {
+            NavigationHost(navController = navController, viewModel = viewModel)
+        }
+    }
+}
+
+@Composable
+fun BottomNavigationBar(navController: NavController, viewModel: SchoolViewModel) {
+    val navItems = listOf(
+        BottomNavItem.Home,
+        BottomNavItem.Search,
+        BottomNavItem.AIChat,
+        BottomNavItem.Notification,
+        BottomNavItem.Profile
+    )
+    val context = LocalContext.current
+    val userType by viewModel.userType.collectAsState()
+
+    NavigationBar(containerColor = Color.White) {
+        val navBackStackEntry by navController.currentBackStackEntryAsState()
+        val currentRoute = navBackStackEntry?.destination?.route
+
+        navItems.forEach { item ->
+            NavigationBarItem(
+                selected = currentRoute == item.route,
+                onClick = {
+                    if (item.route == "profile") {
+                        handleProfileClick(userType, context, navController)
+                    } else {
+                        navController.navigate(item.route) {
+                            popUpTo(navController.graph.startDestinationId)
+                            launchSingleTop = true
+                        }
+                    }
+                },
+                icon = { Icon(item.icon, contentDescription = item.title) },
+                label = { Text(item.title, maxLines = 1, fontSize = 11.sp) }
+            )
+        }
+    }
+}
+
+private fun handleProfileClick(userType: UserType, context: Context, navController: NavController) {
+    when (userType) {
+        is UserType.Normal -> {
+            navController.navigate(BottomNavItem.Profile.route) {
+                popUpTo(navController.graph.startDestinationId)
+                launchSingleTop = true
+            }
+        }
+        is UserType.School -> {
+            val intent = Intent(context, SchoolDetailActivity::class.java)
+            context.startActivity(intent)
+        }
+        is UserType.Unknown -> {
+            // Optional: Show a toast or do nothing while user type is being determined
+        }
+    }
+}
+
+@Composable
+fun NavigationHost(navController: NavHostController, viewModel: SchoolViewModel) {
+    NavHost(navController = navController, startDestination = BottomNavItem.Home.route) {
+        composable(BottomNavItem.Home.route) {
+            val schools by viewModel.schools.collectAsState()
+            val isLoading by viewModel.isLoadingSchools.collectAsState()
+            DashboardScreen(
+                schools = schools,
+                isLoading = isLoading,
+                onRefresh = { viewModel.fetchSchools() }
+            )
+        }
+        composable(BottomNavItem.Search.route) {
+            SearchScreen()
+        }
+        composable(BottomNavItem.AIChat.route) {
+            AiChatScreen()
+        }
+        composable(BottomNavItem.Notification.route) {
+            NotificationScreen()
+        }
+        composable(BottomNavItem.Profile.route) {
+            UserProfileScreen(viewModel = null)
+        }
+    }
+}
+
+
+@Composable
+fun DashboardScreen(
+    schools: List<SchoolForm> = emptyList(),
+    isLoading: Boolean = false,
+    onRefresh: () -> Unit = {}
+) {
     var isSearchActive by remember { mutableStateOf(false) }
     var searchText by remember { mutableStateOf("") }
     val context = LocalContext.current
@@ -93,7 +218,11 @@ fun DashboardScreen() {
                             colors = listOf(Color(0xFF667EEA), Color(0xFF764BA2))
                         ),
                         CircleShape
-                    ),
+                    )
+                    .clickable {
+                        val intent = Intent(context, DataFormAcitivity::class.java)
+                        context.startActivity(intent)
+                    },
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
@@ -161,7 +290,7 @@ fun DashboardScreen() {
                     .size(58.dp)
                     .shadow(4.dp, RoundedCornerShape(14.dp)),
                 colors = ButtonDefaults.outlinedButtonColors(containerColor = Color.White),
-                border = ButtonDefaults.outlinedButtonBorder.copy(
+                border = BorderStroke(
                     width = 2.dp,
                     brush = Brush.linearGradient(listOf(Color(0xFF2563EB), Color(0xFF2563EB)))
                 ),
@@ -182,7 +311,7 @@ fun DashboardScreen() {
                 .height(58.dp)
                 .shadow(4.dp, RoundedCornerShape(14.dp)),
             colors = ButtonDefaults.outlinedButtonColors(containerColor = Color.White),
-            border = ButtonDefaults.outlinedButtonBorder.copy(
+            border = BorderStroke(
                 width = 2.dp,
                 brush = Brush.linearGradient(listOf(Color(0xFF2563EB), Color(0xFF2563EB)))
             ),
@@ -195,7 +324,7 @@ fun DashboardScreen() {
 
         Spacer(modifier = Modifier.height(14.dp))
 
-        // Add School Button - Navigate to DataFormActivity
+        // Add School Button
         Button(
             onClick = {
                 val intent = Intent(context, DataFormAcitivity::class.java)
@@ -206,7 +335,7 @@ fun DashboardScreen() {
                 .height(58.dp)
                 .shadow(8.dp, RoundedCornerShape(14.dp)),
             colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFF10B981) // Green color for add action
+                containerColor = Color(0xFF10B981)
             ),
             shape = RoundedCornerShape(14.dp)
         ) {
@@ -217,55 +346,60 @@ fun DashboardScreen() {
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        /* SCHOOL CARDS SECTION - COMMENTED OUT
-
-        // Perfect Matches Section
-        SchoolSection(
-            title = "Perfect Matches",
-            subtitle = "Institutions matching your academic profile",
-            schools = listOf(
-                SchoolData("St. Xavier's College", "Maitighar • +2 Science/A-Levels", "0.8 km", "4.9", "98% match", "https://images.unsplash.com/photo-1562774053-701939374585?w=400"),
-                SchoolData("Budhanilkantha School", "Kathmandu • National Curriculum", "5.4 km", "4.8", "95% match", "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=400"),
-                SchoolData("Ullens School", "Khumaltar • IB Diploma Program", "3.2 km", "4.7", "92% match", "https://images.unsplash.com/photo-1498243691581-b145c3f54a5a?w=400")
+        // Schools Section
+        if (isLoading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(color = Color(0xFF2563EB))
+            }
+        } else if (schools.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp)
+                    .background(Color.White, RoundedCornerShape(16.dp))
+                    .padding(32.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = "🏫",
+                        fontSize = 48.sp
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "No schools added yet",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF0F172A)
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Be the first to add your school!",
+                        fontSize = 14.sp,
+                        color = Color(0xFF64748B)
+                    )
+                }
+            }
+        } else {
+            SchoolSection(
+                title = "Recently Added Schools",
+                subtitle = "Newly registered educational institutions",
+                schools = schools,
+                context = context
             )
-        )
-
-        Spacer(modifier = Modifier.height(32.dp))
-
-        // Top Rated in Kathmandu Section
-        SchoolSection(
-            title = "Top Rated in Kathmandu",
-            subtitle = "Highest academic standing in the capital",
-            schools = listOf(
-                SchoolData("Little Angels' School", "Hattiban • School to Bachelors", "4.5 km", "4.7", "90% rank", "https://images.unsplash.com/photo-1509062522246-3755977927d7?w=400"),
-                SchoolData("Trinity International", "Dillibazar • +2 & A-Levels", "1.1 km", "4.6", "88% rank", "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=400"),
-                SchoolData("Rato Bangala School", "Patan • A-Levels Center", "2.9 km", "4.8", "87% rank", "https://images.unsplash.com/photo-1546410531-bb4caa6b424d?w=400")
-            )
-        )
-
-        Spacer(modifier = Modifier.height(32.dp))
-
-        // Regional Leaders Section
-        SchoolSection(
-            title = "Regional Leaders",
-            subtitle = "Top schools outside the capital valley",
-            schools = listOf(
-                SchoolData("Gandaki Boarding", "Pokhara • National Curriculum", "200 km", "4.7", "Elite", "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=400"),
-                SchoolData("Siddhartha Boarding", "Butwal • Science/Management", "260 km", "4.5", "Top Pick", "https://images.unsplash.com/photo-1571260899304-425eee4c7efc?w=400"),
-                SchoolData("SOS Hermann Gmeiner", "Pokhara • Science Streams", "198 km", "4.6", "Scholarship", "https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=400")
-            )
-        )
-
-        */
+        }
 
         Spacer(modifier = Modifier.height(40.dp))
     }
 }
 
-/* SCHOOL SECTION AND CARD COMPOSABLES - COMMENTED OUT
-
 @Composable
-fun SchoolSection(title: String, subtitle: String, schools: List<SchoolData>) {
+fun SchoolSection(title: String, subtitle: String, schools: List<SchoolForm>, context: Context) {
     Column {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -287,29 +421,28 @@ fun SchoolSection(title: String, subtitle: String, schools: List<SchoolData>) {
                     lineHeight = 20.sp
                 )
             }
-            TextButton(onClick = { }) {
-                Text(
-                    "View all →",
-                    color = Color(0xFF2563EB),
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            }
         }
         Spacer(modifier = Modifier.height(16.dp))
         LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            items(schools) { school -> SchoolCard(school) }
+            items(schools) { school ->
+                SchoolCard(school = school, context = context)
+            }
         }
     }
 }
 
 @Composable
-fun SchoolCard(school: SchoolData) {
+fun SchoolCard(school: SchoolForm, context: Context) {
     Card(
         modifier = Modifier
             .width(280.dp)
-            .height(240.dp)
-            .shadow(8.dp, RoundedCornerShape(16.dp)),
+            .height(260.dp)
+            .shadow(8.dp, RoundedCornerShape(16.dp))
+            .clickable {
+                val intent = Intent(context, DashboardCard::class.java)
+                intent.putExtra("school_details", school)
+                context.startActivity(intent)
+            },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
@@ -318,25 +451,46 @@ fun SchoolCard(school: SchoolData) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(120.dp)
-                    .background(Color(0xFFE2E8F0))
+                    .height(130.dp)
             ) {
-                // In a real app, use AsyncImage or Coil to load from school.imageUrl
-                // For now, showing a colored overlay to represent the image
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(
-                            Brush.verticalGradient(
-                                colors = listOf(
-                                    Color(0xFF2563EB).copy(alpha = 0.1f),
-                                    Color(0xFF2563EB).copy(alpha = 0.05f)
+                if (!school.imageUrl.isNullOrBlank()) {
+                    SubcomposeAsyncImage(
+                        model = school.imageUrl,
+                        contentDescription = school.schoolName,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop,
+                        loading = {
+                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                CircularProgressIndicator(color = Color(0xFF2563EB))
+                            }
+                        },
+                        error = {
+                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.Filled.BrokenImage,
+                                    contentDescription = "Image failed to load",
+                                    tint = Color.Gray
+                                )
+                            }
+                        }
+                    )
+                } else {
+                    // Fallback gradient if no image
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(
+                                Brush.verticalGradient(
+                                    colors = listOf(
+                                        Color(0xFF2563EB).copy(alpha = 0.3f),
+                                        Color(0xFF2563EB).copy(alpha = 0.1f)
+                                    )
                                 )
                             )
-                        )
-                )
+                    )
+                }
 
-                // Match badge
+                // Rating badge (5 stars for all)
                 Box(
                     modifier = Modifier
                         .padding(12.dp)
@@ -345,7 +499,7 @@ fun SchoolCard(school: SchoolData) {
                         .align(Alignment.TopEnd)
                 ) {
                     Text(
-                        text = school.match,
+                        text = "⭐ 5.0",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White
@@ -362,44 +516,65 @@ fun SchoolCard(school: SchoolData) {
             ) {
                 Column {
                     Text(
-                        text = school.name,
+                        text = school.schoolName,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFF0F172A),
-                        lineHeight = 22.sp
+                        lineHeight = 22.sp,
+                        maxLines = 2
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = school.type,
+                        text = "${school.location} • ${school.curriculum}",
                         fontSize = 13.sp,
                         color = Color(0xFF64748B),
-                        lineHeight = 18.sp
+                        lineHeight = 18.sp,
+                        maxLines = 1
                     )
                 }
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(text = "📍", fontSize = 14.sp)
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = school.distance,
-                            fontSize = 13.sp,
-                            color = Color(0xFF64748B),
-                            fontWeight = FontWeight.Medium
-                        )
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    if (school.totalStudents.isNotEmpty()) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(text = "👥", fontSize = 14.sp)
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "${school.totalStudents} students",
+                                fontSize = 13.sp,
+                                color = Color(0xFF64748B),
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
                     }
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(text = "⭐", fontSize = 14.sp)
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = school.rating,
-                            fontSize = 13.sp,
-                            color = Color(0xFF0F172A),
-                            fontWeight = FontWeight.Bold
-                        )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        if (school.scholarshipAvailable) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(text = "🎓", fontSize = 14.sp)
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = "Scholarship",
+                                    fontSize = 12.sp,
+                                    color = Color(0xFF10B981),
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                        if (school.transportFacility) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(text = "🚌", fontSize = 14.sp)
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = "Transport",
+                                    fontSize = 12.sp,
+                                    color = Color(0xFF2563EB),
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -407,19 +582,38 @@ fun SchoolCard(school: SchoolData) {
     }
 }
 
-data class SchoolData(
-    val name: String,
-    val type: String,
-    val distance: String,
-    val rating: String,
-    val match: String,
-    val imageUrl: String
-)
+// Placeholder screens
+@Composable
+fun SearchScreen() {
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Text(text = "This is Search Screen")
+    }
+}
 
-*/
+@Composable
+fun NotificationScreen() {
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Text(text = "This is Notification Screen")
+    }
+}
+
 
 @Preview(showBackground = true)
 @Composable
 fun DashboardPreview() {
-    UNICKTheme { DashboardScreen() }
+    UNICKTheme {
+        val schools = listOf(
+            SchoolForm(
+                uid = "1",
+                schoolName = "St. Xavier's College",
+                location = "Maitighar, Kathmandu",
+                curriculum = "A-Levels, National",
+                totalStudents = "1500",
+                scholarshipAvailable = true,
+                transportFacility = true,
+                imageUrl = "https://images.unsplash.com/photo-1562774053-701939374585?w=400"
+            )
+        )
+        DashboardScreen(schools = schools, isLoading = false)
+    }
 }

@@ -7,7 +7,10 @@ import com.cloudinary.android.MediaManager
 import com.cloudinary.android.callback.ErrorInfo
 import com.cloudinary.android.callback.UploadCallback
 import com.example.unick.model.SchoolForm
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 
 class SchoolRepository {
 
@@ -81,5 +84,24 @@ class SchoolRepository {
                     onComplete(task.isSuccessful)
                 }
         }
+    }
+
+    fun fetchAllSchools(onComplete: (List<SchoolForm>) -> Unit) {
+        database.addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val schoolsList = mutableListOf<SchoolForm>()
+                for (childSnapshot in snapshot.children) {
+                    val school = childSnapshot.getValue(SchoolForm::class.java)
+                    school?.let { schoolsList.add(it) }
+                }
+                onComplete(schoolsList)
+                Log.d("SchoolRepository", "Fetched ${schoolsList.size} schools")
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Log.e("SchoolRepository", "Error fetching schools: ${error.message}")
+                onComplete(emptyList())
+            }
+        })
     }
 }

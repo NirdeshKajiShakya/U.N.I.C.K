@@ -1,5 +1,9 @@
 package com.example.unick.model
 
+import android.os.Parcelable
+import kotlinx.parcelize.Parcelize
+
+@Parcelize
 data class SchoolForm(
     val uid: String = "",
     val imageUrl: String? = null,
@@ -21,4 +25,4 @@ data class SchoolForm(
     val hostelFacility: Boolean = false,
     val extracurricular: String = "",
     val description: String = ""
-)
+) : Parcelable

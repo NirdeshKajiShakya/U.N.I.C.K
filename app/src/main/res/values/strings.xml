@@ -27,6 +27,7 @@
     <string name="title_activity_user_registration_school">UserRegistrationSchoolActivity</string>
     <string name="title_activity_user_login_school">UserLoginSchoolActivity</string>
     <string name="title_activity_data_form_acitivity">DataFormAcitivity</string>
+    <string name="title_activity_dashboard_card">DashboardCard</string>
     <string name="title_activity_school_edit_profile">SchoolEditProfileActivity</string>
     <string name="title_activity_school_settings">SchoolSettingsActivity</string>
     <string name="title_activity_school_gallery">SchoolGalleryActivity</string>

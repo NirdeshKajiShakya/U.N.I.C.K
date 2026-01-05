@@ -1,6 +1,5 @@
 package com.example.unick.view
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -9,7 +8,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -29,7 +27,7 @@ data class ChatMessage(
     val text: String,
     val isUser: Boolean,
     val isTyping: Boolean = false,
-    val id: Long = System.nanoTime() // Changed to nanoTime for better uniqueness
+    val id: Long = System.nanoTime()
 )
 
 // ---------------- AI LOGIC ----------------
@@ -49,7 +47,6 @@ fun getAiReply(input: String): String {
 }
 
 // ---------------- MAIN SCREEN ----------------
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AiChatScreen(
     onBackPressed: () -> Unit = {}
@@ -66,133 +63,107 @@ fun AiChatScreen(
         }
     }
 
-    // Handle back press
-    BackHandler {
-        onBackPressed()
-    }
-
-    Scaffold(
-        topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text("AI Chat", fontSize = 20.sp) },
-                navigationIcon = {
-                    IconButton(onClick = onBackPressed) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
-                            tint = Color.White
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = Color(0xFF0A73FF),
-                    titleContentColor = Color.White
-                )
-            )
-        }
-    ) { padding ->
-        Column(
+    // This screen is hosted by NavHost in DashboardActivity, no Scaffold needed
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFFF6F7FA))
+    ) {
+        // Chat messages area
+        LazyColumn(
+            state = listState,
             modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .background(Color(0xFFF6F7FA))
+                .weight(1f)
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // Chat messages area
-            LazyColumn(
-                state = listState,
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(horizontal = 12.dp, vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                // Welcome message
-                if (messages.isEmpty()) {
-                    item {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 20.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                "👋 Hi! Ask me about schools!",
-                                fontSize = 16.sp,
-                                color = Color.Gray
-                            )
-                        }
-                    }
-                }
-
-                items(messages, key = { it.id }) { msg ->
-                    if (msg.isTyping) {
-                        TypingBubble()
-                    } else {
-                        ChatBubble(msg)
+            // Welcome message
+            if (messages.isEmpty()) {
+                item {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 20.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            "👋 Hi! Ask me about schools!",
+                            fontSize = 16.sp,
+                            color = Color.Gray
+                        )
                     }
                 }
             }
 
-            // Input area
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(12.dp)
-                    .clip(RoundedCornerShape(24.dp))
-                    .background(Color.White)
-                    .padding(horizontal = 4.dp, vertical = 4.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                OutlinedTextField(
-                    value = inputText,
-                    onValueChange = { inputText = it },
-                    modifier = Modifier.weight(1f),
-                    placeholder = { Text("Say hi 👋 or ask about schools") },
-                    maxLines = 3,
-                    shape = RoundedCornerShape(20.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Color.Transparent,
-                        unfocusedBorderColor = Color.Transparent,
-                        focusedContainerColor = Color.White,
-                        unfocusedContainerColor = Color.White
-                    )
-                )
-
-                Spacer(Modifier.width(4.dp))
-
-                IconButton(
-                    onClick = {
-                        val userMsg = inputText.trim()
-                        if (userMsg.isNotBlank()) {
-                            inputText = ""
-
-                            // Add user message
-                            messages.add(ChatMessage(userMsg, isUser = true))
-
-                            // Add typing indicator
-                            val typingMsg = ChatMessage("", isUser = false, isTyping = true)
-                            messages.add(typingMsg)
-
-                            // Simulate AI response
-                            coroutineScope.launch {
-                                delay(1200)
-                                messages.remove(typingMsg)
-                                messages.add(
-                                    ChatMessage(
-                                        text = getAiReply(userMsg),
-                                        isUser = false
-                                    )
-                                )
-                            }
-                        }
-                    },
-                    enabled = inputText.isNotBlank()
-                ) {
-                    Icon(
-                        Icons.Default.Send,
-                        contentDescription = "Send",
-                        tint = if (inputText.isNotBlank()) Color(0xFF0A73FF) else Color.Gray
-                    )
+            items(messages, key = { it.id }) { msg ->
+                if (msg.isTyping) {
+                    TypingBubble()
+                } else {
+                    ChatBubble(msg)
                 }
+            }
+        }
+
+        // Input area
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp)
+                .clip(RoundedCornerShape(24.dp))
+                .background(Color.White)
+                .padding(horizontal = 4.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            OutlinedTextField(
+                value = inputText,
+                onValueChange = { inputText = it },
+                modifier = Modifier.weight(1f),
+                placeholder = { Text("Say hi 👋 or ask about schools") },
+                maxLines = 3,
+                shape = RoundedCornerShape(20.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = Color.Transparent,
+                    unfocusedBorderColor = Color.Transparent,
+                    focusedContainerColor = Color.White,
+                    unfocusedContainerColor = Color.White
+                )
+            )
+
+            Spacer(Modifier.width(4.dp))
+
+            IconButton(
+                onClick = {
+                    val userMsg = inputText.trim()
+                    if (userMsg.isNotBlank()) {
+                        inputText = ""
+
+                        // Add user message
+                        messages.add(ChatMessage(userMsg, isUser = true))
+
+                        // Add typing indicator
+                        val typingMsg = ChatMessage("", isUser = false, isTyping = true)
+                        messages.add(typingMsg)
+
+                        // Simulate AI response
+                        coroutineScope.launch {
+                            delay(1200)
+                            messages.remove(typingMsg)
+                            messages.add(
+                                ChatMessage(
+                                    text = getAiReply(userMsg),
+                                    isUser = false
+                                )
+                            )
+                        }
+                    }
+                },
+                enabled = inputText.isNotBlank()
+            ) {
+                Icon(
+                    Icons.Default.Send,
+                    contentDescription = "Send",
+                    tint = if (inputText.isNotBlank()) Color(0xFF0A73FF) else Color.Gray
+                )
             }
         }
     }
@@ -278,3 +249,4 @@ fun AiChatScreenPreview() {
         AiChatScreen()
     }
 }
+
