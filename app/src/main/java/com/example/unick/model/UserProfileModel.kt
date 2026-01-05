@@ -1,6 +1,6 @@
 package com.example.unick.model
 
-data class UserModel(
+data class UserProfileModel(
     val name: String = "",
     val email: String = "",
     val location: String = "",
