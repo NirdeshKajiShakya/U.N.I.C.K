@@ -389,7 +389,8 @@ fun DashboardScreen(
             SchoolSection(
                 title = "Recently Added Schools",
                 subtitle = "Newly registered educational institutions",
-                schools = schools
+                schools = schools,
+                context = context
             )
         }
 
@@ -398,7 +399,7 @@ fun DashboardScreen(
 }
 
 @Composable
-fun SchoolSection(title: String, subtitle: String, schools: List<SchoolForm>) {
+fun SchoolSection(title: String, subtitle: String, schools: List<SchoolForm>, context: Context) {
     Column {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -424,19 +425,24 @@ fun SchoolSection(title: String, subtitle: String, schools: List<SchoolForm>) {
         Spacer(modifier = Modifier.height(16.dp))
         LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             items(schools) { school ->
-                SchoolCard(school)
+                SchoolCard(school = school, context = context)
             }
         }
     }
 }
 
 @Composable
-fun SchoolCard(school: SchoolForm) {
+fun SchoolCard(school: SchoolForm, context: Context) {
     Card(
         modifier = Modifier
             .width(280.dp)
             .height(260.dp)
-            .shadow(8.dp, RoundedCornerShape(16.dp)),
+            .shadow(8.dp, RoundedCornerShape(16.dp))
+            .clickable {
+                val intent = Intent(context, DashboardCard::class.java)
+                intent.putExtra("school_details", school)
+                context.startActivity(intent)
+            },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
