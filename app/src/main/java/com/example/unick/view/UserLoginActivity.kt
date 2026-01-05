@@ -41,6 +41,10 @@ class UserLoginActivity : ComponentActivity() {
                     onNavigateToRegister = {
                         // Navigate to registration
                         startActivity(Intent(this, UserRegistrationActivity::class.java))
+                    },
+                    onNavigateToForgotPassword = {
+                        // Navigate to forgot password
+                        startActivity(Intent(this, SendCodeToEmailActivity::class.java))
                     }
                 )
             }
@@ -52,7 +56,8 @@ class UserLoginActivity : ComponentActivity() {
 fun UserLoginScreen(
     viewModel: UserLoginViewModel = viewModel(),
     onLoginSuccess: () -> Unit = {},
-    onNavigateToRegister: () -> Unit = {}
+    onNavigateToRegister: () -> Unit = {},
+    onNavigateToForgotPassword: () -> Unit = {}
 ) {
     val email by viewModel.email.collectAsState()
     val password by viewModel.password.collectAsState()
@@ -173,6 +178,12 @@ fun UserLoginScreen(
             }
 
             item {
+                ForgotPasswordLinkForUserLogin(
+                    onClick = onNavigateToForgotPassword
+                )
+            }
+
+            item {
                 RegisterLinkForUserLogin(
                     onClick = onNavigateToRegister
                 )
@@ -287,6 +298,24 @@ fun UserLoginButton(
                 fontWeight = FontWeight.Bold
             )
         }
+    }
+}
+
+@Composable
+fun ForgotPasswordLinkForUserLogin(onClick: () -> Unit = {}) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp, horizontal = 25.dp),
+        horizontalArrangement = Arrangement.End
+    ) {
+        Text(
+            text = "Forgot Password?",
+            color = Color(0xFF2563EB),
+            fontWeight = FontWeight.Medium,
+            fontSize = 14.sp,
+            modifier = Modifier.clickable { onClick() }
+        )
     }
 }
 

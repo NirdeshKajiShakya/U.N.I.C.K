@@ -6,6 +6,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -93,7 +94,10 @@ fun DashboardScreen() {
                             colors = listOf(Color(0xFF667EEA), Color(0xFF764BA2))
                         ),
                         CircleShape
-                    ),
+                    )
+                    .clickable {
+                        context.startActivity(Intent(context, UserProfileActivity::class.java))
+                    },
                 contentAlignment = Alignment.Center
             ) {
                 Icon(

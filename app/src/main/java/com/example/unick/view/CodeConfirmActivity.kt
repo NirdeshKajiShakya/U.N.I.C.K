@@ -40,14 +40,19 @@ class CodeConfirmActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             UNICKTheme {
-                CodeConfirmScreen()
+                CodeConfirmScreen(
+                    onCodeVerified = {
+                        startActivity(Intent(this, ResetPasswordActivity::class.java))
+                        finish()
+                    }
+                )
             }
         }
     }
 }
 
 @Composable
-fun CodeConfirmScreen() {
+fun CodeConfirmScreen(onCodeVerified: () -> Unit = {}) {
     Scaffold { padding ->
         LazyColumn(
             modifier = Modifier
@@ -59,7 +64,7 @@ fun CodeConfirmScreen() {
             item { Spacer(modifier = Modifier.padding(top = 32.dp))}
             item { OtpCodeInput(length = 6) }
             item { Spacer(modifier = Modifier.padding(top = 32.dp))}
-            item { ButtonForOTPConfirm() }
+            item { ButtonForOTPConfirm(onClick = onCodeVerified) }
         }
     }
 }
@@ -158,8 +163,7 @@ fun OtpCodeInput(length: Int) {
 }
 
 @Composable
-fun ButtonForOTPConfirm(){
-    val context = LocalContext.current
+fun ButtonForOTPConfirm(onClick: () -> Unit = {}){
     Row(
         modifier = Modifier
             .fillMaxSize()
@@ -167,10 +171,7 @@ fun ButtonForOTPConfirm(){
         horizontalArrangement = Arrangement.Center
     ) {
         androidx.compose.material3.Button(
-            onClick = {
-                val intent = Intent(context, ResetPasswordActivity::class.java)
-                context.startActivity(intent)
-            },
+            onClick = onClick,
             colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = com.example.unick.ui.theme.Blue)
         ) {
             Text(

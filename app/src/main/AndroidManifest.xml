@@ -21,39 +21,38 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.UNICK">
+        <!-- Main Welcome/Landing Page - THE ONLY LAUNCHER -->
+        <activity
+            android:name=".view.WelcomeActivity"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:theme="@style/Theme.UNICK">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- School Data Form Activity -->
         <activity
             android:name=".view.DataFormAcitivity"
-            android:exported="true"
+            android:exported="false"
             android:label="@string/title_activity_data_form_acitivity"
-            android:theme="@style/Theme.UNICK">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
+            android:theme="@style/Theme.UNICK" />
 
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
+        <!-- School Login Activity -->
         <activity
             android:name=".view.UserLoginSchoolActivity"
-            android:exported="true"
+            android:exported="false"
             android:label="@string/title_activity_user_login_school"
-            android:theme="@style/Theme.UNICK">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
+            android:theme="@style/Theme.UNICK" />
 
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
+        <!-- School Registration Activity -->
         <activity
             android:name=".view.UserRegistrationSchoolActivity"
-            android:exported="true"
+            android:exported="false"
             android:label="@string/title_activity_user_registration_school"
-            android:theme="@style/Theme.UNICK">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
+            android:theme="@style/Theme.UNICK" />
         <activity
             android:name=".view.SettingsActivity"
             android:exported="true"
@@ -90,17 +89,14 @@
             android:label="@string/title_activity_student_application"
             android:theme="@style/Theme.UNICK" />
 
+        <!-- Student Registration Activity -->
         <activity
             android:name=".view.UserRegistrationActivity"
-            android:exported="true"
+            android:exported="false"
             android:label="@string/title_activity_user_registration"
-            android:theme="@style/Theme.UNICK">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
+            android:theme="@style/Theme.UNICK" />
 
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
+        <!-- Student Login Activity -->
         <activity
             android:name=".view.UserLoginActivity"
             android:exported="false"
@@ -134,6 +130,16 @@
             android:name=".view.DashboardActivity"
             android:exported="true"
             android:label="@string/title_activity_dashboard"
+            android:theme="@style/Theme.UNICK" />
+        <activity
+            android:name=".view.UserProfileActivity"
+            android:exported="false"
+            android:label="User Profile"
+            android:theme="@style/Theme.UNICK" />
+        <activity
+            android:name=".view.EditUserProfileActivity"
+            android:exported="false"
+            android:label="Edit Profile"
             android:theme="@style/Theme.UNICK" />
         <activity
             android:name=".MainActivity"
