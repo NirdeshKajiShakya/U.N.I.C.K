@@ -44,6 +44,19 @@ class SchoolViewModel : ViewModel() {
     private val _isDataSaved = MutableStateFlow(false)
     val isDataSaved = _isDataSaved.asStateFlow()
 
+    // NEW: Schools list for dashboard
+    private val _schools = MutableStateFlow<List<SchoolForm>>(emptyList())
+    val schools = _schools.asStateFlow()
+
+    // NEW: Loading state for fetching schools
+    private val _isLoadingSchools = MutableStateFlow(false)
+    val isLoadingSchools = _isLoadingSchools.asStateFlow()
+
+    // NEW: Fetch schools when ViewModel is created
+    init {
+        fetchSchools()
+    }
+
     fun saveSchoolData(context: Context) {
         viewModelScope.launch {
             _isLoading.value = true
@@ -54,8 +67,21 @@ class SchoolViewModel : ViewModel() {
                     _isLoading.value = false
                     if (success) {
                         _isDataSaved.value = true
+                        // NEW: Refresh schools list after saving
+                        fetchSchools()
                     }
                 }
+            }
+        }
+    }
+
+    // NEW: Fetch all schools from Firebase for dashboard
+    fun fetchSchools() {
+        viewModelScope.launch {
+            _isLoadingSchools.value = true
+            repository.fetchAllSchools { schoolsList ->
+                _schools.value = schoolsList
+                _isLoadingSchools.value = false
             }
         }
     }
