@@ -1,274 +1,462 @@
 package com.example.unick.view
 
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.outlined.*
+import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.unick.R
+import com.example.unick.repo.EditProfileRepoImpl
+import com.example.unick.viewmodel.EditUserProfileViewModel
 
-//--------------------------------------------------------------
-// 🔥 EDIT PROFILE ACTIVITY
-//--------------------------------------------------------------
+// Colors
+private val PrimaryBlue = Color(0xFF4A90E2)
+private val PrimaryBlueDark = Color(0xFF357ABD)
+private val BackgroundGray = Color(0xFFF8FAFC)
+private val CardWhite = Color(0xFFFFFFFF)
+private val TextPrimary = Color(0xFF1A1A2E)
+private val TextSecondary = Color(0xFF6B7280)
+private val AccentRed = Color(0xFFEF4444)
+private val AccentRedDark = Color(0xFFDC2626)
+private val BorderGray = Color(0xFFE5E7EB)
+private val ChipBackground = Color(0xFFEEF2FF)
+private val ChipText = Color(0xFF4338CA)
+
 class EditUserProfileActivity : ComponentActivity() {
+    private val viewModel: EditUserProfileViewModel by viewModels {
+        EditUserProfileViewModel.Factory(EditProfileRepoImpl())
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            EditUserProfileScreen()
+            EditUserProfileScreen(
+                viewModel = viewModel,
+                onBackClick = { finish() }
+            )
         }
     }
 }
 
-//--------------------------------------------------------------
-// 🔥 MAIN SCREEN
-//--------------------------------------------------------------
 @Composable
-fun EditUserProfileScreen() {
+fun EditUserProfileScreen(
+    viewModel: EditUserProfileViewModel,
+    onBackClick: () -> Unit = {}
+) {
+    val context = LocalContext.current
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    // Editable user states
-    var fullName by remember { mutableStateOf("") }
-    var email by remember { mutableStateOf("") }
-    var contact by remember { mutableStateOf("") }
-    var dob by remember { mutableStateOf("") }
-    var gender by remember { mutableStateOf("") }
-    var location by remember { mutableStateOf("") }
+    LaunchedEffect(uiState.saveSuccess, uiState.deleteSuccess, uiState.errorMessage) {
+        uiState.saveSuccess?.let { success ->
+            val message = if (success) "Profile updated successfully!" else uiState.errorMessage ?: "Failed to update"
+            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+            viewModel.clearStatus()
+        }
+        uiState.deleteSuccess?.let { success ->
+            if (success) {
+                Toast.makeText(context, "Account deleted", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(context, uiState.errorMessage ?: "Failed to delete", Toast.LENGTH_SHORT).show()
+            }
+            viewModel.clearStatus()
+        }
+    }
 
-    // Preferences
-    var classPref by remember { mutableStateOf("Class") }
-    var levelPref by remember { mutableStateOf("Level") }
-    var typePref by remember { mutableStateOf("Type") }
-
-    LazyColumn(
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
-            .windowInsetsPadding(WindowInsets.systemBars)
+            .background(BackgroundGray)
     ) {
-
-        item { EditProfileHeaderSectionForEditUserProfile(onBackClick = {}) }
-
-        item {
-            EditProfileUserCardSectionForEditUserProfile(
-                name = fullName.ifEmpty { "User Name" },
-                email = email.ifEmpty { "user123@gmail.com" }
+        if (uiState.isLoading) {
+            CircularProgressIndicator(
+                modifier = Modifier.align(Alignment.Center),
+                color = PrimaryBlue
             )
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .windowInsetsPadding(WindowInsets.systemBars),
+                contentPadding = PaddingValues(bottom = 32.dp)
+            ) {
+                item { EditProfileHeader(onBackClick = onBackClick) }
+                item { ProfileCard(
+                    name = uiState.profile.fullName.ifEmpty { "User Name" },
+                    email = uiState.profile.email.ifEmpty { "user@gmail.com" }
+                )}
+                item { PersonalInfoSection(
+                    fullName = uiState.profile.fullName,
+                    email = uiState.profile.email,
+                    contact = uiState.profile.contact,
+                    dob = uiState.profile.dob,
+                    gender = uiState.profile.gender,
+                    location = uiState.profile.location,
+                    onFieldChange = { field, value -> viewModel.updateField(field, value) }
+                )}
+                item { PreferencesSection(
+                    classPref = uiState.profile.classPref,
+                    levelPref = uiState.profile.levelPref,
+                    typePref = uiState.profile.typePref
+                )}
+                item { ActionButtons(
+                    onDelete = { viewModel.deleteAccount() },
+                    onSave = { viewModel.saveUserProfile() }
+                )}
+            }
         }
-
-        item { EditFieldItemForEditUserProfile("Full Name", fullName) { fullName = it } }
-        item { EditFieldItemForEditUserProfile("Email", email) { email = it } }
-        item { EditFieldItemForEditUserProfile("Contact", contact) { contact = it } }
-        item { EditFieldItemForEditUserProfile("Date Of Birth", dob) { dob = it } }
-        item { EditFieldItemForEditUserProfile("Gender", gender) { gender = it } }
-        item { EditFieldItemForEditUserProfile("Location", location) { location = it } }
-
-        item {
-            PreferencesSectionForEditUserProfile(
-                classPref = classPref,
-                levelPref = levelPref,
-                typePref = typePref,
-                onClassClick = {},
-                onLevelClick = {},
-                onTypeClick = {},
-                onEditPrefClick = {}
-            )
-        }
-
-        item {
-            EditActionsButtonsForEditUserProfile(
-                onDelete = {},
-                onSave = {}
-            )
-        }
-
-        item { Spacer(modifier = Modifier.height(40.dp)) }
-    }
-}
-
-//--------------------------------------------------------------
-// 🔥 COMPONENTS BELOW
-//--------------------------------------------------------------
-
-@Composable
-fun EditProfileHeaderSectionForEditUserProfile(onBackClick: () -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-
-        Icon(
-            Icons.Default.ArrowBack,
-            contentDescription = null,
-            modifier = Modifier.size(28.dp).clickable { onBackClick() }
-        )
-
-        Spacer(modifier = Modifier.width(20.dp))
-
-        Text("My Profile", fontSize = 26.sp, fontWeight = FontWeight.Bold)
     }
 }
 
 @Composable
-fun EditProfileUserCardSectionForEditUserProfile(name: String, email: String) {
-    Row(
+fun EditProfileHeader(onBackClick: () -> Unit) {
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp)
-            .clip(RoundedCornerShape(20.dp))
-            .background(Color(0xFFF5F8FC))
-            .padding(20.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-
-        Box(
-            modifier = Modifier
-                .size(70.dp)
-                .clip(CircleShape)
-                .background(Color(0xFFE7F2FF)),
-            contentAlignment = Alignment.Center
-        ) {
-            Image(
-                painterResource(id = R.drawable.school_profile),
-                contentDescription = null,
-                modifier = Modifier.size(40.dp)
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(PrimaryBlue, PrimaryBlueDark)
+                )
             )
-        }
-
-        Spacer(modifier = Modifier.width(20.dp))
-
-        Column {
-            Text(name, fontSize = 20.sp, fontWeight = FontWeight.Bold)
-            Text(email, fontSize = 16.sp, color = Color.Gray)
+            .padding(top = 16.dp, bottom = 80.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(
+                onClick = onBackClick,
+                modifier = Modifier
+                    .size(40.dp)
+                    .background(Color.White.copy(alpha = 0.2f), CircleShape)
+            ) {
+                Icon(
+                    Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Back",
+                    tint = Color.White
+                )
+            }
+            Spacer(modifier = Modifier.width(16.dp))
+            Text(
+                "Edit Profile",
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White
+            )
         }
     }
 }
 
 @Composable
-fun EditFieldItemForEditUserProfile(label: String, value: String, onValueChange: (String) -> Unit) {
+fun ProfileCard(name: String, email: String) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp)
+            .offset(y = (-50).dp)
+            .shadow(8.dp, RoundedCornerShape(20.dp)),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = CardWhite)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(100.dp)
+                    .shadow(4.dp, CircleShape)
+                    .clip(CircleShape)
+                    .background(
+                        Brush.linearGradient(
+                            colors = listOf(Color(0xFFE0E7FF), Color(0xFFC7D2FE))
+                        )
+                    )
+                    .border(3.dp, Color.White, CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Image(
+                    painterResource(id = R.drawable.school_profile),
+                    contentDescription = null,
+                    modifier = Modifier.size(50.dp)
+                )
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                name,
+                fontSize = 22.sp,
+                fontWeight = FontWeight.Bold,
+                color = TextPrimary
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                email,
+                fontSize = 14.sp,
+                color = TextSecondary
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            TextButton(onClick = { /* Change photo */ }) {
+                Icon(
+                    Icons.Outlined.CameraAlt,
+                    contentDescription = null,
+                    tint = PrimaryBlue,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(Modifier.width(6.dp))
+                Text("Change Photo", color = PrimaryBlue, fontWeight = FontWeight.Medium)
+            }
+        }
+    }
+}
+
+@Composable
+fun PersonalInfoSection(
+    fullName: String,
+    email: String,
+    contact: String,
+    dob: String,
+    gender: String,
+    location: String,
+    onFieldChange: (String, String) -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp)
+            .offset(y = (-30).dp)
+            .shadow(4.dp, RoundedCornerShape(16.dp)),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = CardWhite)
+    ) {
+        Column(modifier = Modifier.padding(20.dp)) {
+            Text(
+                "Personal Information",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = TextPrimary
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+
+            StyledTextField(
+                value = fullName,
+                onValueChange = { onFieldChange("fullName", it) },
+                label = "Full Name",
+                icon = Icons.Outlined.Person
+            )
+            StyledTextField(
+                value = email,
+                onValueChange = { onFieldChange("email", it) },
+                label = "Email Address",
+                icon = Icons.Outlined.Email
+            )
+            StyledTextField(
+                value = contact,
+                onValueChange = { onFieldChange("contact", it) },
+                label = "Phone Number",
+                icon = Icons.Outlined.Phone
+            )
+            StyledTextField(
+                value = dob,
+                onValueChange = { onFieldChange("dob", it) },
+                label = "Date of Birth",
+                icon = Icons.Outlined.CalendarToday
+            )
+            StyledTextField(
+                value = gender,
+                onValueChange = { onFieldChange("gender", it) },
+                label = "Gender",
+                icon = Icons.Outlined.Person
+            )
+            StyledTextField(
+                value = location,
+                onValueChange = { onFieldChange("location", it) },
+                label = "Location",
+                icon = Icons.Outlined.LocationOn,
+                isLast = true
+            )
+        }
+    }
+}
+
+@Composable
+fun StyledTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    icon: ImageVector,
+    isLast: Boolean = false
+) {
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
         label = { Text(label) },
+        leadingIcon = {
+            Icon(icon, contentDescription = null, tint = PrimaryBlue)
+        },
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 6.dp)
+            .padding(bottom = if (isLast) 0.dp else 12.dp),
+        shape = RoundedCornerShape(12.dp),
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = PrimaryBlue,
+            unfocusedBorderColor = BorderGray,
+            focusedLabelColor = PrimaryBlue,
+            cursorColor = PrimaryBlue
+        ),
+        singleLine = true
     )
 }
 
 @Composable
-fun PreferencesSectionForEditUserProfile(
-    classPref: String,
-    levelPref: String,
-    typePref: String,
-    onClassClick: () -> Unit,
-    onLevelClick: () -> Unit,
-    onTypeClick: () -> Unit,
-    onEditPrefClick: () -> Unit
-) {
-
-    Column(
+fun PreferencesSection(classPref: String, levelPref: String, typePref: String) {
+    Card(
         modifier = Modifier
-            .padding(16.dp)
-            .clip(RoundedCornerShape(20.dp))
-            .background(Color(0xFFF5F8FC))
-            .padding(20.dp)
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp)
+            .offset(y = (-10).dp)
+            .shadow(4.dp, RoundedCornerShape(16.dp)),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = CardWhite)
     ) {
-
-        Text("Your preferences", fontSize = 18.sp, fontWeight = FontWeight.Bold)
-
-        Spacer(modifier = Modifier.height(10.dp))
-
-        Row {
-            PrefChipForEditUserProfile(classPref, onClassClick)
-            Spacer(Modifier.width(10.dp))
-            PrefChipForEditUserProfile(levelPref, onLevelClick)
-            Spacer(Modifier.width(10.dp))
-            PrefChipForEditUserProfile(typePref, onTypeClick)
+        Column(modifier = Modifier.padding(20.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.Outlined.Tune,
+                    contentDescription = null,
+                    tint = PrimaryBlue
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    "Preferences",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = TextPrimary
+                )
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                PreferenceChip(text = classPref.ifEmpty { "Class" }, modifier = Modifier.weight(1f))
+                PreferenceChip(text = levelPref.ifEmpty { "Level" }, modifier = Modifier.weight(1f))
+                PreferenceChip(text = typePref.ifEmpty { "Type" }, modifier = Modifier.weight(1f))
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(ChipBackground.copy(alpha = 0.5f))
+                    .clickable { }
+                    .padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(Icons.Outlined.Edit, contentDescription = null, tint = ChipText, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
+                Text("Edit Preferences", color = ChipText, fontWeight = FontWeight.Medium)
+            }
         }
+    }
+}
 
-        Spacer(modifier = Modifier.height(12.dp))
-
+@Composable
+fun PreferenceChip(text: String, modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(10.dp))
+            .background(ChipBackground)
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        contentAlignment = Alignment.Center
+    ) {
         Text(
-            "Edit Preferences",
-            color = Color(0xFF3A6DFF),
-            modifier = Modifier.clickable { onEditPrefClick() }
+            text,
+            color = ChipText,
+            fontWeight = FontWeight.Medium,
+            fontSize = 13.sp,
+            maxLines = 1
         )
     }
 }
 
 @Composable
-fun PrefChipForEditUserProfile(text: String, onClick: () -> Unit) {
-    Box(
-        modifier = Modifier
-            .clip(RoundedCornerShape(12.dp))
-            .background(Color(0xFFF7DCDC))
-            .clickable(onClick = onClick)
-            .padding(horizontal = 20.dp, vertical = 10.dp)
-    ) {
-        Text(text, fontWeight = FontWeight.Medium)
-    }
-}
-
-@Composable
-fun EditActionsButtonsForEditUserProfile(onDelete: () -> Unit, onSave: () -> Unit) {
-
+fun ActionButtons(onDelete: () -> Unit, onSave: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp),
-        horizontalArrangement = Arrangement.SpaceBetween
+            .padding(horizontal = 20.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-
-        Box(
+        Button(
+            onClick = onDelete,
             modifier = Modifier
                 .weight(1f)
-                .clip(RoundedCornerShape(30.dp))
-                .background(Color(0xFFFF4C4C))
-                .clickable { onDelete() }
-                .padding(vertical = 14.dp),
-            contentAlignment = Alignment.Center
+                .height(52.dp),
+            shape = RoundedCornerShape(14.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = AccentRed)
         ) {
-            Text("Delete Account", color = Color.White, fontWeight = FontWeight.Bold)
+            Icon(Icons.Outlined.DeleteOutline, contentDescription = null, modifier = Modifier.size(20.dp))
+            Spacer(Modifier.width(8.dp))
+            Text("Delete", fontWeight = FontWeight.SemiBold)
         }
 
-        Spacer(modifier = Modifier.width(12.dp))
-
-        Box(
+        Button(
+            onClick = onSave,
             modifier = Modifier
                 .weight(1f)
-                .clip(RoundedCornerShape(30.dp))
-                .background(Color(0xFF365CFF))
-                .clickable { onSave() }
-                .padding(vertical = 14.dp),
-            contentAlignment = Alignment.Center
+                .height(52.dp),
+            shape = RoundedCornerShape(14.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
         ) {
-            Text("Save Changes", color = Color.White, fontWeight = FontWeight.Bold)
+            Icon(Icons.Outlined.Check, contentDescription = null, modifier = Modifier.size(20.dp))
+            Spacer(Modifier.width(8.dp))
+            Text("Save", fontWeight = FontWeight.SemiBold)
         }
     }
 }
 
-// Preview
 @Preview(showBackground = true)
 @Composable
 fun PreviewEditUserProfileScreen() {
-    EditUserProfileScreen()
+    Box(modifier = Modifier.fillMaxSize().background(BackgroundGray)) {
+        LazyColumn {
+            item { EditProfileHeader(onBackClick = {}) }
+            item { ProfileCard("John Doe", "john@email.com") }
+        }
+    }
 }
