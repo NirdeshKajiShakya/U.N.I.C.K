@@ -5,10 +5,10 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -93,7 +93,11 @@ fun DashboardScreen() {
                             colors = listOf(Color(0xFF667EEA), Color(0xFF764BA2))
                         ),
                         CircleShape
-                    ),
+                    )
+                    .clickable {
+                        val intent = Intent(context, DataFormAcitivity::class.java)
+                        context.startActivity(intent)
+                    },
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
@@ -161,7 +165,7 @@ fun DashboardScreen() {
                     .size(58.dp)
                     .shadow(4.dp, RoundedCornerShape(14.dp)),
                 colors = ButtonDefaults.outlinedButtonColors(containerColor = Color.White),
-                border = ButtonDefaults.outlinedButtonBorder.copy(
+                border = BorderStroke(
                     width = 2.dp,
                     brush = Brush.linearGradient(listOf(Color(0xFF2563EB), Color(0xFF2563EB)))
                 ),
@@ -182,7 +186,7 @@ fun DashboardScreen() {
                 .height(58.dp)
                 .shadow(4.dp, RoundedCornerShape(14.dp)),
             colors = ButtonDefaults.outlinedButtonColors(containerColor = Color.White),
-            border = ButtonDefaults.outlinedButtonBorder.copy(
+            border = BorderStroke(
                 width = 2.dp,
                 brush = Brush.linearGradient(listOf(Color(0xFF2563EB), Color(0xFF2563EB)))
             ),
