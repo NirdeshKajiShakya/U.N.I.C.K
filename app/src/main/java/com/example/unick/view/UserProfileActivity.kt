@@ -1,10 +1,6 @@
 package com.example.unick.view
 
 import android.content.Intent
-import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -26,8 +22,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
 import com.example.unick.R
@@ -48,17 +42,8 @@ data class ApplicationItemForUserProfile(
     val applicationCode: String
 )
 
-// -------------------- ACTIVITY ------------------------
-
-class UserProfileActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        setContent { UserProfileScreen() }
-    }
-}
-
 // -------------------- ROOT SCREEN ---------------------
+// The UserProfileActivity class has been removed as this screen is now hosted by NavHost in DashboardActivity.
 @Composable
 fun UserProfileScreen() {
 
@@ -79,12 +64,10 @@ fun UserProfileScreen() {
         )
     }
 
-    // 🔹 FIX FOR NOTCH / STATUS BAR OVERLAP
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
-            .windowInsetsPadding(WindowInsets.statusBars)   // ONLY padding at top
     ) {
 
         LazyColumn(

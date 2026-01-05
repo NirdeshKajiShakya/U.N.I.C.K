@@ -1,13 +1,11 @@
 package com.example.unick.view
 
-import android.app.Activity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -15,7 +13,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.tooling.preview.Preview
@@ -29,12 +26,7 @@ data class ChatMessage(val text: String, val isUser: Boolean)
 @Composable
 fun AiChatScreen() {
 
-    val context = LocalContext.current
-    val activity: Activity? = context as? Activity
-
-
     var inputText by rememberSaveable { mutableStateOf("") }
-
 
     val messages = remember {
         mutableStateListOf(
@@ -44,9 +36,7 @@ fun AiChatScreen() {
         )
     }
 
-
     val listState = rememberLazyListState()
-
 
     LaunchedEffect(messages.size) {
         if (messages.isNotEmpty()) {
@@ -54,91 +44,68 @@ fun AiChatScreen() {
         }
     }
 
-    Scaffold(
-        topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text("AI Chat", fontSize = 20.sp) },
-                navigationIcon = {
-                    IconButton(onClick = { activity?.finish() }) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
-                            tint = Color.White
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = Color(0xFF0A73FF),
-                    titleContentColor = Color.White
-                )
-            )
-        }
-    ) { innerPadding ->
-        Column(
+    // The Scaffold has been removed as this screen is now hosted by NavHost in DashboardActivity.
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFFF6F7FA))
+    ) {
+
+        LazyColumn(
+            state = listState,
             modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .background(Color(0xFFF6F7FA))
+                .weight(1f)
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
+            items(messages) { msg ->
+                ChatBubble(msg)
+            }
+        }
 
-
-            LazyColumn(
-                state = listState,
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp)
+                .clip(RoundedCornerShape(24.dp))
+                .background(Color.White)
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            OutlinedTextField(
+                value = inputText,
+                onValueChange = { inputText = it },
                 modifier = Modifier
                     .weight(1f)
-                    .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(messages) { msg ->
-                    ChatBubble(msg)
-                }
-            }
-
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(12.dp)
-                    .clip(RoundedCornerShape(24.dp))
-                    .background(Color.White)
-                    .padding(horizontal = 12.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                OutlinedTextField(
-                    value = inputText,
-                    onValueChange = { inputText = it },
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(end = 8.dp),
-                    placeholder = { Text("Ask about schools, e.g. \"Search private schools grade 9\"") },
-                    maxLines = 3,
-                    shape = RoundedCornerShape(20.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Color(0xFF0A73FF),
-                        unfocusedBorderColor = Color(0xFFDDDDDD),
-                        cursorColor = Color(0xFF0A73FF),
-                        focusedLeadingIconColor = Color.Unspecified,
-                        unfocusedLeadingIconColor = Color.Unspecified
-                    )
+                    .padding(end = 8.dp),
+                placeholder = { Text("Ask about schools, e.g. \"Search private schools grade 9\"") },
+                maxLines = 3,
+                shape = RoundedCornerShape(20.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = Color(0xFF0A73FF),
+                    unfocusedBorderColor = Color(0xFFDDDDDD),
+                    cursorColor = Color(0xFF0A73FF),
+                    focusedLeadingIconColor = Color.Unspecified,
+                    unfocusedLeadingIconColor = Color.Unspecified
                 )
+            )
 
-                IconButton(onClick = {
-                    if (inputText.isNotBlank()) {
-                        messages += ChatMessage(inputText.trim(), true)
-                        messages += ChatMessage(
-                            "Mock AI response for: \"${inputText.trim()}\"",
-                            false
-                        )
-                        inputText = ""
-                    }
-                }) {
-                    Icon(
-                        imageVector = Icons.Default.Send,
-                        contentDescription = "Send",
-                        tint = Color(0xFF0A73FF)
+            IconButton(onClick = {
+                if (inputText.isNotBlank()) {
+                    messages += ChatMessage(inputText.trim(), true)
+                    messages += ChatMessage(
+                        "Mock AI response for: \"${inputText.trim()}\"",
+                        false
                     )
+                    inputText = ""
                 }
+            }) {
+                Icon(
+                    imageVector = Icons.Default.Send,
+                    contentDescription = "Send",
+                    tint = Color(0xFF0A73FF)
+                )
             }
         }
     }

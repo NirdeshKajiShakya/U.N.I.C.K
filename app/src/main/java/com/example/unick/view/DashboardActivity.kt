@@ -17,10 +17,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.BrokenImage
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -35,10 +32,28 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
 import coil.compose.SubcomposeAsyncImage
 import com.example.unick.model.SchoolForm
 import com.example.unick.ui.theme.UNICKTheme
 import com.example.unick.viewmodel.SchoolViewModel
+
+// Sealed class for Bottom Navigation items
+sealed class BottomNavItem(
+    val title: String,
+    val icon: androidx.compose.ui.graphics.vector.ImageVector,
+    val route: String
+) {
+    object Home : BottomNavItem("Home", Icons.Default.Home, "home")
+    object Profile : BottomNavItem("Profile", Icons.Default.Person, "profile")
+    object Search : BottomNavItem("Search", Icons.Default.Search, "search")
+    object AIChat : BottomNavItem("AI Chat", Icons.Default.Chat, "aichat")
+    object Notification : BottomNavItem("Notification", Icons.Default.Notifications, "notification")
+}
 
 class DashboardActivity : ComponentActivity() {
     private val viewModel: SchoolViewModel by viewModels()
@@ -48,27 +63,88 @@ class DashboardActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             UNICKTheme {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = Color(0xFFF8F9FA)
-                ) {
-                    val schools by viewModel.schools.collectAsState()
-                    val isLoading by viewModel.isLoadingSchools.collectAsState()
-
-                    LaunchedEffect(Unit) {
-                        viewModel.fetchSchools()
-                    }
-
-                    DashboardScreen(
-                        schools = schools,
-                        isLoading = isLoading,
-                        onRefresh = { viewModel.fetchSchools() }
-                    )
-                }
+                MainScreen(viewModel = viewModel)
             }
         }
     }
 }
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun MainScreen(viewModel: SchoolViewModel) {
+    val navController = rememberNavController()
+
+    Scaffold(
+        bottomBar = {
+            BottomNavigationBar(navController = navController)
+        }
+    ) { innerPadding ->
+        Box(modifier = Modifier.padding(innerPadding)) {
+            NavigationHost(navController = navController, viewModel = viewModel)
+        }
+    }
+}
+
+@Composable
+fun BottomNavigationBar(navController: NavController) {
+    val navItems = listOf(
+        BottomNavItem.Home,
+        BottomNavItem.Search,
+        BottomNavItem.AIChat,
+        BottomNavItem.Notification,
+        BottomNavItem.Profile
+    )
+
+    NavigationBar(containerColor = Color.White) {
+        val navBackStackEntry by navController.currentBackStackEntryAsState()
+        val currentRoute = navBackStackEntry?.destination?.route
+
+        navItems.forEach { item ->
+            NavigationBarItem(
+                selected = currentRoute == item.route,
+                onClick = {
+                    navController.navigate(item.route) {
+                        // Pop up to the start destination of the graph to
+                        // avoid building up a large stack of destinations
+                        // on the back stack as users select items
+                        popUpTo(navController.graph.startDestinationId)
+                        launchSingleTop = true
+                    }
+                },
+                icon = { Icon(item.icon, contentDescription = item.title) },
+                label = { Text(item.title, maxLines = 1, fontSize = 11.sp) }
+            )
+        }
+    }
+}
+
+@Composable
+fun NavigationHost(navController: NavController, viewModel: SchoolViewModel) {
+    NavHost(navController = navController as androidx.navigation.NavHostController, startDestination = BottomNavItem.Home.route) {
+        composable(BottomNavItem.Home.route) {
+            val schools by viewModel.schools.collectAsState()
+            val isLoading by viewModel.isLoadingSchools.collectAsState()
+            DashboardScreen(
+                schools = schools,
+                isLoading = isLoading,
+                onRefresh = { viewModel.fetchSchools() }
+            )
+        }
+        composable(BottomNavItem.Search.route) {
+            SearchScreen()
+        }
+        composable(BottomNavItem.AIChat.route) {
+            AiChatScreen()
+        }
+        composable(BottomNavItem.Notification.route) {
+            NotificationScreen()
+        }
+        composable(BottomNavItem.Profile.route) {
+            UserProfileScreen()
+        }
+    }
+}
+
 
 @Composable
 fun DashboardScreen(
@@ -477,32 +553,38 @@ fun SchoolCard(school: SchoolForm) {
     }
 }
 
+// Placeholder screens
+@Composable
+fun SearchScreen() {
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Text(text = "This is Search Screen")
+    }
+}
+
+@Composable
+fun NotificationScreen() {
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Text(text = "This is Notification Screen")
+    }
+}
+
+
 @Preview(showBackground = true)
 @Composable
 fun DashboardPreview() {
     UNICKTheme {
-        DashboardScreen(
-            schools = listOf(
-                SchoolForm(
-                    uid = "1",
-                    schoolName = "St. Xavier's College",
-                    location = "Maitighar, Kathmandu",
-                    curriculum = "A-Levels, National",
-                    totalStudents = "1500",
-                    scholarshipAvailable = true,
-                    transportFacility = true,
-                    imageUrl = "https://images.unsplash.com/photo-1562774053-701939374585?w=400"
-                ),
-                SchoolForm(
-                    uid = "2",
-                    schoolName = "Budhanilkantha School",
-                    location = "Kathmandu",
-                    curriculum = "National Curriculum",
-                    totalStudents = "2000",
-                    scholarshipAvailable = false,
-                    transportFacility = true
-                )
+        val schools = listOf(
+            SchoolForm(
+                uid = "1",
+                schoolName = "St. Xavier's College",
+                location = "Maitighar, Kathmandu",
+                curriculum = "A-Levels, National",
+                totalStudents = "1500",
+                scholarshipAvailable = true,
+                transportFacility = true,
+                imageUrl = "https://images.unsplash.com/photo-1562774053-701939374585?w=400"
             )
         )
+        DashboardScreen(schools = schools, isLoading = false)
     }
 }
