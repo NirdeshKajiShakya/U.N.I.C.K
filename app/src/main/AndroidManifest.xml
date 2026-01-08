@@ -194,7 +194,7 @@
         <!-- Compare Schools -->
         <activity
             android:name=".view.CompareActivity"
-            android:exported="false"
+            android:exported="true"
             android:label="@string/title_activity_compare"
             android:theme="@style/Theme.UNICK" />
 
