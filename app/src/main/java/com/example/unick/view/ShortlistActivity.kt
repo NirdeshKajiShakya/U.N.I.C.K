@@ -28,7 +28,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.unick.view.ui.theme.UNICKTheme
+import com.example.unick.viewmodel.ShortlistViewModel
 
 // Data class for schools
 data class SchoolDataShortlist(
@@ -53,7 +55,15 @@ class ShortlistActivity : ComponentActivity() {
                     color = Color(0xFFF8F9FA)
                 ) {
                     ShortlistScreen(
-                        onBackPressed = { finish() }
+                        onBackPressed = { finish() },
+                        onSchoolClick = { schoolName ->
+                            // Navigate to school detail screen
+                            Toast.makeText(
+                                this,
+                                "Opening $schoolName",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
                     )
                 }
             }
@@ -63,25 +73,15 @@ class ShortlistActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ShortlistScreen(onBackPressed: () -> Unit = {}) {
+fun ShortlistScreen(
+    onBackPressed: () -> Unit = {},
+    onSchoolClick: (String) -> Unit = {},
+    viewModel: ShortlistViewModel = viewModel()
+) {
     val context = LocalContext.current
-
-    // Manage state of shortlisted schools
-    var shortlistedSchools by remember {
-        mutableStateOf(
-            listOf(
-                SchoolDataShortlist("1", "St. Xavier's College", "Maitighar • +2 Science/A-Levels", "0.8 km", "4.9", "98% match", "https://images.unsplash.com/photo-1562774053-701939374585?w=400", true),
-                SchoolDataShortlist("2", "Budhanilkantha School", "Kathmandu • National Curriculum", "5.4 km", "4.8", "95% match", "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=400", true),
-                SchoolDataShortlist("3", "Ullens School", "Khumaltar • IB Diploma Program", "3.2 km", "4.7", "92% match", "https://images.unsplash.com/photo-1498243691581-b145c3f54a5a?w=400", true),
-                SchoolDataShortlist("4", "Little Angels' School", "Hattiban • School to Bachelors", "4.5 km", "4.7", "90% rank", "https://images.unsplash.com/photo-1509062522246-3755977927d7?w=400", true),
-                SchoolDataShortlist("5", "Trinity International", "Dillibazar • +2 & A-Levels", "1.1 km", "4.6", "88% rank", "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=400", true),
-                SchoolDataShortlist("6", "Rato Bangala School", "Patan • A-Levels Center", "2.9 km", "4.8", "87% rank", "https://images.unsplash.com/photo-1546410531-bb4caa6b424d?w=400", true),
-                SchoolDataShortlist("7", "Gandaki Boarding", "Pokhara • National Curriculum", "200 km", "4.7", "Elite", "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=400", true),
-                SchoolDataShortlist("8", "Siddhartha Boarding", "Butwal • Science/Management", "260 km", "4.5", "Top Pick", "https://images.unsplash.com/photo-1571260899304-425eee4c7efc?w=400", true),
-                SchoolDataShortlist("9", "SOS Hermann Gmeiner", "Pokhara • Science Streams", "198 km", "4.6", "Scholarship", "https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=400", true)
-            )
-        )
-    }
+    val schools by viewModel.schools
+    val isLoading by viewModel.isLoading
+    val error by viewModel.error
 
     Scaffold(
         topBar = {
@@ -94,11 +94,13 @@ fun ShortlistScreen(onBackPressed: () -> Unit = {}) {
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFF0F172A)
                         )
-                        Text(
-                            text = "${shortlistedSchools.size} institutions found",
-                            fontSize = 14.sp,
-                            color = Color(0xFF64748B)
-                        )
+                        if (!isLoading && error == null) {
+                            Text(
+                                text = "${schools.size} institutions found",
+                                fontSize = 14.sp,
+                                color = Color(0xFF64748B)
+                            )
+                        }
                     }
                 },
                 navigationIcon = {
@@ -116,68 +118,131 @@ fun ShortlistScreen(onBackPressed: () -> Unit = {}) {
             )
         }
     ) { paddingValues ->
-        if (shortlistedSchools.isEmpty()) {
-            // Empty state
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
+        when {
+            isLoading -> {
+                // Loading state
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = "📚",
-                        fontSize = 48.sp
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = "No schools shortlisted yet",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF0F172A)
-                    )
-                    Text(
-                        text = "Start exploring and add your favorites",
-                        fontSize = 14.sp,
-                        color = Color(0xFF64748B)
-                    )
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        CircularProgressIndicator(
+                            color = Color(0xFF2563EB)
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = "Loading your shortlist...",
+                            fontSize = 14.sp,
+                            color = Color(0xFF64748B)
+                        )
+                    }
                 }
             }
-        } else {
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(1),
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color(0xFFF8F9FA))
-                    .padding(paddingValues)
-                    .padding(horizontal = 20.dp),
-                contentPadding = PaddingValues(vertical = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                items(shortlistedSchools, key = { it.id }) { school ->
-                    ShortlistSchoolCard(
-                        school = school,
-                        onCardClick = {
-                            Toast.makeText(
-                                context,
-                                "Opening ${school.name}",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                            // Navigate to school detail screen
-                        },
-                        onFavoriteToggle = {
-                            // Remove from shortlist
-                            shortlistedSchools = shortlistedSchools.filter { it.id != school.id }
-                            Toast.makeText(
-                                context,
-                                "${school.name} removed from shortlist",
-                                Toast.LENGTH_SHORT
-                            ).show()
+            error != null -> {
+                // Error state
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = "⚠️",
+                            fontSize = 48.sp
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = "Something went wrong",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF0F172A)
+                        )
+                        Text(
+                            text = error ?: "Unknown error",
+                            fontSize = 14.sp,
+                            color = Color(0xFF64748B)
+                        )
+                        Spacer(modifier = Modifier.height(24.dp))
+                        Button(
+                            onClick = { viewModel.refresh() },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF2563EB)
+                            )
+                        ) {
+                            Text("Retry")
                         }
-                    )
+                    }
+                }
+            }
+            schools.isEmpty() -> {
+                // Empty state
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = "📚",
+                            fontSize = 48.sp
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = "No schools shortlisted yet",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF0F172A)
+                        )
+                        Text(
+                            text = "Start exploring and add your favorites",
+                            fontSize = 14.sp,
+                            color = Color(0xFF64748B)
+                        )
+                    }
+                }
+            }
+            else -> {
+                // Success state with schools
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(1),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color(0xFFF8F9FA))
+                        .padding(paddingValues)
+                        .padding(horizontal = 20.dp),
+                    contentPadding = PaddingValues(vertical = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    items(schools, key = { it.id }) { school ->
+                        ShortlistSchoolCard(
+                            school = school,
+                            onCardClick = {
+                                onSchoolClick(school.name)
+                            },
+                            onFavoriteToggle = {
+                                // Remove from shortlist using ViewModel
+                                viewModel.removeFromShortlist(school.id)
+                                Toast.makeText(
+                                    context,
+                                    "${school.name} removed from shortlist",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        )
+                    }
                 }
             }
         }

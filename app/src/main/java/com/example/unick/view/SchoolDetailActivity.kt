@@ -50,10 +50,14 @@ class SchoolDetailActivity : ComponentActivity() {
                 vm.loadSchoolDetail(schoolId)
             }
 
+            // Get school name from profile or use loading text
+            val schoolName = vm.schoolProfile?.schoolName ?: "School Details"
+
             SchoolDetailScreen(
+                schoolName = schoolName,
+                onBack = { finish() },
                 vm = vm,
                 schoolId = schoolId,
-                onBack = { finish() },
                 onOpenGallery = {
                     startActivity(
                         Intent(this, SchoolGalleryActivity::class.java).putExtra("schoolId", schoolId)
@@ -72,11 +76,12 @@ class SchoolDetailActivity : ComponentActivity() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SchoolDetailScreen(
-    vm: SchoolDetailViewModel,
-    schoolId: String,
+    schoolName: String,
     onBack: () -> Unit,
-    onOpenGallery: () -> Unit,
-    onSchoolSetting: () -> Unit,
+    vm: SchoolDetailViewModel = SchoolDetailViewModel(),
+    schoolId: String = "",
+    onOpenGallery: () -> Unit = {},
+    onSchoolSetting: () -> Unit = {}
 ) {
     val context = LocalContext.current
     var selectedTab by remember { mutableStateOf("Overview") }
@@ -89,7 +94,7 @@ fun SchoolDetailScreen(
         modifier = Modifier.windowInsetsPadding(WindowInsets.systemBars),
         topBar = {
             TopAppBar(
-                title = { Text("School Profile", fontWeight = FontWeight.Bold) },
+                title = { Text(schoolName, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
