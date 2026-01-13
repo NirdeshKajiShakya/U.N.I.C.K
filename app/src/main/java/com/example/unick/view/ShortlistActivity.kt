@@ -230,7 +230,8 @@ fun ShortlistScreen(
                         ShortlistSchoolCard(
                             school = school,
                             onCardClick = {
-                                onSchoolClick(school.name)
+                                onSchoolClick(school.id)
+
                             },
                             onFavoriteToggle = {
                                 // Remove from shortlist using ViewModel

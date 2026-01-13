@@ -20,24 +20,24 @@ fun AppNavGraph() {
 
         composable(NavRoutes.SHORTLIST) {
             ShortlistScreen(
-                onSchoolClick = { schoolName ->
-                    navController.navigate("${NavRoutes.DETAIL}/$schoolName")
+                onSchoolClick = { schoolId ->
+                    navController.navigate("${NavRoutes.DETAIL}/$schoolId")
                 }
             )
         }
 
         composable(
-            route = "${NavRoutes.DETAIL}/{schoolName}",
+            route = "${NavRoutes.DETAIL}/{schoolId}",
             arguments = listOf(
-                navArgument("schoolName") { type = NavType.StringType }
+                navArgument("schoolId") { type = NavType.StringType }
             )
         ) { backStackEntry ->
 
-            val schoolName =
-                backStackEntry.arguments?.getString("schoolName") ?: ""
+            val schoolId =
+                backStackEntry.arguments?.getString("schoolId") ?: ""
 
             SchoolDetailScreen(
-                schoolName = schoolName,
+                schoolId = schoolId,
                 onBack = { navController.popBackStack() }
             )
         }

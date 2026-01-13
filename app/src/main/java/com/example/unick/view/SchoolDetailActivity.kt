@@ -54,10 +54,9 @@ class SchoolDetailActivity : ComponentActivity() {
             val schoolName = vm.schoolProfile?.schoolName ?: "School Details"
 
             SchoolDetailScreen(
-                schoolName = schoolName,
+                schoolId = schoolId,
                 onBack = { finish() },
                 vm = vm,
-                schoolId = schoolId,
                 onOpenGallery = {
                     startActivity(
                         Intent(this, SchoolGalleryActivity::class.java).putExtra("schoolId", schoolId)
@@ -76,10 +75,9 @@ class SchoolDetailActivity : ComponentActivity() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SchoolDetailScreen(
-    schoolName: String,
+    schoolId: String,
     onBack: () -> Unit,
     vm: SchoolDetailViewModel = SchoolDetailViewModel(),
-    schoolId: String = "",
     onOpenGallery: () -> Unit = {},
     onSchoolSetting: () -> Unit = {}
 ) {
@@ -94,7 +92,7 @@ fun SchoolDetailScreen(
         modifier = Modifier.windowInsetsPadding(WindowInsets.systemBars),
         topBar = {
             TopAppBar(
-                title = { Text(schoolName, fontWeight = FontWeight.Bold) },
+                title = { Text(schoolId, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
