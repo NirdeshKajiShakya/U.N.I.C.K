@@ -46,7 +46,7 @@ class AdminLoginActivity : ComponentActivity() {
             UNICKTheme {
                 AdminLoginScreen(
                     onLoginSuccess = {
-                        startActivity(Intent(this, AdminDashboard::class.java))
+                        startActivity(Intent(this, AdminDashboardActivity::class.java))
                         finish()
                     },
                     onBackToUserLogin = {

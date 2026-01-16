@@ -45,17 +45,8 @@ import com.example.unick.ui.theme.UNICKTheme
 import com.example.unick.viewmodel.SchoolViewModel
 import com.example.unick.viewmodel.UserType
 
-sealed class BottomNavItem(
-    val title: String,
-    val icon: androidx.compose.ui.graphics.vector.ImageVector,
-    val route: String
-) {
-    object Home : BottomNavItem("Home", Icons.Default.Home, "home")
-    object Profile : BottomNavItem("Profile", Icons.Default.Person, "profile")
-    object Search : BottomNavItem("Search", Icons.Default.Search, "search")
-    object AIChat : BottomNavItem("AI Chat", Icons.Default.Chat, "aichat")
-    object Notification : BottomNavItem("Notification", Icons.Default.Notifications, "notification")
-}
+// BottomNavItem moved to UnifiedNavBar.kt
+
 
 class DashboardActivity : ComponentActivity() {
     private val viewModel: SchoolViewModel by viewModels()
@@ -88,42 +79,34 @@ fun MainScreen(viewModel: SchoolViewModel) {
 }
 
 @Composable
-fun BottomNavigationBar(navController: NavController, viewModel: SchoolViewModel) {
-    val navItems = listOf(
-        BottomNavItem.Home,
-        BottomNavItem.Search,
-        BottomNavItem.AIChat,
-        BottomNavItem.Notification,
-        BottomNavItem.Profile
-    )
-    val context = LocalContext.current
+fun BottomNavigationBar(navController: androidx.navigation.NavController, viewModel: SchoolViewModel) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     val userType by viewModel.userType.collectAsState()
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
 
-    NavigationBar(containerColor = Color.White) {
-        val navBackStackEntry by navController.currentBackStackEntryAsState()
-        val currentRoute = navBackStackEntry?.destination?.route
-
-        navItems.forEach { item ->
-            NavigationBarItem(
-                selected = currentRoute == item.route,
-                onClick = {
-                    if (item.route == "profile") {
-                        handleProfileClick(userType, context, navController)
-                    } else {
-                        navController.navigate(item.route) {
-                            popUpTo(navController.graph.startDestinationId)
-                            launchSingleTop = true
-                        }
-                    }
-                },
-                icon = { Icon(item.icon, contentDescription = item.title) },
-                label = { Text(item.title, maxLines = 1, fontSize = 11.sp) }
-            )
-        }
-    }
+    UnifiedBottomNavigationBar(
+        currentRoute = currentRoute,
+        onNavigate = { route ->
+            navController.navigate(route) {
+                popUpTo(navController.graph.startDestinationId)
+                launchSingleTop = true
+            }
+        },
+        onProfileClick = {
+            handleProfileClick(userType, context, navController)
+        },
+        navItems = listOf(
+            BottomNavItem.Home,
+            BottomNavItem.Search,
+            BottomNavItem.AIChat,
+            BottomNavItem.Notification,
+            BottomNavItem.Profile
+        )
+    )
 }
 
-private fun handleProfileClick(userType: UserType, context: Context, navController: NavController) {
+private fun handleProfileClick(userType: UserType, context: Context, navController: androidx.navigation.NavController) {
     when (userType) {
         is UserType.Normal -> {
             navController.navigate(BottomNavItem.Profile.route) {
@@ -140,6 +123,7 @@ private fun handleProfileClick(userType: UserType, context: Context, navControll
         }
     }
 }
+
 
 @Composable
 fun NavigationHost(navController: NavHostController, viewModel: SchoolViewModel) {

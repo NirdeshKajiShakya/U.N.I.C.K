@@ -32,4 +32,5 @@
     <string name="title_activity_school_settings">SchoolSettingsActivity</string>
     <string name="title_activity_school_gallery">SchoolGalleryActivity</string>
     <string name="title_activity_admin_dashboard">AdminDashboard</string>
+    <string name="title_activity_admin_profile">AdminProfileActivity</string>
 </resources>
