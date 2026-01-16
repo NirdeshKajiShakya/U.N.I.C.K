@@ -41,9 +41,12 @@ class ApplicationRepoImpl(
 
             Log.d(TAG, "Generated Application ID: $applicationId")
 
+            // Include the applicationId in the saved data
+            val applicationWithId = application.copy(applicationId = applicationId)
+
             // Add application to Realtime Database with timeout to prevent infinite loading
             withTimeout(TIMEOUT_MS) {
-                newApplicationRef.setValue(application).await()
+                newApplicationRef.setValue(applicationWithId).await()
             }
 
             Log.d(TAG, "✅ Application submitted successfully! Application ID: $applicationId")

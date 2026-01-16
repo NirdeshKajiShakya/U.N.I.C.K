@@ -63,6 +63,18 @@ class SchoolDetailActivity : ComponentActivity() {
                     startActivity(
                         Intent(this, SchoolSettingsActivity::class.java).putExtra("schoolId", schoolId)
                     )
+                },
+                onApplyNow = {
+                    // Navigate to student application form with schoolId
+                    startActivity(
+                        Intent(this, StudentApplicationActivity::class.java).putExtra("schoolId", schoolId)
+                    )
+                },
+                onViewApplications = {
+                    // Navigate to view applications (for school admin)
+                    startActivity(
+                        Intent(this, ViewApplicationActivity::class.java).putExtra("schoolId", schoolId)
+                    )
                 }
             )
         }
@@ -77,6 +89,8 @@ fun SchoolDetailScreen(
     onBack: () -> Unit,
     onOpenGallery: () -> Unit,
     onSchoolSetting: () -> Unit,
+    onApplyNow: () -> Unit = {},
+    onViewApplications: () -> Unit = {},
 ) {
     val context = LocalContext.current
     var selectedTab by remember { mutableStateOf("Overview") }
@@ -84,6 +98,10 @@ fun SchoolDetailScreen(
     val profile = vm.schoolProfile
     val gallery = vm.gallery
     val reviews = vm.reviews
+
+    // Check if current user is the school owner/admin
+    val currentUserId = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid ?: ""
+    val isSchoolOwner = currentUserId == schoolId
 
     Scaffold(
         modifier = Modifier.windowInsetsPadding(WindowInsets.systemBars),
@@ -148,6 +166,35 @@ fun SchoolDetailScreen(
                         text = profile?.location ?: "",
                         color = Color.DarkGray
                     )
+
+                    Spacer(Modifier.height(12.dp))
+
+                    // Action Buttons - Show based on user role
+                    if (isSchoolOwner) {
+                        // School Owner: Show "View Applications" button
+                        Button(
+                            onClick = onViewApplications,
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF3B82F6)
+                            ),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text("View Applications", fontWeight = FontWeight.SemiBold)
+                        }
+                    } else {
+                        // Student/Visitor: Show "Apply Now" button
+                        Button(
+                            onClick = onApplyNow,
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF10B981)
+                            ),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text("Apply Now", fontWeight = FontWeight.SemiBold)
+                        }
+                    }
                 }
             }
 
