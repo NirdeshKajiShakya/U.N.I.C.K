@@ -92,7 +92,7 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.6")
 
     // Cloudinary
-    implementation("com.cloudinary:cloudinary-android:2.1.0")
+    implementation("com.cloudinary:cloudinary-android:3.1.2")
 
     // Retrofit + OkHttp
     implementation("com.squareup.retrofit2:retrofit:2.11.0")
