@@ -12,6 +12,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.activity.viewModels
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -21,9 +22,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -31,6 +34,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.windowInsetsPadding
+import coil.compose.AsyncImage
+import com.example.unick.model.SchoolForm
+import com.example.unick.viewmodel.SchoolViewModel
 
 // -------------------- COLORS --------------------
 private val PrimaryBlue = Color(0xFF4A90E2)
@@ -45,51 +51,35 @@ private val ChipBackground = Color(0xFFEEF2FF)
 private val ChipText = Color(0xFF4338CA)
 
 // -------------------- DATA MODEL --------------------
-data class SchoolSubmission(
-    val id: String,
-    val schoolName: String,
-    val location: String,
-    val submittedDate: String,
-    val status: String = "Pending"
-)
+// Replaced local SchoolSubmission with shared SchoolForm model
 
 // -------------------- ACTIVITY ------------------------
 
 class AdminDashboardActivity : ComponentActivity() {
+    private val viewModel: SchoolViewModel by viewModels()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        // Sample data - replace with your backend data
-        val schoolSubmissions = listOf(
-            SchoolSubmission(
-                id = "1",
-                schoolName = "Sunrise International School",
-                location = "Kathmandu, Nepal",
-                submittedDate = "2 days ago"
-            ),
-            SchoolSubmission(
-                id = "2",
-                schoolName = "Mountain View Academy",
-                location = "Pokhara, Nepal",
-                submittedDate = "1 day ago"
-            ),
-            SchoolSubmission(
-                id = "3",
-                schoolName = "Valley High School",
-                location = "Lalitpur, Nepal",
-                submittedDate = "4 days ago"
-            )
-        )
-
         setContent {
-            AdminDashboardScreen(schoolSubmissions = schoolSubmissions)
+            // Observe the list of schools from the ViewModel
+            val schools by viewModel.schools.collectAsState()
+            
+            // Trigger fetch if empty (optional, init block in VM handles it usually)
+            LaunchedEffect(Unit) {
+                if (schools.isEmpty()) {
+                    viewModel.fetchSchools()
+                }
+            }
+
+            AdminDashboardScreen(schoolSubmissions = schools)
         }
     }
 }
 
 @Composable
-fun AdminDashboardScreen(schoolSubmissions: List<SchoolSubmission>) {
+fun AdminDashboardScreen(schoolSubmissions: List<SchoolForm>) {
     val context = LocalContext.current
     val navController = androidx.navigation.compose.rememberNavController()
 
@@ -148,7 +138,9 @@ fun AdminDashboardScreen(schoolSubmissions: List<SchoolSubmission>) {
                     SchoolSubmissionCard(
                         submission = submission,
                         onVerifyClick = {
-                            // Handle verify action
+                            val intent = Intent(context, AdminCardsForm::class.java)
+                            intent.putExtra("school_data", submission)
+                            context.startActivity(intent)
                         }
                     )
                     Spacer(modifier = Modifier.height(12.dp))
@@ -229,7 +221,7 @@ fun PendingVerificationsHeader(count: Int) {
 // -------------------- SCHOOL SUBMISSION CARD --------------------
 @Composable
 fun SchoolSubmissionCard(
-    submission: SchoolSubmission,
+    submission: SchoolForm,
     onVerifyClick: () -> Unit
 ) {
     Card(
@@ -245,6 +237,26 @@ fun SchoolSubmissionCard(
                 .fillMaxWidth()
                 .padding(20.dp)
         ) {
+            // School Image (if available)
+            if (!submission.imageUrl.isNullOrEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(150.dp)
+                        .padding(bottom = 16.dp)
+                ) {
+                    AsyncImage(
+                        model = submission.imageUrl,
+                        contentDescription = "School Image",
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color.LightGray, RoundedCornerShape(12.dp))
+                            .clip(RoundedCornerShape(12.dp)),
+                        contentScale = ContentScale.Crop
+                    )
+                }
+            }
+
             // School Name
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -265,7 +277,7 @@ fun SchoolSubmissionCard(
                         .padding(horizontal = 12.dp, vertical = 6.dp)
                 ) {
                     Text(
-                        submission.status,
+                        "Pending", // Status placeholder
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
                         color = AccentOrange
@@ -288,7 +300,7 @@ fun SchoolSubmissionCard(
             SchoolDetailRow(
                 icon = Icons.Outlined.Schedule,
                 label = "Submitted",
-                value = submission.submittedDate
+                value = "Recently" // Placeholder as date isn't in SchoolForm yet
             )
 
             Spacer(modifier = Modifier.height(20.dp))
@@ -375,23 +387,17 @@ fun SchoolDetailRow(
 @Composable
 fun PreviewAdminDashboardScreen() {
     val sampleData = listOf(
-        SchoolSubmission(
-            id = "1",
+        SchoolForm(
             schoolName = "Sunrise International School",
-            location = "Kathmandu, Nepal",
-            submittedDate = "2 days ago"
+            location = "Kathmandu, Nepal"
         ),
-        SchoolSubmission(
-            id = "2",
+        SchoolForm(
             schoolName = "Mountain View Academy",
-            location = "Pokhara, Nepal",
-            submittedDate = "1 day ago"
+            location = "Pokhara, Nepal"
         ),
-        SchoolSubmission(
-            id = "3",
+        SchoolForm(
             schoolName = "Valley High School",
-            location = "Lalitpur, Nepal",
-            submittedDate = "4 days ago"
+            location = "Lalitpur, Nepal"
         )
     )
     AdminDashboardScreen(schoolSubmissions = sampleData)

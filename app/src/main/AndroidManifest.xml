@@ -21,6 +21,11 @@
         android:usesCleartextTraffic="true"
         tools:replace="android:fullBackupContent">
         <activity
+            android:name=".view.AdminCardsForm"
+            android:exported="false"
+            android:label="@string/title_activity_admin_cards_form"
+            android:theme="@style/Theme.UNICK" />
+        <activity
             android:name=".view.AdminProfileActivity"
             android:exported="true"
             android:label="@string/title_activity_admin_profile"
