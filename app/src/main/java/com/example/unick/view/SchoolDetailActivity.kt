@@ -2,15 +2,10 @@ package com.example.unick.view
 
 import android.content.Intent
 import android.net.Uri
-import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -21,7 +16,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -29,54 +23,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import coil3.compose.AsyncImage
 import com.example.unick.viewmodel.SchoolDetailViewModel
-
-class SchoolDetailActivity : ComponentActivity() {
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-
-        // get schoolId from intent
-        var schoolId = intent.getStringExtra("uid") ?: ""
-        if (schoolId == "") {
-            schoolId = "XcfjtBIHVfdpHeh8QSMy7j3VGiU2"
-        }
-
-        setContent {
-            val vm = remember { SchoolDetailViewModel() }
-
-            LaunchedEffect(schoolId) {
-                vm.loadSchoolDetail(schoolId)
-            }
-
-            // Get school name from profile or use loading text
-            val schoolName = vm.schoolProfile?.schoolName ?: "School Details"
-
-            SchoolDetailScreen(
-                schoolId = schoolId,
-                onBack = { finish() },
-                vm = vm,
-                onOpenGallery = {
-                    startActivity(
-                        Intent(this, SchoolGalleryActivity::class.java).putExtra("schoolId", schoolId)
-                    )
-                },
-                onSchoolSetting = {
-                    startActivity(
-                        Intent(this, SchoolSettingsActivity::class.java).putExtra("schoolId", schoolId)
-                    )
-                }
-            )
-        }
-    }
-}
+import com.example.unick.model.SchoolReviewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SchoolDetailScreen(
     schoolId: String,
-    onBack: () -> Unit,
+    onBack: () -> Unit = {},
     vm: SchoolDetailViewModel = SchoolDetailViewModel(),
     onOpenGallery: () -> Unit = {},
     onSchoolSetting: () -> Unit = {}
@@ -288,7 +243,6 @@ fun SchoolDetailScreen(
                             value = "Open in Google Maps",
                             leadingIcon = { Icon(Icons.Default.LocationOn, null) },
                             onClick = {
-                                // store full google maps url later (for now build query)
                                 val q = profile?.location ?: profile?.schoolName ?: "School"
                                 val mapUri = Uri.parse("geo:0,0?q=${Uri.encode(q)}")
                                 val i = Intent(Intent.ACTION_VIEW, mapUri).apply {
@@ -315,16 +269,13 @@ fun SchoolDetailScreen(
                         ReviewsHeader(
                             avg = vm.avgRating,
                             total = vm.totalReviews,
-                            onWriteReview = {
-                                // simple demo dialog below
-                            }
+                            onWriteReview = {}
                         )
                     }
 
                     item {
                         ReviewComposer(
                             onSubmit = { rating, comment ->
-                                // reviewerUid should come from FirebaseAuth later
                                 val demoUserUid = "demo_reviewer_uid"
                                 vm.submitReview(
                                     reviewerUid = demoUserUid,
@@ -554,7 +505,7 @@ private fun ReviewComposer(onSubmit: (rating: Int, comment: String) -> Unit) {
 }
 
 @Composable
-private fun ReviewCard(review: com.example.unick.model.SchoolReviewModel) {
+private fun ReviewCard(review: SchoolReviewModel) {
     var expanded by remember { mutableStateOf(false) }
 
     Card(

@@ -15,7 +15,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -30,19 +29,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.unick.view.ui.theme.UNICKTheme
+import com.example.unick.model.School
 import com.example.unick.viewmodel.ShortlistViewModel
-
-// Data class for schools
-data class SchoolDataShortlist(
-    val id: String,
-    val name: String,
-    val type: String,
-    val distance: String,
-    val rating: String,
-    val match: String,
-    val imageUrl: String,
-    var isFavorited: Boolean = true // Track favorite status
-)
 
 class ShortlistActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -56,11 +44,10 @@ class ShortlistActivity : ComponentActivity() {
                 ) {
                     ShortlistScreen(
                         onBackPressed = { finish() },
-                        onSchoolClick = { schoolName ->
-                            // Navigate to school detail screen
+                        onSchoolClick = { schoolId ->
                             Toast.makeText(
-                                this,
-                                "Opening $schoolName",
+                                this@ShortlistActivity,
+                                "Opening $schoolId",
                                 Toast.LENGTH_SHORT
                             ).show()
                         }
@@ -79,9 +66,9 @@ fun ShortlistScreen(
     viewModel: ShortlistViewModel = viewModel()
 ) {
     val context = LocalContext.current
-    val schools by viewModel.schools
-    val isLoading by viewModel.isLoading
-    val error by viewModel.error
+    val schools by viewModel.schools.collectAsState(initial = emptyList())
+    val isLoading by viewModel.isLoading.collectAsState(initial = false)
+    val error by viewModel.error.collectAsState(initial = null)
 
     Scaffold(
         topBar = {
@@ -120,7 +107,6 @@ fun ShortlistScreen(
     ) { paddingValues ->
         when {
             isLoading -> {
-                // Loading state
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -144,7 +130,6 @@ fun ShortlistScreen(
                 }
             }
             error != null -> {
-                // Error state
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -184,7 +169,6 @@ fun ShortlistScreen(
                 }
             }
             schools.isEmpty() -> {
-                // Empty state
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -215,7 +199,6 @@ fun ShortlistScreen(
                 }
             }
             else -> {
-                // Success state with schools
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(1),
                     modifier = Modifier
@@ -231,10 +214,8 @@ fun ShortlistScreen(
                             school = school,
                             onCardClick = {
                                 onSchoolClick(school.id)
-
                             },
                             onFavoriteToggle = {
-                                // Remove from shortlist using ViewModel
                                 viewModel.removeFromShortlist(school.id)
                                 Toast.makeText(
                                     context,
@@ -252,7 +233,7 @@ fun ShortlistScreen(
 
 @Composable
 fun ShortlistSchoolCard(
-    school: SchoolDataShortlist,
+    school: School,
     onCardClick: () -> Unit = {},
     onFavoriteToggle: () -> Unit = {}
 ) {
@@ -302,9 +283,9 @@ fun ShortlistSchoolCard(
                             .background(Color.White, RoundedCornerShape(8.dp))
                     ) {
                         Icon(
-                            imageVector = if (school.isFavorited) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
-                            contentDescription = "Favorite",
-                            tint = if (school.isFavorited) Color(0xFFEF4444) else Color(0xFF64748B),
+                            imageVector = Icons.Filled.Favorite,
+                            contentDescription = "Remove from favorites",
+                            tint = Color(0xFFEF4444),
                             modifier = Modifier.size(20.dp)
                         )
                     }

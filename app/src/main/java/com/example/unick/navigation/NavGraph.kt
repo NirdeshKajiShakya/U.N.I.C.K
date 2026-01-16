@@ -9,17 +9,22 @@ import androidx.navigation.navArgument
 import com.example.unick.view.SchoolDetailScreen
 import com.example.unick.view.ShortlistScreen
 
+object NavRoutes {
+    const val SHORTLIST = "shortlist"
+    const val DETAIL = "school_detail"
+}
+
 @Composable
-fun AppNavGraph() {
+fun NavGraph() {
     val navController = rememberNavController()
 
     NavHost(
         navController = navController,
         startDestination = NavRoutes.SHORTLIST
     ) {
-
         composable(NavRoutes.SHORTLIST) {
             ShortlistScreen(
+                onBackPressed = { navController.popBackStack() },
                 onSchoolClick = { schoolId ->
                     navController.navigate("${NavRoutes.DETAIL}/$schoolId")
                 }
@@ -32,9 +37,7 @@ fun AppNavGraph() {
                 navArgument("schoolId") { type = NavType.StringType }
             )
         ) { backStackEntry ->
-
-            val schoolId =
-                backStackEntry.arguments?.getString("schoolId") ?: ""
+            val schoolId = backStackEntry.arguments?.getString("schoolId") ?: ""
 
             SchoolDetailScreen(
                 schoolId = schoolId,

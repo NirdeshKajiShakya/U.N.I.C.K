@@ -41,7 +41,6 @@ android {
         jvmTarget = "17"
     }
 
-    // Ensure consistent Java version across all environments
     java {
         toolchain {
             languageVersion.set(JavaLanguageVersion.of(17))
@@ -55,6 +54,7 @@ android {
         unitTests.isIncludeAndroidResources = false
     }
 }
+
 dependencies {
 
     // AndroidX Core
@@ -70,21 +70,21 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
 
-    // Images
-    implementation("io.coil-kt:coil-compose:2.4.0")
+    // Images - Use latest stable Coil version
+    implementation("io.coil-kt.coil3:coil-compose:3.3.0")
+    implementation("io.coil-kt.coil3:coil-network-okhttp:3.3.0")
     implementation("com.squareup.picasso:picasso:2.8")
 
     // Material Icons + Navigation
     implementation("androidx.compose.material:material-icons-extended:1.5.0")
     implementation("androidx.navigation:navigation-compose:2.7.0")
 
-    // Firebase (ONE BOM ONLY — no versions on individual firebase deps)
+    // Firebase (ONE BOM ONLY)
     implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-auth-ktx")
     implementation("com.google.firebase:firebase-database-ktx")
     implementation("com.google.firebase:firebase-firestore-ktx")
-
 
     // Coroutines support for Firebase Tasks (await())
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
@@ -104,7 +104,9 @@ dependencies {
     // For Multipart (images)
     implementation("com.squareup.retrofit2:converter-scalars:2.11.0")
 
-    // AI/ML (kept as you had; if build breaks, comment them temporarily)
+    implementation("io.coil-kt:coil-compose:2.4.0")
+
+    // AI/ML
     implementation(libs.generativeai)
     implementation(libs.firebase.ai)
 
