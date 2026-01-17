@@ -5,7 +5,7 @@ import kotlinx.parcelize.Parcelize
 
 @Parcelize
 data class SchoolForm(
-    val uid: String = "",
+    var uid: String = "",
     val imageUrl: String? = null,
     val schoolName: String = "",
     val location: String = "",
