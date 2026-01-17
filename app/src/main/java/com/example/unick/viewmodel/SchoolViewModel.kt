@@ -174,4 +174,14 @@ class SchoolViewModel : ViewModel() {
             description = description
         )
     }
+    fun verifySchool(uid: String, onResult: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            repository.updateSchoolVerificationStatus(uid, true) { success ->
+                if (success) {
+                    fetchSchools() // Refresh list to reflect changes if usage changes
+                }
+                onResult(success)
+            }
+        }
+    }
 }

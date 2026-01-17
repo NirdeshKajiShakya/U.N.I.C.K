@@ -104,4 +104,14 @@ class SchoolRepository {
             }
         })
     }
+    fun updateSchoolVerificationStatus(uid: String, isVerified: Boolean, onComplete: (Boolean) -> Unit) {
+        database.child(uid).child("verified").setValue(isVerified)
+            .addOnCompleteListener { task ->
+                onComplete(task.isSuccessful)
+            }
+            .addOnFailureListener { e ->
+                Log.e("SchoolRepository", "Error updating verification status: ${e.message}")
+                onComplete(false)
+            }
+    }
 }

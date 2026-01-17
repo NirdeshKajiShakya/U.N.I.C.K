@@ -28,12 +28,16 @@ import coil.compose.AsyncImage
 import com.example.unick.model.SchoolForm
 import com.example.unick.view.ui.theme.UNICKTheme
 
+import androidx.activity.viewModels
+
 class AdminCardsForm : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
         val schoolForm = intent.getParcelableExtra<SchoolForm>("school_data")
+
+        val viewModel: com.example.unick.viewmodel.SchoolViewModel by viewModels()
 
         setContent {
             UNICKTheme {
@@ -42,9 +46,14 @@ class AdminCardsForm : ComponentActivity() {
                         school = schoolForm,
                         onBack = { finish() },
                         onConfirmVerify = {
-                            // Logic to confirm verification (Update status in Firebase)
-                            // For now, just a Toast
-                            android.widget.Toast.makeText(this, "School Verified!", android.widget.Toast.LENGTH_SHORT).show()
+                            viewModel.verifySchool(schoolForm.uid) { success ->
+                                if (success) {
+                                    android.widget.Toast.makeText(this, "School Verified!", android.widget.Toast.LENGTH_SHORT).show()
+                                    finish() // Close activity on success
+                                } else {
+                                    android.widget.Toast.makeText(this, "Verification Failed", android.widget.Toast.LENGTH_SHORT).show()
+                                }
+                            }
                         }
                     )
                 } else {

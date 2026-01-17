@@ -273,14 +273,17 @@ fun SchoolSubmissionCard(
                 }
                 Box(
                     modifier = Modifier
-                        .background(AccentOrange.copy(alpha = 0.15f), RoundedCornerShape(12.dp))
+                        .background(
+                            if (submission.verified) AccentGreen.copy(alpha = 0.15f) else AccentOrange.copy(alpha = 0.15f),
+                            RoundedCornerShape(12.dp)
+                        )
                         .padding(horizontal = 12.dp, vertical = 6.dp)
                 ) {
                     Text(
-                        "Pending", // Status placeholder
+                        if (submission.verified) "Verified" else "Pending",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
-                        color = AccentOrange
+                        color = if (submission.verified) AccentGreen else AccentOrange
                     )
                 }
             }

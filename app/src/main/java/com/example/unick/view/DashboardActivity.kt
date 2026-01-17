@@ -130,9 +130,10 @@ fun NavigationHost(navController: NavHostController, viewModel: SchoolViewModel)
     NavHost(navController = navController, startDestination = BottomNavItem.Home.route) {
         composable(BottomNavItem.Home.route) {
             val schools by viewModel.schools.collectAsState()
+            val verifiedSchools = schools.filter { it.verified }
             val isLoading by viewModel.isLoadingSchools.collectAsState()
             DashboardScreen(
-                schools = schools,
+                schools = verifiedSchools,
                 isLoading = isLoading,
                 onRefresh = { viewModel.fetchSchools() }
             )
