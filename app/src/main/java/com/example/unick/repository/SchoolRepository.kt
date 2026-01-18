@@ -92,7 +92,11 @@ class SchoolRepository {
                 val schoolsList = mutableListOf<SchoolForm>()
                 for (childSnapshot in snapshot.children) {
                     val school = childSnapshot.getValue(SchoolForm::class.java)
-                    school?.let { schoolsList.add(it) }
+                    // CRITICAL FIX: Assign the Firebase Key (UID) to the object
+                    school?.let { 
+                        it.uid = childSnapshot.key ?: ""
+                        schoolsList.add(it) 
+                    }
                 }
                 onComplete(schoolsList)
                 Log.d("SchoolRepository", "Fetched ${schoolsList.size} schools")
@@ -103,5 +107,15 @@ class SchoolRepository {
                 onComplete(emptyList())
             }
         })
+    }
+    fun updateSchoolVerificationStatus(uid: String, isVerified: Boolean, onComplete: (Boolean) -> Unit) {
+        database.child(uid).child("verified").setValue(isVerified)
+            .addOnCompleteListener { task ->
+                onComplete(task.isSuccessful)
+            }
+            .addOnFailureListener { e ->
+                Log.e("SchoolRepository", "Error updating verification status: ${e.message}")
+                onComplete(false)
+            }
     }
 }

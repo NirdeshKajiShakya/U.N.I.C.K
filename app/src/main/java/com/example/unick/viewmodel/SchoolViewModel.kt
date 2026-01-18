@@ -102,6 +102,28 @@ class SchoolViewModel : ViewModel() {
     }
 
     fun saveSchoolData(context: Context) {
+        // Validation
+        if (imageUri == null) {
+            android.widget.Toast.makeText(context, "Please upload a school image", android.widget.Toast.LENGTH_SHORT).show()
+            return
+        }
+        if (schoolName.isBlank()) {
+            android.widget.Toast.makeText(context, "School Name is required", android.widget.Toast.LENGTH_SHORT).show()
+            return
+        }
+        if (location.isBlank()) {
+            android.widget.Toast.makeText(context, "Location is required", android.widget.Toast.LENGTH_SHORT).show()
+            return
+        }
+        if (contactNumber.isBlank()) {
+            android.widget.Toast.makeText(context, "Contact Number is required", android.widget.Toast.LENGTH_SHORT).show()
+            return
+        }
+        if (curriculum.isBlank()) {
+            android.widget.Toast.makeText(context, "Curriculum is required", android.widget.Toast.LENGTH_SHORT).show()
+            return
+        }
+
         viewModelScope.launch {
             _isLoading.value = true
             val uid = FirebaseAuth.getInstance().currentUser?.uid
@@ -151,5 +173,15 @@ class SchoolViewModel : ViewModel() {
             extracurricular = extracurricular,
             description = description
         )
+    }
+    fun verifySchool(uid: String, onResult: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            repository.updateSchoolVerificationStatus(uid, true) { success ->
+                if (success) {
+                    fetchSchools() // Refresh list to reflect changes if usage changes
+                }
+                onResult(success)
+            }
+        }
     }
 }

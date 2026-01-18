@@ -2,7 +2,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     package="com.example.unick">
-
     <!-- Permissions -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -21,6 +20,13 @@
         android:theme="@style/Theme.UNICK"
         android:usesCleartextTraffic="true"
         tools:replace="android:fullBackupContent">
+        <activity
+            android:name=".view.SchoolDashboard"
+            android:exported="true"
+            android:label="@string/title_activity_school_dashbaord"
+            android:theme="@style/Theme.UNICK">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
 
         <!--
              TODO: Before you run your application, you need a Google Maps API key.
@@ -54,6 +60,30 @@
             android:label="@string/title_activity_view_application"
             android:theme="@style/Theme.UNICK" />
         <!-- ============================================ -->
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".view.AdminCardsForm"
+            android:exported="false"
+            android:label="@string/title_activity_admin_cards_form"
+            android:theme="@style/Theme.UNICK" />
+        <activity
+            android:name=".view.AdminProfileActivity"
+            android:exported="true"
+            android:label="@string/title_activity_admin_profile"
+            android:theme="@style/Theme.UNICK">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".view.AdminDashboardActivity"
+            android:exported="false"
+            android:label="@string/title_activity_admin_dashboard"
+            android:theme="@style/Theme.UNICK" /> <!-- ============================================ -->
         <!-- MAIN LAUNCHER - Welcome/Landing Page -->
         <!-- ============================================ -->
         <activity

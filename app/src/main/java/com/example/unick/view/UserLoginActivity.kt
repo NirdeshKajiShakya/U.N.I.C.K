@@ -45,6 +45,9 @@ class UserLoginActivity : ComponentActivity() {
                     onNavigateToForgotPassword = {
                         // Navigate to forgot password
                         startActivity(Intent(this, SendCodeToEmailActivity::class.java))
+                    },
+                    onNavigateToAdminLogin = {
+                        startActivity(Intent(this, AdminLoginActivity::class.java))
                     }
                 )
             }
@@ -57,7 +60,8 @@ fun UserLoginScreen(
     viewModel: UserLoginViewModel = viewModel(),
     onLoginSuccess: () -> Unit = {},
     onNavigateToRegister: () -> Unit = {},
-    onNavigateToForgotPassword: () -> Unit = {}
+    onNavigateToForgotPassword: () -> Unit = {},
+    onNavigateToAdminLogin: () -> Unit = {}
 ) {
     val email by viewModel.email.collectAsState()
     val password by viewModel.password.collectAsState()
@@ -188,7 +192,30 @@ fun UserLoginScreen(
                     onClick = onNavigateToRegister
                 )
             }
+
+            item {
+                AdminLoginLink(onClick = onNavigateToAdminLogin)
+            }
         }
+    }
+}
+
+@Composable
+fun AdminLoginLink(onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .padding(vertical = 24.dp)
+            .clickable { onClick() },
+        horizontalArrangement = Arrangement.Center
+    ) {
+        Text(
+            text = "Are you an admin? ",
+        )
+        Text(
+            text = "Login here",
+            color = Color(0xFF2563EB),
+            fontWeight = FontWeight.Bold
+        )
     }
 }
 

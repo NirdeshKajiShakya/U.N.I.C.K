@@ -1,5 +1,6 @@
 package com.example.unick.view
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -21,10 +22,9 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -33,7 +33,9 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.unick.ui.theme.UNICKTheme
+import com.example.unick.viewmodel.AdminLoginViewModel
 
 
 class AdminLoginActivity : ComponentActivity() {
@@ -42,17 +44,42 @@ class AdminLoginActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             UNICKTheme {
-                AdminLoginScreen()
+                AdminLoginScreen(
+                    onLoginSuccess = {
+                        startActivity(Intent(this, AdminDashboardActivity::class.java))
+                        finish()
+                    },
+                    onBackToUserLogin = {
+                        startActivity(Intent(this, UserLoginActivity::class.java))
+                        finish()
+                    }
+                )
             }
         }
     }
 }
 
 @Composable
-fun AdminLoginScreen(){
-    Scaffold(
+fun AdminLoginScreen(
+    viewModel: AdminLoginViewModel = viewModel(),
+    onLoginSuccess: () -> Unit = {},
+    onBackToUserLogin: () -> Unit = {}
+) {
+    val email by viewModel.email.collectAsState()
+    val password by viewModel.password.collectAsState()
+    val rememberMe by viewModel.rememberMe.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    val errorMessage by viewModel.errorMessage.collectAsState()
+    val loginSuccess by viewModel.loginSuccess.collectAsState()
 
-    ) {
+    LaunchedEffect(loginSuccess) {
+        if (loginSuccess) {
+            onLoginSuccess()
+            viewModel.resetLoginSuccess()
+        }
+    }
+
+    Scaffold {
         padding ->
         LazyColumn(
             modifier = Modifier
@@ -64,12 +91,22 @@ fun AdminLoginScreen(){
         ) {
             item { HeadingTextForAdminLogin() }
             item { SubHeadingTextForAdminLogin() }
-            item { AdminEmailInputField() }
-            item { AdminPasswordField() }
-            item { CheckBoxForAdminLogin() }
-            item { AdminLoginButton() }
+            item { AdminEmailInputField(email, viewModel::onEmailChange) }
+            item { AdminPasswordField(password, viewModel::onPasswordChange) }
+            item { CheckBoxForAdminLogin(rememberMe, viewModel::onRememberMeChange) }
+            item { AdminLoginButton(isLoading, viewModel::login) }
+            if (errorMessage != null) {
+                item {
+                    Text(
+                        text = errorMessage!!,
+                        color = Color.Red,
+                        fontSize = 14.sp,
+                        modifier = Modifier.padding(top = 8.dp, start = 25.dp, end = 25.dp)
+                    )
+                }
+            }
             item { RequestAdminAccessLinkForAdminLogin() }
-            item { BackToUserLoginLinkForAdminLogin() }
+            item { BackToUserLoginLinkForAdminLogin(onBackToUserLogin) }
         }
     }
 }
@@ -96,8 +133,7 @@ fun SubHeadingTextForAdminLogin(){
 }
 
 @Composable
-fun AdminEmailInputField(){
-    var email by remember { mutableStateOf("") }
+fun AdminEmailInputField(email: String, onEmailChange: (String) -> Unit){
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -105,7 +141,7 @@ fun AdminEmailInputField(){
     ) {
         OutlinedTextField(
             value = email,
-            onValueChange = { email = it },
+            onValueChange = onEmailChange,
             modifier = Modifier
                 .fillMaxSize(),
             label = { Text("Admin Email") }
@@ -114,8 +150,7 @@ fun AdminEmailInputField(){
 }
 
 @Composable
-fun AdminPasswordField(){
-    var password by remember { mutableStateOf("") }
+fun AdminPasswordField(password: String, onPasswordChange: (String) -> Unit){
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -123,7 +158,7 @@ fun AdminPasswordField(){
     ) {
         OutlinedTextField(
             value = password,
-            onValueChange = { password = it },
+            onValueChange = onPasswordChange,
             modifier = Modifier
                 .fillMaxSize(),
             label = { Text("Password") },
@@ -133,8 +168,7 @@ fun AdminPasswordField(){
 }
 
 @Composable
-fun CheckBoxForAdminLogin(){
-    var rememberMe by remember { mutableStateOf(false) }
+fun CheckBoxForAdminLogin(rememberMe: Boolean, onCheckedChange: (Boolean) -> Unit){
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -144,7 +178,7 @@ fun CheckBoxForAdminLogin(){
     ) {
         Checkbox(
             checked = rememberMe,
-            onCheckedChange = { rememberMe = it }
+            onCheckedChange = onCheckedChange
         )
         Text(
             text = "Remember Me",
@@ -156,7 +190,7 @@ fun CheckBoxForAdminLogin(){
 }
 
 @Composable
-fun AdminLoginButton(){
+fun AdminLoginButton(isLoading: Boolean, onClick: () -> Unit){
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -164,7 +198,8 @@ fun AdminLoginButton(){
         horizontalArrangement = Arrangement.Center
     ) {
         Button(
-            onClick = { /* Handle sign in */ },
+            onClick = onClick,
+            enabled = !isLoading,
             modifier = Modifier
                 .width(200.dp)
                 .height(50.dp)
@@ -206,12 +241,12 @@ fun RequestAdminAccessLinkForAdminLogin(){
 }
 
 @Composable
-fun BackToUserLoginLinkForAdminLogin(){
+fun BackToUserLoginLinkForAdminLogin(onClick: () -> Unit){
     Row(
         modifier = Modifier
             .padding(horizontal = 24.dp)
             .fillMaxWidth()
-            .clickable { /* Handle back */ },
+            .clickable { onClick() },
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {

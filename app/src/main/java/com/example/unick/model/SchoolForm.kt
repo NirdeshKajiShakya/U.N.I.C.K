@@ -5,7 +5,7 @@ import kotlinx.parcelize.Parcelize
 
 @Parcelize
 data class SchoolForm(
-    val uid: String = "",
+    var uid: String = "",
     val imageUrl: String? = null,
     val schoolName: String = "",
     val location: String = "",
@@ -24,5 +24,6 @@ data class SchoolForm(
     val transportFacility: Boolean = false,
     val hostelFacility: Boolean = false,
     val extracurricular: String = "",
-    val description: String = ""
+    val description: String = "",
+    val verified: Boolean = false
 ) : Parcelable
