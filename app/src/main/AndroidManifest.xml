@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    package="com.example.unick">
+    xmlns:tools="http://schemas.android.com/tools">
     <!-- Permissions -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -20,13 +19,6 @@
         android:theme="@style/Theme.UNICK"
         android:usesCleartextTraffic="true"
         tools:replace="android:fullBackupContent">
-        <activity
-            android:name=".view.SchoolDashboard"
-            android:exported="true"
-            android:label="@string/title_activity_school_dashbaord"
-            android:theme="@style/Theme.UNICK">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
 
         <!--
              TODO: Before you run your application, you need a Google Maps API key.
@@ -43,6 +35,11 @@
             android:name="com.google.android.geo.API_KEY"
             android:value="${MAPS_API_KEY}" />
 
+        <activity
+            android:name=".view.SchoolDashboard"
+            android:exported="false"
+            android:label="@string/title_activity_school_dashbaord"
+            android:theme="@style/Theme.UNICK" />
 
         <activity
             android:name=".MapsActivity"
@@ -50,19 +47,17 @@
             android:label="@string/title_activity_maps">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
         <activity
             android:name=".view.ViewApplicationActivity"
             android:exported="true"
             android:label="@string/title_activity_view_application"
             android:theme="@style/Theme.UNICK" />
+
         <!-- ============================================ -->
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
         <activity
             android:name=".view.AdminCardsForm"
             android:exported="false"

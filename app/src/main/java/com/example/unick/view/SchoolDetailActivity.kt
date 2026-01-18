@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.unick.viewmodel.SchoolDetailViewModel
+import com.example.unick.model.SchoolReviewModel
 
 class SchoolDetailActivity : ComponentActivity() {
 
@@ -84,13 +85,13 @@ class SchoolDetailActivity : ComponentActivity() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SchoolDetailScreen(
-    vm: SchoolDetailViewModel,
     schoolId: String,
-    onBack: () -> Unit,
-    onOpenGallery: () -> Unit,
-    onSchoolSetting: () -> Unit,
+    vm: SchoolDetailViewModel = SchoolDetailViewModel(),
+    onBack: () -> Unit = {},
+    onOpenGallery: () -> Unit = {},
+    onSchoolSetting: () -> Unit = {},
     onApplyNow: () -> Unit = {},
-    onViewApplications: () -> Unit = {},
+    onViewApplications: () -> Unit = {}
 ) {
     val context = LocalContext.current
     var selectedTab by remember { mutableStateOf("Overview") }
@@ -107,7 +108,7 @@ fun SchoolDetailScreen(
         modifier = Modifier.windowInsetsPadding(WindowInsets.systemBars),
         topBar = {
             TopAppBar(
-                title = { Text("School Profile", fontWeight = FontWeight.Bold) },
+                title = { Text(schoolId, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
@@ -332,7 +333,6 @@ fun SchoolDetailScreen(
                             value = "Open in Google Maps",
                             leadingIcon = { Icon(Icons.Default.LocationOn, null) },
                             onClick = {
-                                // store full google maps url later (for now build query)
                                 val q = profile?.location ?: profile?.schoolName ?: "School"
                                 val mapUri = Uri.parse("geo:0,0?q=${Uri.encode(q)}")
                                 val i = Intent(Intent.ACTION_VIEW, mapUri).apply {
@@ -359,16 +359,13 @@ fun SchoolDetailScreen(
                         ReviewsHeader(
                             avg = vm.avgRating,
                             total = vm.totalReviews,
-                            onWriteReview = {
-                                // simple demo dialog below
-                            }
+                            onWriteReview = {}
                         )
                     }
 
                     item {
                         ReviewComposer(
                             onSubmit = { rating, comment ->
-                                // reviewerUid should come from FirebaseAuth later
                                 val demoUserUid = "demo_reviewer_uid"
                                 vm.submitReview(
                                     reviewerUid = demoUserUid,
@@ -598,7 +595,7 @@ private fun ReviewComposer(onSubmit: (rating: Int, comment: String) -> Unit) {
 }
 
 @Composable
-private fun ReviewCard(review: com.example.unick.model.SchoolReviewModel) {
+private fun ReviewCard(review: SchoolReviewModel) {
     var expanded by remember { mutableStateOf(false) }
 
     Card(

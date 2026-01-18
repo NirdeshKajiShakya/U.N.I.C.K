@@ -4,7 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.google.services)
     id("kotlin-parcelize")
-    alias(libs.plugins.mapsSecrets)
+    id("com.google.android.libraries.mapsplatform.secrets-gradle-plugin") version "2.0.1"
 }
 
 kotlin {
@@ -73,6 +73,7 @@ android {
         unitTests.isIncludeAndroidResources = false
     }
 }
+
 dependencies {
 
     // AndroidX Core
@@ -88,15 +89,15 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
 
-    // Images
-    implementation("io.coil-kt:coil-compose:2.4.0")
-    implementation("com.squareup.picasso:picasso:2.8")
+    // Images - Use Coil version compatible with Kotlin 2.0
+    implementation("io.coil-kt:coil-compose:2.7.0")
+    implementation("com.squareup.picasso:picasso:2.71828")
 
     // Material Icons + Navigation
     implementation("androidx.compose.material:material-icons-extended:1.5.0")
     implementation("androidx.navigation:navigation-compose:2.7.0")
 
-    // Firebase (ONE BOM ONLY — no versions on individual firebase deps)
+    // Firebase (ONE BOM ONLY)
     implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-auth-ktx")
@@ -121,13 +122,16 @@ dependencies {
     // For Multipart (images)
     implementation("com.squareup.retrofit2:converter-scalars:2.11.0")
 
-    implementation("com.google.android.gms:play-services-maps:18.2.0")
+    // Maps
+    implementation("com.google.android.gms:play-services-maps:19.2.0")
 
-    // AI/ML (kept as you had; if build breaks, comment them temporarily)
+    // AI/ML
     implementation(libs.generativeai)
     implementation(libs.firebase.ai)
-    implementation(libs.androidx.appcompat)
-    implementation(libs.androidx.constraintlayout)
+
+    // AppCompat & ConstraintLayout (temporarily using direct dependencies until catalog is fixed)
+    implementation("androidx.appcompat:appcompat:1.6.1")
+    implementation("androidx.constraintlayout:constraintlayout:2.1.4")
 
     // Testing
     testImplementation(libs.junit)
@@ -138,18 +142,6 @@ dependencies {
 
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
-
-    implementation("com.google.android.libraries.mapsplatform.secrets-gradle-plugin:secrets-gradle-plugin:2.0.1")
-
-    // Dependencies for ChatBot
-    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.3")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.3")
-    implementation("io.coil-kt:coil-compose:2.5.0")
-    // implementation("com.github.stefanodp91:android-host-provider:1.0.0") // Not found on JitPack
-    implementation("com.squareup.retrofit2:retrofit:2.9.0")
-    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
-    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
-
-    // Groq SDK
-    // implementation("com.github.groq:groq-sdk-android:1.0.0") // Not found on JitPack
 }
+
+
