@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -19,56 +20,72 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlinx.coroutines.delay
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.unick.viewmodel.AIChatViewModel
+import com.example.unick.viewmodel.ChatMessage
 import kotlinx.coroutines.launch
-
-// ---------------- DATA MODEL ----------------
-data class ChatMessage(
-    val text: String,
-    val isUser: Boolean,
-    val isTyping: Boolean = false,
-    val id: Long = System.nanoTime()
-)
-
-// ---------------- AI LOGIC ----------------
-fun getAiReply(input: String): String {
-    val msg = input.lowercase().trim()
-    return when {
-        msg in listOf("hi", "hello", "hey", "hii", "helo") -> "Hello! 👋 How can I help you today?"
-        msg.contains("private school") -> "Sure 😊 Which grade are you looking for?"
-        msg.contains("grade 9") || msg.contains("grade 10") ||
-                msg.contains("grade 11") || msg.contains("grade 12") ->
-            "Got it 👍 Do you want schools near you or in a specific area?"
-        msg.contains("map") -> "I can show the schools on the map 🗺️"
-        msg.contains("thank") -> "You're welcome 💙"
-        msg.contains("bye") -> "Goodbye! Feel free to come back anytime! 👋"
-        else -> "I can help you search schools by grade, tuition, or location 📚"
-    }
-}
 
 // ---------------- MAIN SCREEN ----------------
 @Composable
 fun AiChatScreen(
-    onBackPressed: () -> Unit = {}
+    onBackPressed: () -> Unit = {},
+    viewModel: AIChatViewModel = viewModel()
 ) {
     var inputText by rememberSaveable { mutableStateOf("") }
-    val messages = remember { mutableStateListOf<ChatMessage>() }
+    val messages by viewModel.messages.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    val error by viewModel.error.collectAsState()
+
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
 
     // Auto-scroll when new messages arrive
     LaunchedEffect(messages.size) {
         if (messages.isNotEmpty()) {
-            listState.animateScrollToItem(messages.size - 1)
+            coroutineScope.launch {
+                listState.animateScrollToItem(messages.size - 1)
+            }
         }
     }
 
-    // This screen is hosted by NavHost in DashboardActivity, no Scaffold needed
+    // Show error snackbar if any
+    error?.let { errorMessage ->
+        LaunchedEffect(errorMessage) {
+            // Error is already shown in chat, just clear it
+            viewModel.clearError()
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFFF6F7FA))
     ) {
+        // Header with clear button
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                "UNICK AI Assistant",
+                style = MaterialTheme.typography.titleMedium,
+                color = Color(0xFF0A73FF)
+            )
+
+            IconButton(onClick = { viewModel.clearConversation() }) {
+                Icon(
+                    Icons.Default.Refresh,
+                    contentDescription = "Clear conversation",
+                    tint = Color(0xFF0A73FF)
+                )
+            }
+        }
+
+        Divider(color = Color.LightGray.copy(alpha = 0.3f))
+
         // Chat messages area
         LazyColumn(
             state = listState,
@@ -80,18 +97,7 @@ fun AiChatScreen(
             // Welcome message
             if (messages.isEmpty()) {
                 item {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 20.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            "👋 Hi! Ask me about schools!",
-                            fontSize = 16.sp,
-                            color = Color.Gray
-                        )
-                    }
+                    WelcomeMessage()
                 }
             }
 
@@ -105,66 +111,123 @@ fun AiChatScreen(
         }
 
         // Input area
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp)
-                .clip(RoundedCornerShape(24.dp))
-                .background(Color.White)
-                .padding(horizontal = 4.dp, vertical = 4.dp),
-            verticalAlignment = Alignment.CenterVertically
+        InputArea(
+            inputText = inputText,
+            onInputChange = { inputText = it },
+            onSend = {
+                val message = inputText.trim()
+                if (message.isNotBlank()) {
+                    inputText = ""
+                    viewModel.sendMessage(message)
+                }
+            },
+            isLoading = isLoading
+        )
+    }
+}
+
+@Composable
+fun WelcomeMessage() {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 20.dp, horizontal = 16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            "👋 Hi! I'm UNICK AI",
+            fontSize = 20.sp,
+            color = Color(0xFF0A73FF),
+            style = MaterialTheme.typography.titleLarge
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            "I can help you find the perfect school!",
+            fontSize = 16.sp,
+            color = Color.Gray
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Quick suggestions
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            OutlinedTextField(
-                value = inputText,
-                onValueChange = { inputText = it },
-                modifier = Modifier.weight(1f),
-                placeholder = { Text("Say hi 👋 or ask about schools") },
-                maxLines = 3,
-                shape = RoundedCornerShape(20.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color.Transparent,
-                    unfocusedBorderColor = Color.Transparent,
-                    focusedContainerColor = Color.White,
-                    unfocusedContainerColor = Color.White
-                )
+            Text(
+                "Try asking:",
+                fontSize = 14.sp,
+                color = Color.Gray
             )
+            SuggestionChip("Find schools in Kathmandu")
+            SuggestionChip("Show me schools with Grade 10")
+            SuggestionChip("Which schools have scholarships?")
+            SuggestionChip("Compare schools with A-Levels")
+        }
+    }
+}
 
-            Spacer(Modifier.width(4.dp))
+@Composable
+fun SuggestionChip(text: String) {
+    Surface(
+        shape = RoundedCornerShape(20.dp),
+        color = Color(0xFFE8F4FF),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Text(
+            text = "💬 $text",
+            modifier = Modifier.padding(12.dp),
+            fontSize = 14.sp,
+            color = Color(0xFF0A73FF)
+        )
+    }
+}
 
-            IconButton(
-                onClick = {
-                    val userMsg = inputText.trim()
-                    if (userMsg.isNotBlank()) {
-                        inputText = ""
+@Composable
+fun InputArea(
+    inputText: String,
+    onInputChange: (String) -> Unit,
+    onSend: () -> Unit,
+    isLoading: Boolean
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(12.dp)
+            .clip(RoundedCornerShape(24.dp))
+            .background(Color.White)
+            .padding(horizontal = 4.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        OutlinedTextField(
+            value = inputText,
+            onValueChange = onInputChange,
+            modifier = Modifier.weight(1f),
+            placeholder = { Text("Ask about schools...") },
+            maxLines = 3,
+            enabled = !isLoading,
+            shape = RoundedCornerShape(20.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = Color.Transparent,
+                unfocusedBorderColor = Color.Transparent,
+                disabledBorderColor = Color.Transparent,
+                focusedContainerColor = Color.White,
+                unfocusedContainerColor = Color.White,
+                disabledContainerColor = Color.White
+            )
+        )
 
-                        // Add user message
-                        messages.add(ChatMessage(userMsg, isUser = true))
+        Spacer(Modifier.width(4.dp))
 
-                        // Add typing indicator
-                        val typingMsg = ChatMessage("", isUser = false, isTyping = true)
-                        messages.add(typingMsg)
-
-                        // Simulate AI response
-                        coroutineScope.launch {
-                            delay(1200)
-                            messages.remove(typingMsg)
-                            messages.add(
-                                ChatMessage(
-                                    text = getAiReply(userMsg),
-                                    isUser = false
-                                )
-                            )
-                        }
-                    }
-                },
-                enabled = inputText.isNotBlank()
-            ) {
-                Icon(
-                    Icons.Default.Send,
-                    contentDescription = "Send",
-                    tint = if (inputText.isNotBlank()) Color(0xFF0A73FF) else Color.Gray
-                )
-            }
+        IconButton(
+            onClick = onSend,
+            enabled = inputText.isNotBlank() && !isLoading
+        ) {
+            Icon(
+                Icons.Default.Send,
+                contentDescription = "Send",
+                tint = if (inputText.isNotBlank() && !isLoading)
+                    Color(0xFF0A73FF) else Color.Gray
+            )
         }
     }
 }
@@ -233,7 +296,7 @@ fun TypingBubble() {
                 .padding(horizontal = 14.dp, vertical = 10.dp)
         ) {
             Text(
-                text = "Typing${".".repeat(dotCount)}",
+                text = "Thinking${".".repeat(dotCount)}",
                 fontSize = 15.sp,
                 color = Color.Gray
             )
