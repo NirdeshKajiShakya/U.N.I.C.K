@@ -23,6 +23,32 @@
         android:usesCleartextTraffic="true"
         tools:replace="android:fullBackupContent">
 
+        <!--
+             TODO: Before you run your application, you need a Google Maps API key.
+
+             To get one, follow the directions here:
+
+                https://developers.google.com/maps/documentation/android-sdk/get-api-key
+
+             Once you have your API key (it starts with "AIza"), define a new property in your
+             project's local.properties file (e.g. MAPS_API_KEY=Aiza...), and replace the
+             "YOUR_API_KEY" string in this file with "${MAPS_API_KEY}".
+        -->
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="${MAPS_API_KEY}" />
+
+
+        <activity
+            android:name=".MapsActivity"
+            android:exported="true"
+            android:label="@string/title_activity_maps">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
         <!-- ============================================ -->
         <!-- MAIN LAUNCHER - Welcome/Landing Page -->
         <!-- ============================================ -->
@@ -33,204 +59,150 @@
             android:theme="@style/Theme.UNICK">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity>
-
-        <!-- ============================================ -->
+        </activity> <!-- ============================================ -->
         <!-- Authentication Activities -->
         <!-- ============================================ -->
-
         <!-- Student/User Login -->
         <activity
             android:name=".view.UserLoginActivity"
             android:exported="false"
             android:label="@string/title_activity_user_login"
-            android:theme="@style/Theme.UNICK" />
-
-        <!-- Student/User Registration -->
+            android:theme="@style/Theme.UNICK" /> <!-- Student/User Registration -->
         <activity
             android:name=".view.UserRegistrationActivity"
             android:exported="false"
             android:label="@string/title_activity_user_registration"
-            android:theme="@style/Theme.UNICK" />
-
-        <!-- School Login -->
+            android:theme="@style/Theme.UNICK" /> <!-- School Login -->
         <activity
             android:name=".view.UserLoginSchoolActivity"
             android:exported="false"
             android:label="@string/title_activity_user_login_school"
-            android:theme="@style/Theme.UNICK" />
-
-        <!-- School Registration -->
+            android:theme="@style/Theme.UNICK" /> <!-- School Registration -->
         <activity
             android:name=".view.UserRegistrationSchoolActivity"
             android:exported="false"
             android:label="@string/title_activity_user_registration_school"
-            android:theme="@style/Theme.UNICK" />
-
-        <!-- Admin Login -->
+            android:theme="@style/Theme.UNICK" /> <!-- Admin Login -->
         <activity
             android:name=".view.AdminLoginActivity"
             android:exported="false"
             android:label="@string/title_activity_admin_login"
-            android:theme="@style/Theme.UNICK" />
-
-        <!-- Password Reset Flow -->
+            android:theme="@style/Theme.UNICK" /> <!-- Password Reset Flow -->
         <activity
             android:name=".view.SendCodeToEmailActivity"
             android:exported="false"
             android:label="@string/title_activity_send_code_to_email"
             android:theme="@style/Theme.UNICK" />
-
         <activity
             android:name=".view.CodeConfirmActivity"
             android:exported="false"
             android:label="@string/title_activity_code_confirm"
             android:theme="@style/Theme.UNICK" />
-
         <activity
             android:name=".view.ResetPasswordActivity"
             android:exported="false"
             android:label="@string/title_activity_reset_password"
-            android:theme="@style/Theme.UNICK" />
-
-        <!-- ============================================ -->
+            android:theme="@style/Theme.UNICK" /> <!-- ============================================ -->
         <!-- Main Dashboard & Navigation -->
         <!-- ============================================ -->
-
         <!-- Main Dashboard with Bottom Navigation -->
         <activity
             android:name=".view.DashboardActivity"
-            android:exported="false"
+            android:exported="true"
             android:label="@string/title_activity_dashboard"
-            android:theme="@style/Theme.UNICK" />
-
-        <!-- ============================================ -->
+            android:theme="@style/Theme.UNICK" /> <!-- ============================================ -->
         <!-- User/Student Profile Activities -->
         <!-- ============================================ -->
-
         <!-- User Profile Screen -->
         <activity
             android:name=".view.UserProfileActivity"
             android:exported="false"
             android:label="User Profile"
-            android:theme="@style/Theme.UNICK" />
-
-        <!-- Edit User Profile -->
+            android:theme="@style/Theme.UNICK" /> <!-- Edit User Profile -->
         <activity
             android:name=".view.EditUserProfileActivity"
             android:exported="false"
             android:label="Edit Profile"
-            android:theme="@style/Theme.UNICK" />
-
-        <!-- Settings -->
+            android:theme="@style/Theme.UNICK" /> <!-- Settings -->
         <activity
             android:name=".view.SettingsActivity"
             android:exported="false"
             android:label="@string/title_activity_settings"
-            android:theme="@style/Theme.UNICK" />
-
-        <!-- ============================================ -->
+            android:theme="@style/Theme.UNICK" /> <!-- ============================================ -->
         <!-- School Profile Activities -->
         <!-- ============================================ -->
-
         <!-- School Detail/Profile View -->
         <activity
             android:name=".view.SchoolDetailActivity"
             android:exported="false"
             android:label="@string/title_activity_school_profile"
-            android:theme="@style/Theme.UNICK" />
-
-        <!-- School Data Form -->
+            android:theme="@style/Theme.UNICK" /> <!-- School Data Form -->
         <activity
             android:name=".view.DataFormAcitivity"
             android:exported="false"
             android:label="@string/title_activity_data_form_acitivity"
-            android:theme="@style/Theme.UNICK" />
-
-        <!-- School Edit Profile -->
+            android:theme="@style/Theme.UNICK" /> <!-- School Edit Profile -->
         <activity
             android:name=".view.SchoolEditProfileActivity"
             android:exported="false"
             android:label="@string/title_activity_school_edit_profile"
-            android:theme="@style/Theme.UNICK" />
-
-        <!-- School Settings -->
+            android:theme="@style/Theme.UNICK" /> <!-- School Settings -->
         <activity
             android:name=".view.SchoolSettingsActivity"
             android:exported="false"
             android:label="@string/title_activity_school_settings"
-            android:theme="@style/Theme.UNICK" />
-
-        <!-- School Gallery -->
+            android:theme="@style/Theme.UNICK" /> <!-- School Gallery -->
         <activity
             android:name=".view.SchoolGalleryActivity"
             android:exported="false"
             android:label="@string/title_activity_school_gallery"
-            android:theme="@style/Theme.UNICK" />
-
-        <!-- ============================================ -->
+            android:theme="@style/Theme.UNICK" /> <!-- ============================================ -->
         <!-- Search & Filter Activities -->
         <!-- ============================================ -->
-
         <!-- Search/Filter Screen -->
         <activity
             android:name=".view.FilterActivity"
             android:exported="false"
             android:label="@string/title_activity_filter"
-            android:theme="@style/Theme.UNICK" />
-
-        <!-- ============================================ -->
+            android:theme="@style/Theme.UNICK" /> <!-- ============================================ -->
         <!-- School Management Activities -->
         <!-- ============================================ -->
-
         <!-- Shortlist -->
         <activity
             android:name=".view.ShortlistActivity"
             android:exported="false"
             android:label="@string/title_activity_shortlist"
-            android:theme="@style/Theme.UNICK" />
-
-        <!-- Compare Schools -->
+            android:theme="@style/Theme.UNICK" /> <!-- Compare Schools -->
         <activity
             android:name=".view.CompareActivity"
             android:exported="false"
             android:label="@string/title_activity_compare"
-            android:theme="@style/Theme.UNICK" />
-
-        <!-- Student Application Form -->
+            android:theme="@style/Theme.UNICK" /> <!-- Student Application Form -->
         <activity
             android:name=".view.StudentApplicationActivity"
             android:exported="false"
             android:label="@string/title_activity_student_application"
-            android:theme="@style/Theme.UNICK" />
-
-        <!-- ============================================ -->
+            android:theme="@style/Theme.UNICK" /> <!-- ============================================ -->
         <!-- Other/Utility Activities -->
         <!-- ============================================ -->
-
         <!-- Top Bar Activity (if used) -->
         <activity
             android:name=".view.TopBarActivity"
             android:exported="false"
             android:label="@string/title_activity_top_bar"
-            android:theme="@style/Theme.UNICK" />
-
-        <!-- Dashboard Card (if used) -->
+            android:theme="@style/Theme.UNICK" /> <!-- Dashboard Card (if used) -->
         <activity
             android:name=".view.DashboardCard"
             android:exported="false"
             android:label="@string/title_activity_dashboard_card"
-            android:theme="@style/Theme.UNICK" />
-
-        <!-- Main Activity (if used) -->
+            android:theme="@style/Theme.UNICK" /> <!-- Main Activity (if used) -->
         <activity
             android:name=".MainActivity"
             android:exported="false"
             android:theme="@style/Theme.UNICK" />
-
     </application>
 
 </manifest>
-

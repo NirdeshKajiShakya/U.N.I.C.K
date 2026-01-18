@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.google.services)
     id("kotlin-parcelize")
+    alias(libs.plugins.mapsSecrets)
 }
 
 kotlin {
@@ -60,6 +61,7 @@ android {
     buildFeatures {
         compose = true
         buildConfig = true
+        viewBinding = true
     }
 
     lint {
@@ -119,9 +121,13 @@ dependencies {
     // For Multipart (images)
     implementation("com.squareup.retrofit2:converter-scalars:2.11.0")
 
+    implementation("com.google.android.gms:play-services-maps:18.2.0")
+
     // AI/ML (kept as you had; if build breaks, comment them temporarily)
     implementation(libs.generativeai)
     implementation(libs.firebase.ai)
+    implementation(libs.androidx.appcompat)
+    implementation(libs.androidx.constraintlayout)
 
     // Testing
     testImplementation(libs.junit)
@@ -132,6 +138,8 @@ dependencies {
 
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
+
+    implementation("com.google.android.libraries.mapsplatform.secrets-gradle-plugin:secrets-gradle-plugin:2.0.1")
 
     // Dependencies for ChatBot
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.3")

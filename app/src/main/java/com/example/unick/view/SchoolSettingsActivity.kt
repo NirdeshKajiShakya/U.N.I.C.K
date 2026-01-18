@@ -23,7 +23,7 @@ class SchoolSettingsActivity : ComponentActivity() {
             SchoolSettingsScreen(
                 onBack = { finish() },
                 onEditProfile = {
-                    startActivity(Intent(this, SchoolEditProfileActivity::class.java))
+                    startActivity(Intent(this, DataFormAcitivity::class.java))
                 },
                 onGallery = {
                     startActivity(Intent(this, SchoolGalleryActivity::class.java))
@@ -39,6 +39,7 @@ fun SchoolSettingsScreen(
     onBack: () -> Unit,
     onEditProfile: () -> Unit,
     onGallery: () -> Unit
+
 ) {
     var isVisible by remember { mutableStateOf(true) }
     var acceptingApplications by remember { mutableStateOf(true) }
