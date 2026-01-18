@@ -36,9 +36,16 @@ class StudentApplicationActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        // Get the schoolId from intent (passed when student clicks "Apply" on a school)
+        val schoolId = intent.getStringExtra("schoolId") ?: ""
+
+        // Debug: Show which schoolId will be used
+        android.util.Log.d("StudentApplicationActivity", "Applying to schoolId: $schoolId")
+
         setContent {
             UNICKTheme {
-                StudentRegistrationForm()
+                StudentRegistrationForm(schoolId = schoolId)
             }
         }
     }
@@ -94,8 +101,10 @@ data class FormErrors(val errors: Map<String, String> = emptyMap()) {
 }
 
 // Mapping function: Convert FormData to StudentApplication
-fun FormData.toStudentApplication(): StudentApplication {
+fun FormData.toStudentApplication(schoolId: String, studentId: String): StudentApplication {
     return StudentApplication(
+        schoolId = schoolId,
+        studentId = studentId,
         fullName = fullName,
         dob = dob,
         gender = gender,
@@ -110,17 +119,21 @@ fun FormData.toStudentApplication(): StudentApplication {
         presentAddress = presentAddress,
         permanentAddress = permanentAddress,
         schoolBudget = schoolBudget,
+        status = "pending",
         timestamp = System.currentTimeMillis()
     )
 }
 
 @Composable
-fun StudentRegistrationForm() {
+fun StudentRegistrationForm(schoolId: String = "") {
     // ViewModel integration
     val viewModel = viewModel<StudentApplicationViewModel>(
         factory = StudentApplicationViewModel.Factory(ApplicationRepoImpl())
     )
     val submitState by viewModel.submitState.collectAsState()
+
+    // Get current user ID for studentId
+    val currentUserId = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid ?: ""
 
     var currentStep by remember { mutableStateOf(1) }
     var formData by remember { mutableStateOf(FormData()) }
@@ -146,7 +159,7 @@ fun StudentRegistrationForm() {
             },
             onRetry = {
                 // Retry submission
-                viewModel.submitApplication(formData.toStudentApplication())
+                viewModel.submitApplication(formData.toStudentApplication(schoolId, currentUserId))
             }
         )
     }
@@ -200,7 +213,7 @@ fun StudentRegistrationForm() {
                     onSubmit = {
                         formErrors = validateStep(currentStep, formData)
                         if (formErrors.isEmpty()) {
-                            viewModel.submitApplication(formData.toStudentApplication())
+                            viewModel.submitApplication(formData.toStudentApplication(schoolId, currentUserId))
                         }
                     }
                 )

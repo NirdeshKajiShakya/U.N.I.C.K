@@ -31,5 +31,6 @@
     <string name="title_activity_school_edit_profile">SchoolEditProfileActivity</string>
     <string name="title_activity_school_settings">SchoolSettingsActivity</string>
     <string name="title_activity_school_gallery">SchoolGalleryActivity</string>
+    <string name="title_activity_view_application">ViewApplicationActivity</string>
     <string name="title_activity_maps">MapsActivity</string>
 </resources>
