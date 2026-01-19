@@ -1,6 +1,7 @@
 package com.example.unick.view
 
 import android.app.DatePickerDialog
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -151,8 +152,34 @@ fun StudentRegistrationForm() {
         )
     }
 
+    val context = LocalContext.current
+
     Scaffold(
-        containerColor = Color(0xFFF5F7FA)
+        containerColor = Color(0xFFF5F7FA),
+        bottomBar = {
+            UnifiedBottomNavigationBar(
+                currentRoute = "", // No specific tab selected
+                onNavigate = { route ->
+                    when (route) {
+                        BottomNavItem.Home.route -> {
+                            val intent = Intent(context, DashboardActivity::class.java)
+                            intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                            context.startActivity(intent)
+                        }
+                        BottomNavItem.Profile.route -> {
+                             // Navigate to Profile if needed, or keeping it strictly for dashboard return
+                             // For now, let's just go home or do nothing if not implemented
+                        }
+                        else -> {
+                             // Handle other routes or ignore
+                        }
+                    }
+                },
+                onProfileClick = {
+                    // specific profile handling
+                }
+            )
+        }
     ) { padding ->
         LazyColumn(
             modifier = Modifier

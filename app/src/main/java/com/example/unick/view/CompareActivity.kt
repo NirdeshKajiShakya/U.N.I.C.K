@@ -45,7 +45,9 @@ class CompareActivity : ComponentActivity() {
                     surface = Color.White
                 )
             ) {
-                SchoolCompareScreen()
+                // Initialize with passed school data
+                val schoolForm = androidx.core.content.IntentCompat.getParcelableExtra(intent, "school_details", com.example.unick.model.SchoolForm::class.java)
+                SchoolCompareScreen(initialSchool = schoolForm)
             }
         }
     }
@@ -53,9 +55,27 @@ class CompareActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SchoolCompareScreen() {
+fun SchoolCompareScreen(initialSchool: com.example.unick.model.SchoolForm? = null) {
     // State management
-    var school1 by remember { mutableStateOf<Schools?>(null) }
+    // Map initialSchool to Schools model if present
+    val initialMapped = remember(initialSchool) {
+        initialSchool?.let { form ->
+            Schools(
+                id = form.uid.hashCode(),
+                name = form.schoolName,
+                fee = form.tuitionFee.ifBlank { "$12,000" }, // Fallback if empty
+                rating = if (form.verified) "4.5" else "4.0",
+                extraCurricular = form.extracurricular,
+                location = form.location,
+                distance = "N/A", // Not in SchoolForm
+                achievements = listOf(),
+                schoolType = "Private", // Default or derive
+                genderType = "Co-ed"
+            )
+        }
+    }
+
+    var school1 by remember { mutableStateOf<Schools?>(initialMapped) }
     var school2 by remember { mutableStateOf<Schools?>(null) }
 
     // Dialog State

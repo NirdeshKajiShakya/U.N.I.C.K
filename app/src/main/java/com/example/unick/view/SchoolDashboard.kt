@@ -69,62 +69,95 @@ fun SchoolDashboardScreen(viewModel: SchoolViewModel, currentUid: String?) {
     } else {
         if (mySchool != null) {
             // New School Dashboard UI
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color(0xFFF8FAFC))
-                    .padding(24.dp)
-            ) {
-                Spacer(modifier = Modifier.height(24.dp))
-                
-                // Welcome Header
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .size(50.dp)
-                            .background(Color(0xFFE2E8F0), CircleShape),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text("🏫", fontSize = 24.sp)
-                    }
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Column {
-                        Text(
-                            text = "Welcome Back,",
-                            fontSize = 14.sp,
-                            color = Color(0xFF64748B)
-                        )
-                        Text(
-                            text = mySchool.schoolName,
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF1E293B),
-                            maxLines = 1
-                        )
-                    }
+            Scaffold(
+                bottomBar = {
+                    UnifiedBottomNavigationBar(
+                        currentRoute = BottomNavItem.Home.route,
+                        onNavigate = { route ->
+                             // Handle Navigation
+                             when(route) {
+                                 BottomNavItem.Home.route -> {
+                                     // Already on Home, maybe scroll to top?
+                                 }
+                                 BottomNavItem.Profile.route -> {
+                                     // Navigate to Profile
+                                 }
+                                 // Add other routes as needed
+                             }
+                        },
+                        onProfileClick = {
+                            // Navigate to Profile
+                        }
+                    )
                 }
-
-                Spacer(modifier = Modifier.height(32.dp))
-
-                Text(
-                    "Your Profile Preview",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF1E293B)
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Shared School Card
-                SchoolCard(
-                    school = mySchool,
-                    context = context,
-                    onClick = {
-                        val intent = Intent(context, DashboardCard::class.java)
-                        intent.putExtra("school_details", mySchool)
-                        intent.putExtra("is_school_view", true) // Flag for navigation
-                        context.startActivity(intent)
+            ) { innerPadding ->
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color(0xFFF8FAFC))
+                        .padding(innerPadding) // Respect Scaffolding padding (top/bottom bars)
+                        .padding(24.dp) // Keep original padding
+                        // If vertical scroll is needed, add it here. The original didn't have verticalScroll on this specific Column, 
+                        // but it might be implicitly needed if content overflows. 
+                        // Looking at original code, it didn't have verticalScroll on the school dashboard part, 
+                        // but it's good practice. I'll stick to original structure unless user asked for scroll.
+                        // Actually, I'll add verticalScroll because dashboard content typically grows.
+                        .verticalScroll(rememberScrollState()) 
+                ) {
+                    Spacer(modifier = Modifier.height(24.dp))
+                    
+                    // Welcome Header
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(50.dp)
+                                .background(Color(0xFFE2E8F0), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("🏫", fontSize = 24.sp)
+                        }
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Column {
+                            Text(
+                                text = "Welcome Back,",
+                                fontSize = 14.sp,
+                                color = Color(0xFF64748B)
+                            )
+                            Text(
+                                text = mySchool.schoolName,
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF1E293B),
+                                maxLines = 1
+                            )
+                        }
                     }
-                )
+
+                    Spacer(modifier = Modifier.height(32.dp))
+
+                    Text(
+                        "Your Profile Preview",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF1E293B)
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Shared School Card
+                    SchoolCard(
+                        school = mySchool,
+                        context = context,
+                        onClick = {
+                            val intent = Intent(context, DashboardCard::class.java)
+                            intent.putExtra("school_details", mySchool)
+                            intent.putExtra("is_school_view", true) // Flag for navigation
+                            context.startActivity(intent)
+                        }
+                    )
+                    
+                    // Add extra spacer at bottom to avoid content being too close to navbar if scrolled
+                    Spacer(modifier = Modifier.height(24.dp))
+                }
             }
         } else {
             // Dashboard UI for School Admin when no details are submitted yet
