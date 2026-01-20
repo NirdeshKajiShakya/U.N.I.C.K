@@ -66,7 +66,7 @@ fun SchoolDetailsScreen(school: SchoolForm, isSchoolView: Boolean, onBack: () ->
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { }, // Transparent/Custom title handled in scroll or simple overlay
+                title = { },
                 navigationIcon = {
                     IconButton(
                         onClick = onBack,
@@ -79,15 +79,57 @@ fun SchoolDetailsScreen(school: SchoolForm, isSchoolView: Boolean, onBack: () ->
             )
         },
         bottomBar = {
-            // bottomBar removed
+            UnifiedBottomNavigationBar(
+                currentRoute = "", // Pass empty string to avoid any null issues, though null is valid
+                onNavigate = { route ->
+                    when (route) {
+                        BottomNavItem.Home.route -> {
+                             val intent = Intent(context, DashboardActivity::class.java)
+                             intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                             context.startActivity(intent)
+                        }
+                        BottomNavItem.AIChat.route -> {
+                             val intent = Intent(context, DashboardActivity::class.java)
+                             intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                             intent.putExtra("start_destination", BottomNavItem.AIChat.route)
+                             context.startActivity(intent)
+                        }
+                         BottomNavItem.Profile.route -> {
+                             val intent = Intent(context, UserProfileActivity::class.java)
+                             context.startActivity(intent)
+                        }
+                        else -> {
+                             val intent = Intent(context, DashboardActivity::class.java)
+                             intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                             intent.putExtra("start_destination", route)
+                             context.startActivity(intent)
+                        }
+                    }
+                },
+                onProfileClick = {
+                     val intent = Intent(context, UserProfileActivity::class.java)
+                     context.startActivity(intent)
+                },
+                navItems = listOf(
+                    BottomNavItem.Home,
+                    BottomNavItem.Search,
+                    BottomNavItem.AIChat,
+                    BottomNavItem.Notification,
+                    BottomNavItem.Profile
+                )
+            )
         }
     ) { innerPadding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color(0xFFF8FAFC))
-                .padding(bottom = innerPadding.calculateBottomPadding()) // Respect bottom bar
+        // We use a Box with fillMaxSize to contain the LazyColumn
+        Box(modifier = Modifier
+            .fillMaxSize()
+            .padding(bottom = innerPadding.calculateBottomPadding()) // Only pad bottom to allow top image overlap
         ) {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color(0xFFF8FAFC))
+            ) {
             // ---- Header Image ----
             item {
                 Box(modifier = Modifier.fillMaxWidth().height(280.dp)) {
@@ -254,6 +296,7 @@ fun SchoolDetailsScreen(school: SchoolForm, isSchoolView: Boolean, onBack: () ->
             }
         }
     }
+}
 }
 
 @Composable

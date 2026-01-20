@@ -84,7 +84,8 @@ class CompareActivity : ComponentActivity() {
 @Composable
 fun SchoolCompareScreen(
     viewModel: CompareSchoolViewModel = viewModel(),
-    onBackClick: () -> Unit = {}
+    onBackClick: () -> Unit = {},
+    showBottomBar: Boolean = true
 ) {
     // Collect state from ViewModel
     val schoolsState by viewModel.schoolsState.collectAsState()
@@ -141,6 +142,52 @@ fun SchoolCompareScreen(
                 }
             }
         },
+        bottomBar = {
+            if (showBottomBar) {
+                 val context = androidx.compose.ui.platform.LocalContext.current
+                 UnifiedBottomNavigationBar(
+                    currentRoute = null,
+                    onNavigate = { route ->
+                        when (route) {
+                            BottomNavItem.Home.route -> {
+                                 val intent = android.content.Intent(context, DashboardActivity::class.java)
+                                 intent.flags = android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP or android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP
+                                 context.startActivity(intent)
+                            }
+                            BottomNavItem.AIChat.route -> {
+                                 val intent = android.content.Intent(context, DashboardActivity::class.java)
+                                 intent.flags = android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP or android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP
+                                 intent.putExtra("start_destination", BottomNavItem.AIChat.route)
+                                 context.startActivity(intent)
+                            }
+                            BottomNavItem.Profile.route -> {
+                                 val intent = android.content.Intent(context, UserProfileActivity::class.java)
+                                 context.startActivity(intent)
+                            }
+                            else -> {
+                                 val intent = android.content.Intent(context, DashboardActivity::class.java)
+                                 intent.flags = android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP or android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP
+                                 intent.putExtra("start_destination", route)
+                                 context.startActivity(intent)
+                            }
+                        }
+                    },
+                    onProfileClick = {
+                         val intent = android.content.Intent(context, UserProfileActivity::class.java)
+                         context.startActivity(intent)
+                    },
+                    navItems = listOf(
+                        BottomNavItem.Home,
+                        BottomNavItem.Search,
+                        BottomNavItem.AIChat,
+                        BottomNavItem.Notification,
+                        BottomNavItem.Profile
+                    )
+                )
+            }
+        },
+
+        contentWindowInsets = if (showBottomBar) ScaffoldDefaults.contentWindowInsets else WindowInsets(0.dp),
         containerColor = BackgroundGray
     ) { padding ->
         LazyColumn(
