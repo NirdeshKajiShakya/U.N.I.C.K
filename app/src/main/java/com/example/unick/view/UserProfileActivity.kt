@@ -45,6 +45,7 @@ import com.example.unick.R
 import com.example.unick.viewmodel.UserProfileState
 import com.example.unick.viewmodel.UserProfileViewModel
 import com.google.firebase.auth.FirebaseAuth
+import com.example.unick.model.UserProfileModel
 
 // -------------------- COLORS --------------------
 private val PrimaryBlue = Color(0xFF4A90E2)
@@ -61,6 +62,8 @@ private val ChipText = Color(0xFF4338CA)
 
 
 // -------------------- DATA MODELS --------------------
+// These should ideally be in the model package too, but leaving them if they don't break anything else
+// Moving them to model package would be cleaner, but for now just removing the duplicate UserProfileModel
 
 data class ShortlistedSchoolForUserProfile(
     val id: String = "",
@@ -73,14 +76,6 @@ data class ApplicationItemForUserProfile(
     val schoolName: String = "",
     val status: String = "",
     val applicationCode: String = ""
-)
-
-data class UserProfileModel(
-    val fullName: String = "",
-    val email: String = "",
-    val location: String = "",
-    val schoolId: String = "",
-    val role: String = ""
 )
 
 // -------------------- ACTIVITY ------------------------
@@ -235,11 +230,7 @@ fun UserProfileScreen(viewModel: UserProfileViewModel?) {
 
             // ---------------- ACCOUNT DETAILS ----------------
             item {
-                val userProfile = when (userProfileState) {
-                    is UserProfileState.Success -> (userProfileState as UserProfileState.Success<UserProfileModel>).data
-                    else -> null
-                }
-                AccountDetailsSectionForUserProfile(userProfile)
+                AccountDetailsSectionForUserProfile(userProfileState)
             }
 
             item { Spacer(modifier = Modifier.height(24.dp)) }
@@ -260,38 +251,46 @@ fun ProfileHeaderSection(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(PrimaryBlue, PrimaryBlueDark)
-                )
-            )
+            .padding(bottom = 20.dp) // Add bottom padding for the floating effect
     ) {
-        Column(
+        // Background Gradient
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 20.dp, bottom = 100.dp)
-                .padding(horizontal = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .height(200.dp)
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(PrimaryBlue, PrimaryBlueDark)
+                    )
+                )
         ) {
-            Text(
-                "My Profile",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = Color.White
-            )
+             Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 20.dp)
+                    .padding(horizontal = 24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    "My Profile",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color.White
+                )
+            }
         }
-    }
 
-    // Profile Card overlapping the header
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 20.dp)
-            .offset(y = (-60).dp)
-            .shadow(12.dp, RoundedCornerShape(24.dp)),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = CardWhite)
-    ) {
+        // Profile Card
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp)
+                .align(Alignment.TopCenter)
+                .padding(top = 100.dp) // Push card down to overlap
+                .shadow(12.dp, RoundedCornerShape(24.dp)),
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = CardWhite)
+        ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -368,6 +367,7 @@ fun ProfileHeaderSection(
             }
         }
     }
+    }
 }
 
 // -------------------- QUICK STATS SECTION --------------------
@@ -377,7 +377,7 @@ fun QuickStatsSection(applicationsCount: Int, shortlistedCount: Int) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 20.dp)
-            .offset(y = (-40).dp),
+            .padding(horizontal = 20.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         StatCard(
@@ -563,7 +563,6 @@ fun ShortlistedSchoolsSectionForUserProfile(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 20.dp)
-            .offset(y = (-20).dp)
     ) {
         Row(
             modifier = Modifier
@@ -670,6 +669,7 @@ fun ShortlistedSchoolCardForUserProfile(
                     fontSize = 12.sp,
                     maxLines = 1
                 )
+
             }
         }
     }
@@ -863,7 +863,20 @@ fun SmallActionButtonForUserProfile(
 // ---------------- ACCOUNT DETAILS -----------------------
 
 @Composable
-fun AccountDetailsSectionForUserProfile(userProfile: UserProfileModel?) {
+fun AccountDetailsSectionForUserProfile(userProfileState: UserProfileState<UserProfileModel>) {
+    
+    val userProfile = if (userProfileState is UserProfileState.Success) userProfileState.data else null
+    val isLoading = userProfileState is UserProfileState.Loading
+    val isError = userProfileState is UserProfileState.Error
+
+    fun getText(value: String?): String {
+        return when {
+            isLoading -> "Loading..."
+            isError -> "Error loading data"
+            value.isNullOrEmpty() -> "N/A"
+            else -> value
+        }
+    }
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -899,22 +912,22 @@ fun AccountDetailsSectionForUserProfile(userProfile: UserProfileModel?) {
             AccountDetailItemForUserProfile(
                 icon = Icons.Outlined.Person,
                 title = "Full Name",
-                value = userProfile?.fullName ?: "N/A"
+                value = getText(userProfile?.fullName)
             )
             AccountDetailItemForUserProfile(
                 icon = Icons.Outlined.Email,
                 title = "Email",
-                value = userProfile?.email ?: "N/A"
+                value = getText(userProfile?.email)
             )
             AccountDetailItemForUserProfile(
                 icon = Icons.Outlined.LocationOn,
                 title = "Location",
-                value = userProfile?.location ?: "N/A"
+                value = getText(userProfile?.location)
             )
             AccountDetailItemForUserProfile(
                 icon = Icons.Outlined.Badge,
                 title = "Role",
-                value = userProfile?.role?.takeIf { it.isNotEmpty() } ?: "Student",
+                value = getText(userProfile?.role?.takeIf { it.isNotEmpty() } ?: "Student"),
                 isLast = true
             )
         }

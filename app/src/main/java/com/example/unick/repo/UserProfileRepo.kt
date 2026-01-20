@@ -2,7 +2,7 @@ package com.example.unick.repo
 
 import com.example.unick.view.ApplicationItemForUserProfile
 import com.example.unick.view.ShortlistedSchoolForUserProfile
-import com.example.unick.view.UserProfileModel
+import com.example.unick.model.UserProfileModel
 
 interface UserProfileRepo {
     suspend fun getUserProfile(userId: String): Result<UserProfileModel>

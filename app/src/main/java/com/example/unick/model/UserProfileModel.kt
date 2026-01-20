@@ -1,7 +1,7 @@
 package com.example.unick.model
 
 data class UserProfileModel(
-    val name: String = "",
+    val fullName: String = "",
     val email: String = "",
     val location: String = "",
     val schoolId: String = "",

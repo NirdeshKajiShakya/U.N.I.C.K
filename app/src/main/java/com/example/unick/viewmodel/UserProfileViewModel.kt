@@ -7,7 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.unick.repo.UserProfileRepo
 import com.example.unick.view.ApplicationItemForUserProfile
 import com.example.unick.view.ShortlistedSchoolForUserProfile
-import com.example.unick.view.UserProfileModel
+import com.example.unick.model.UserProfileModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch

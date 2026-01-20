@@ -88,7 +88,8 @@ fun SchoolDashboardScreen(viewModel: SchoolViewModel, currentUid: String?) {
                              }
                         },
                         onProfileClick = {
-                            // Navigate to Profile
+                            val intent = Intent(context, SchoolDetailActivity::class.java)
+                            context.startActivity(intent)
                         }
                     )
                 }

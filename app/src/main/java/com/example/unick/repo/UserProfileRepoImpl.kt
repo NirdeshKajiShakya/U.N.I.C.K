@@ -3,7 +3,7 @@ package com.example.unick.repo
 import android.util.Log
 import com.example.unick.view.ApplicationItemForUserProfile
 import com.example.unick.view.ShortlistedSchoolForUserProfile
-import com.example.unick.view.UserProfileModel
+import com.example.unick.model.UserProfileModel
 import com.google.firebase.database.FirebaseDatabase
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withTimeout
