@@ -122,55 +122,14 @@ fun UserProfileScreen(viewModel: UserProfileViewModel?) {
     val applicationsState by viewModel?.applications?.collectAsState() ?: remember { mutableStateOf(UserProfileState.Idle) }
     val context = LocalContext.current
 
-    Scaffold(
-        bottomBar = {
-            UnifiedBottomNavigationBar(
-                currentRoute = BottomNavItem.Profile.route,
-                onNavigate = { route ->
-                    when (route) {
-                        BottomNavItem.Profile.route -> {
-                            // Already on Profile
-                        }
-                        BottomNavItem.Home.route -> {
-                             val intent = Intent(context, DashboardActivity::class.java)
-                             intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
-                             context.startActivity(intent)
-                        }
-                        BottomNavItem.AIChat.route -> {
-                             // Go to Dashboard and open AI Chat
-                             val intent = Intent(context, DashboardActivity::class.java)
-                             intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
-                             intent.putExtra("start_destination", BottomNavItem.AIChat.route)
-                             context.startActivity(intent)
-                        }
-                        else -> {
-                             // For Search/Notification, also go to Dashboard for now
-                             val intent = Intent(context, DashboardActivity::class.java)
-                             intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
-                             intent.putExtra("start_destination", route)
-                             context.startActivity(intent)
-                        }
-                    }
-                },
-                onProfileClick = {
-                     // Already on Profile
-                },
-                navItems = listOf(
-                    BottomNavItem.Home,
-                    BottomNavItem.Search,
-                    BottomNavItem.AIChat,
-                    BottomNavItem.Notification,
-                    BottomNavItem.Profile
-                )
-            )
-        }
-    ) { innerPadding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(BackgroundGray)
-                .padding(innerPadding) // Important: respect bottom bar padding
-        ) {
+    // Scaffold removed as it is now hosted in DashboardActivity which provides the bottom bar
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(BackgroundGray)
+            // No innerPadding needed from local scaffold, but we might want some bottom padding for the main scaffold's bar if it overlaps?
+            // Actually, NavHost usually handles the content area above the bottom bar.
+    ) {
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize(),
@@ -297,7 +256,6 @@ fun UserProfileScreen(viewModel: UserProfileViewModel?) {
             }
         }
     }
-}
 
 
 // -------------------- PROFILE HEADER WITH GRADIENT --------------------

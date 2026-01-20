@@ -43,19 +43,32 @@ import com.example.unick.model.SchoolForm
 import com.example.unick.ui.theme.UNICKTheme
 import com.example.unick.viewmodel.SchoolViewModel
 import com.example.unick.viewmodel.UserType
+import com.example.unick.viewmodel.UserProfileViewModel
+import com.example.unick.repo.UserProfileRepoImpl
+import com.google.firebase.auth.FirebaseAuth
 
 // BottomNavItem moved to UnifiedNavBar.kt
 
 
 class DashboardActivity : ComponentActivity() {
     private val viewModel: SchoolViewModel by viewModels()
+    private val userProfileViewModel: UserProfileViewModel by viewModels {
+        UserProfileViewModel.Factory(UserProfileRepoImpl())
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        
+        // Load user profile data
+        val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
+        if (currentUserId != null) {
+            userProfileViewModel.loadUserData(currentUserId)
+        }
+
         setContent {
             UNICKTheme {
-                MainScreen(viewModel = viewModel)
+                MainScreen(viewModel = viewModel, userProfileViewModel = userProfileViewModel)
             }
         }
     }
@@ -63,7 +76,7 @@ class DashboardActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainScreen(viewModel: SchoolViewModel) {
+fun MainScreen(viewModel: SchoolViewModel, userProfileViewModel: UserProfileViewModel) {
     val navController = rememberNavController()
     val context = LocalContext.current
     val activity = context as? ComponentActivity
@@ -102,8 +115,16 @@ fun MainScreen(viewModel: SchoolViewModel) {
                             }
                         }
                         BottomNavItem.Profile.route -> {
-                            // Redirect to UserProfileActivity
-                            handleProfileClick(userTypeState.value, context, navController)
+                            if (userTypeState.value is UserType.School) {
+                                // School -> Activity
+                                handleProfileClick(userTypeState.value, context, navController)
+                            } else {
+                                // Student -> Smooth Internal Navigation
+                                navController.navigate(BottomNavItem.Profile.route) {
+                                    popUpTo(navController.graph.startDestinationId)
+                                    launchSingleTop = true
+                                }
+                            }
                         }
                         else -> {
                             // Other tabs (Search, Notification) - navigate normally within NavHost
@@ -115,7 +136,14 @@ fun MainScreen(viewModel: SchoolViewModel) {
                     }
                 },
                 onProfileClick = {
-                     handleProfileClick(userTypeState.value, context, navController)
+                    if (userTypeState.value is UserType.School) {
+                         handleProfileClick(userTypeState.value, context, navController)
+                    } else {
+                         navController.navigate(BottomNavItem.Profile.route) {
+                            popUpTo(navController.graph.startDestinationId)
+                            launchSingleTop = true
+                         }
+                    }
                 },
                 navItems = listOf(
                     BottomNavItem.Home,
@@ -129,7 +157,7 @@ fun MainScreen(viewModel: SchoolViewModel) {
     ) { innerPadding ->
         Box(modifier = Modifier.padding(innerPadding)) {
             val userName by viewModel.userName.collectAsState()
-            NavigationHost(navController = navController, viewModel = viewModel, userName = userName)
+            NavigationHost(navController = navController, viewModel = viewModel, userProfileViewModel = userProfileViewModel, userName = userName)
         }
     }
 }
@@ -147,7 +175,7 @@ private fun handleProfileClick(userType: UserType, context: Context, navControll
 
 
 @Composable
-fun NavigationHost(navController: NavHostController, viewModel: SchoolViewModel, userName: String) {
+fun NavigationHost(navController: NavHostController, viewModel: SchoolViewModel, userProfileViewModel: UserProfileViewModel, userName: String) {
     NavHost(navController = navController, startDestination = BottomNavItem.Home.route) {
         composable(BottomNavItem.Home.route) {
             val schools by viewModel.schools.collectAsState()
@@ -171,7 +199,7 @@ fun NavigationHost(navController: NavHostController, viewModel: SchoolViewModel,
             NotificationScreen()
         }
         composable(BottomNavItem.Profile.route) {
-            UserProfileScreen(viewModel = null)
+            UserProfileScreen(viewModel = userProfileViewModel)
         }
         composable("compare") {
             SchoolCompareScreen(onBackClick = { navController.popBackStack() })
