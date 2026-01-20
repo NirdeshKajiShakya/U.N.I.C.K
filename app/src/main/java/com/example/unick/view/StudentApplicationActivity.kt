@@ -168,31 +168,8 @@ fun StudentRegistrationForm(schoolId: String = "") {
     val context = LocalContext.current
 
     Scaffold(
-        containerColor = Color(0xFFF5F7FA),
-        bottomBar = {
-            UnifiedBottomNavigationBar(
-                currentRoute = "", // No specific tab selected
-                onNavigate = { route ->
-                    when (route) {
-                        BottomNavItem.Home.route -> {
-                            val intent = Intent(context, DashboardActivity::class.java)
-                            intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
-                            context.startActivity(intent)
-                        }
-                        BottomNavItem.Profile.route -> {
-                             // Navigate to Profile if needed, or keeping it strictly for dashboard return
-                             // For now, let's just go home or do nothing if not implemented
-                        }
-                        else -> {
-                             // Handle other routes or ignore
-                        }
-                    }
-                },
-                onProfileClick = {
-                    // specific profile handling
-                }
-            )
-        }
+        containerColor = Color(0xFFF5F7FA)
+        // bottomBar removed
     ) { padding ->
         LazyColumn(
             modifier = Modifier

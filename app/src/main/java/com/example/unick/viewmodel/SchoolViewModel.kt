@@ -60,29 +60,41 @@ class SchoolViewModel : ViewModel() {
     private val _isLoadingSchools = MutableStateFlow(false)
     val isLoadingSchools = _isLoadingSchools.asStateFlow()
 
+    private val _userName = MutableStateFlow<String>("")
+    val userName = _userName.asStateFlow()
+
     private val _userType = MutableStateFlow<UserType>(UserType.Unknown)
     val userType = _userType.asStateFlow()
 
     init {
         fetchSchools()
-        checkUserType()
+        checkUserTypeAndFetchName()
     }
 
-    fun checkUserType() {
+    private fun checkUserTypeAndFetchName() {
         val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
-        val usersRef = FirebaseDatabase.getInstance().getReference("Users")
-        val schoolsRef = FirebaseDatabase.getInstance().getReference("schools")
+        val database = FirebaseDatabase.getInstance("https://vidyakhoj-927fb-default-rtdb.firebaseio.com/")
+        val usersRef = database.getReference("Users")
+        val schoolsRef = database.getReference("schools")
 
         usersRef.child(uid).addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 if (snapshot.exists()) {
                     _userType.value = UserType.Normal
+                    val name = snapshot.child("fullName").getValue(String::class.java)
+                    if (name != null) {
+                        _userName.value = name
+                    }
                 } else {
                     // If not in Users, check in schools
                     schoolsRef.child(uid).addListenerForSingleValueEvent(object : ValueEventListener {
                         override fun onDataChange(snapshot: DataSnapshot) {
                             if (snapshot.exists()) {
                                 _userType.value = UserType.School
+                                val name = snapshot.child("name").getValue(String::class.java)
+                                if (name != null) {
+                                    _userName.value = name
+                                }
                             } else {
                                 _userType.value = UserType.Unknown
                             }

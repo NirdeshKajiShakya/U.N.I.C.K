@@ -63,30 +63,7 @@ fun AdminProfileScreen() {
     val email = currentUser?.email ?: "admin@unick.com"
 
     Scaffold(
-        bottomBar = {
-            UnifiedBottomNavigationBar(
-                currentRoute = BottomNavItem.Profile.route,
-                onNavigate = { route ->
-                    if (route == BottomNavItem.Home.route) {
-                        val intent = Intent(context, AdminDashboardActivity::class.java)
-                        // intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP 
-                        // Using finish() might be better if we want to go back to dashboard activity in stack
-                        context.startActivity(intent)
-                        // (context as? ComponentActivity)?.finish() 
-                    } else if (route == "notification") {
-                         android.widget.Toast.makeText(context, "Notifications", android.widget.Toast.LENGTH_SHORT).show()
-                    }
-                },
-                onProfileClick = {
-                    // Already on profile
-                },
-                navItems = listOf(
-                    BottomNavItem.Home,
-                    BottomNavItem.Notification,
-                    BottomNavItem.Profile
-                )
-            )
-        }
+        // bottomBar removed
     ) { innerPadding ->
         Box(
             modifier = Modifier
