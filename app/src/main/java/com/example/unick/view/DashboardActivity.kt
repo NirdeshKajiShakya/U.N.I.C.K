@@ -1,4 +1,4 @@
- package com.example.unick.view
+package com.example.unick.view
 
 import android.content.Context
 import android.content.Intent
@@ -9,12 +9,10 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -26,23 +24,22 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import coil.compose.SubcomposeAsyncImage
 import com.example.unick.model.SchoolForm
 import com.example.unick.ui.theme.UNICKTheme
 import com.example.unick.viewmodel.SchoolViewModel
-import com.example.unick.viewmodel.UserType
+import com.example.unick.viewmodel.UserProfileViewModel
 
 // BottomNavItem moved to UnifiedNavBar.kt
 
@@ -78,9 +75,7 @@ fun MainScreen(viewModel: SchoolViewModel) {
 }
 
 @Composable
-fun BottomNavigationBar(navController: androidx.navigation.NavController, viewModel: SchoolViewModel) {
-    val context = androidx.compose.ui.platform.LocalContext.current
-    val userType by viewModel.userType.collectAsState()
+fun BottomNavigationBar(navController: NavController, viewModel: SchoolViewModel) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
@@ -93,7 +88,11 @@ fun BottomNavigationBar(navController: androidx.navigation.NavController, viewMo
             }
         },
         onProfileClick = {
-            handleProfileClick(userType, context, navController)
+            // Navigate to profile using the NavController instead of launching activity
+            navController.navigate(BottomNavItem.Profile.route) {
+                popUpTo(navController.graph.startDestinationId)
+                launchSingleTop = true
+            }
         },
         navItems = listOf(
             BottomNavItem.Home,
@@ -105,23 +104,6 @@ fun BottomNavigationBar(navController: androidx.navigation.NavController, viewMo
     )
 }
 
-private fun handleProfileClick(userType: UserType, context: Context, navController: androidx.navigation.NavController) {
-    when (userType) {
-        is UserType.Normal -> {
-            navController.navigate(BottomNavItem.Profile.route) {
-                popUpTo(navController.graph.startDestinationId)
-                launchSingleTop = true
-            }
-        }
-        is UserType.School -> {
-            val intent = Intent(context, SchoolDetailActivity::class.java)
-            context.startActivity(intent)
-        }
-        is UserType.Unknown -> {
-            // Optional: Show a toast or do nothing while user type is being determined
-        }
-    }
-}
 
 
 @Composable
@@ -147,7 +129,11 @@ fun NavigationHost(navController: NavHostController, viewModel: SchoolViewModel)
             NotificationScreen()
         }
         composable(BottomNavItem.Profile.route) {
-            UserProfileScreen(viewModel = null)
+            val repo = com.example.unick.repo.UserProfileRepoImpl()
+            val userProfileViewModel: UserProfileViewModel = viewModel(
+                factory = UserProfileViewModel.Factory(repo)
+            )
+            UserProfileScreen(viewModel = userProfileViewModel)
         }
     }
 }
@@ -369,7 +355,7 @@ fun SchoolSection(title: String, subtitle: String, schools: List<SchoolForm>, co
                     school = school, 
                     context = context,
                     onClick = {
-                        val intent = Intent(context, DashboardCard::class.java)
+                        val intent = Intent(context, SchoolDetailActivity::class.java)
                         intent.putExtra("school_details", school)
                         context.startActivity(intent)
                     }

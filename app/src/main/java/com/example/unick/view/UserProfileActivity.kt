@@ -23,6 +23,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -121,15 +122,35 @@ fun UserProfileScreen(viewModel: UserProfileViewModel?) {
     val applicationsState by viewModel?.applications?.collectAsState() ?: remember { mutableStateOf(UserProfileState.Idle) }
     val context = LocalContext.current
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(BackgroundGray)
-    ) {
+    Scaffold(
+        bottomBar = {
+            UnifiedBottomNavigationBar(
+                currentRoute = BottomNavItem.Profile.route,
+                onNavigate = { route ->
+                    // Navigate back to DashboardActivity
+                    val intent = Intent(context, DashboardActivity::class.java)
+                    intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                    context.startActivity(intent)
+                    (context as? ComponentActivity)?.finish()
+                },
+                onProfileClick = {
+                    // Already on profile screen, do nothing
+                },
+                navItems = listOf(
+                    BottomNavItem.Home,
+                    BottomNavItem.Search,
+                    BottomNavItem.AIChat,
+                    BottomNavItem.Notification,
+                    BottomNavItem.Profile
+                )
+            )
+        }
+    ) { innerPadding ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .windowInsetsPadding(WindowInsets.systemBars),
+                .windowInsetsPadding(WindowInsets.systemBars)
+                .padding(innerPadding),
             contentPadding = PaddingValues(bottom = 32.dp)
         ) {
 
