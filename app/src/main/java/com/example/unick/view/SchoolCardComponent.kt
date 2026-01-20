@@ -25,6 +25,7 @@ import com.example.unick.model.SchoolForm
 fun SchoolCard(
     school: SchoolForm, 
     context: Context, 
+    showStatus: Boolean = false,
     onClick: () -> Unit
 ) {
     Card(
@@ -80,20 +81,47 @@ fun SchoolCard(
                     )
                 }
 
-                // Rating badge (5 stars for all)
-                Box(
-                    modifier = Modifier
-                        .padding(12.dp)
-                        .background(Color(0xFF2563EB), RoundedCornerShape(8.dp))
-                        .padding(horizontal = 10.dp, vertical = 5.dp)
-                        .align(Alignment.TopEnd)
-                ) {
-                    Text(
-                        text = "⭐ 5.0",
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
+                // Rating badge (5 stars for all) or Status badge
+                if (showStatus) {
+                    val statusColor = when {
+                        school.verified -> Color(0xFF10B981) // Green
+                        school.rejected -> Color(0xFFEF4444) // Red
+                        else -> Color(0xFFF59E0B) // Orange
+                    }
+                    val statusText = when {
+                        school.verified -> "Verified"
+                        school.rejected -> "Rejected"
+                        else -> "Pending"
+                    }
+                    Box(
+                        modifier = Modifier
+                            .padding(12.dp)
+                            .background(statusColor, RoundedCornerShape(8.dp))
+                            .padding(horizontal = 10.dp, vertical = 5.dp)
+                            .align(Alignment.TopEnd)
+                    ) {
+                        Text(
+                            text = statusText,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                    }
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .padding(12.dp)
+                            .background(Color(0xFF2563EB), RoundedCornerShape(8.dp))
+                            .padding(horizontal = 10.dp, vertical = 5.dp)
+                            .align(Alignment.TopEnd)
+                    ) {
+                        Text(
+                            text = "⭐ 5.0",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                    }
                 }
             }
 

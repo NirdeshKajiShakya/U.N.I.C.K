@@ -19,6 +19,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.ui.draw.shadow
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -143,10 +145,33 @@ fun SchoolDashboardScreen(viewModel: SchoolViewModel, currentUid: String?) {
                     )
                     Spacer(modifier = Modifier.height(16.dp))
 
+                    // Add School Button (Moved from DashboardActivity)
+                    Button(
+                        onClick = {
+                            val intent = Intent(context, DataFormAcitivity::class.java)
+                            context.startActivity(intent)
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(58.dp)
+                            .shadow(8.dp, RoundedCornerShape(14.dp)),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF10B981)
+                        ),
+                        shape = RoundedCornerShape(14.dp)
+                    ) {
+                        Icon(Icons.Default.Add, "Add School", modifier = Modifier.size(22.dp), tint = Color.White)
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Text("Add Your School", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
                     // Shared School Card
                     SchoolCard(
                         school = mySchool,
                         context = context,
+                        showStatus = true, // Enable Status Indicator
                         onClick = {
                             val intent = Intent(context, DashboardCard::class.java)
                             intent.putExtra("school_details", mySchool)
