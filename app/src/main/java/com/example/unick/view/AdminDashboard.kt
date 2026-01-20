@@ -274,16 +274,28 @@ fun SchoolSubmissionCard(
                 Box(
                     modifier = Modifier
                         .background(
-                            if (submission.verified) AccentGreen.copy(alpha = 0.15f) else AccentOrange.copy(alpha = 0.15f),
+                            when {
+                                submission.verified -> AccentGreen.copy(alpha = 0.15f)
+                                submission.rejected -> Color(0xFFEF4444).copy(alpha = 0.15f)
+                                else -> AccentOrange.copy(alpha = 0.15f)
+                            },
                             RoundedCornerShape(12.dp)
                         )
                         .padding(horizontal = 12.dp, vertical = 6.dp)
                 ) {
                     Text(
-                        if (submission.verified) "Verified" else "Pending",
+                        text = when {
+                            submission.verified -> "Verified"
+                            submission.rejected -> "Rejected"
+                            else -> "Pending"
+                        },
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
-                        color = if (submission.verified) AccentGreen else AccentOrange
+                        color = when {
+                            submission.verified -> AccentGreen
+                            submission.rejected -> Color(0xFFEF4444)
+                            else -> AccentOrange
+                        }
                     )
                 }
             }

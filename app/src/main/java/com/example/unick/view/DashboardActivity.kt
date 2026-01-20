@@ -192,30 +192,6 @@ fun DashboardScreen(
                     color = Color(0xFF0F172A)
                 )
             }
-
-            Box(
-                modifier = Modifier
-                    .size(52.dp)
-                    .shadow(4.dp, CircleShape)
-                    .background(
-                        Brush.linearGradient(
-                            colors = listOf(Color(0xFF667EEA), Color(0xFF764BA2))
-                        ),
-                        CircleShape
-                    )
-                    .clickable {
-                        val intent = Intent(context, DataFormAcitivity::class.java)
-                        context.startActivity(intent)
-                    },
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Person,
-                    contentDescription = "User",
-                    tint = Color.White,
-                    modifier = Modifier.size(26.dp)
-                )
-            }
         }
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -306,27 +282,7 @@ fun DashboardScreen(
             Text("Compare Academic Programs", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color(0xFF2563EB))
         }
 
-        Spacer(modifier = Modifier.height(14.dp))
 
-        // Add School Button
-        Button(
-            onClick = {
-                val intent = Intent(context, DataFormAcitivity::class.java)
-                context.startActivity(intent)
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(58.dp)
-                .shadow(8.dp, RoundedCornerShape(14.dp)),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFF10B981)
-            ),
-            shape = RoundedCornerShape(14.dp)
-        ) {
-            Icon(Icons.Default.Add, "Add School", modifier = Modifier.size(22.dp), tint = Color.White)
-            Spacer(modifier = Modifier.width(10.dp))
-            Text("Add Your School", fontSize = 16.sp, fontWeight = FontWeight.Bold)
-        }
 
         Spacer(modifier = Modifier.height(32.dp))
 

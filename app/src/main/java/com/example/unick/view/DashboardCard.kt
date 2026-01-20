@@ -176,42 +176,44 @@ fun SchoolDetailsScreen(school: SchoolForm, isSchoolView: Boolean, onBack: () ->
                     
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Compare Button
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
+                    if (!isSchoolView) {
                         // Compare Button
-                        OutlinedButton(
-                            onClick = {
-                                val intent = Intent(context, CompareActivity::class.java)
-                                intent.putExtra("school_details", school)
-                                context.startActivity(intent)
-                            },
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(12.dp),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF2563EB)),
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF2563EB))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            Icon(Icons.Outlined.CompareArrows, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Compare", maxLines = 1)
-                        }
+                            // Compare Button
+                            OutlinedButton(
+                                onClick = {
+                                    val intent = Intent(context, CompareActivity::class.java)
+                                    intent.putExtra("school_details", school)
+                                    context.startActivity(intent)
+                                },
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(12.dp),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF2563EB)),
+                                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF2563EB))
+                            ) {
+                                Icon(Icons.Outlined.CompareArrows, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Compare", maxLines = 1)
+                            }
 
-                        // Apply Now Button
-                        Button(
-                            onClick = {
-                                val intent = Intent(context, StudentApplicationActivity::class.java)
-                                intent.putExtra("school_details", school)
-                                context.startActivity(intent)
-                            },
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB))
-                        ) {
-                            Icon(Icons.Outlined.Edit, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Apply Now", maxLines = 1)
+                            // Apply Now Button
+                            Button(
+                                onClick = {
+                                    val intent = Intent(context, StudentApplicationActivity::class.java)
+                                    intent.putExtra("school_details", school)
+                                    context.startActivity(intent)
+                                },
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB))
+                            ) {
+                                Icon(Icons.Outlined.Edit, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Apply Now", maxLines = 1)
+                            }
                         }
                     }
                     

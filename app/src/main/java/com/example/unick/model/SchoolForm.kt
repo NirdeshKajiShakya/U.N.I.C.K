@@ -25,5 +25,6 @@ data class SchoolForm(
     val hostelFacility: Boolean = false,
     val extracurricular: String = "",
     val description: String = "",
-    val verified: Boolean = false
+    val verified: Boolean = false,
+    val rejected: Boolean = false
 ) : Parcelable

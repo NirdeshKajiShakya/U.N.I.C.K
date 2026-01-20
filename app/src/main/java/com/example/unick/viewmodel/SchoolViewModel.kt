@@ -184,4 +184,14 @@ class SchoolViewModel : ViewModel() {
             }
         }
     }
+    fun rejectSchool(uid: String, onResult: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            repository.updateSchoolRejectionStatus(uid, true) { success ->
+                if (success) {
+                    fetchSchools() // Refresh list
+                }
+                onResult(success)
+            }
+        }
+    }
 }

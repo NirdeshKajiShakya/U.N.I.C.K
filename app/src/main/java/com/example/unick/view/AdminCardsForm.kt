@@ -54,6 +54,16 @@ class AdminCardsForm : ComponentActivity() {
                                     android.widget.Toast.makeText(this, "Verification Failed", android.widget.Toast.LENGTH_SHORT).show()
                                 }
                             }
+                        },
+                        onReject = {
+                            viewModel.rejectSchool(schoolForm.uid) { success ->
+                                if (success) {
+                                    android.widget.Toast.makeText(this, "School Rejected", android.widget.Toast.LENGTH_SHORT).show()
+                                    finish()
+                                } else {
+                                    android.widget.Toast.makeText(this, "Rejection Failed", android.widget.Toast.LENGTH_SHORT).show()
+                                }
+                            }
                         }
                     )
                 } else {
@@ -71,7 +81,8 @@ class AdminCardsForm : ComponentActivity() {
 fun AdminSchoolDetailScreen(
     school: SchoolForm,
     onBack: () -> Unit,
-    onConfirmVerify: () -> Unit
+    onConfirmVerify: () -> Unit,
+    onReject: () -> Unit
 ) {
     var selectedTab by remember { mutableStateOf("Overview") }
     val context = LocalContext.current
@@ -89,20 +100,42 @@ fun AdminSchoolDetailScreen(
             )
         },
         bottomBar = {
-            // Confirm Verify Button
-            Button(
-                onClick = onConfirmVerify,
+            // Action Buttons
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp)
-                    .height(56.dp)
-                    .shadow(4.dp, RoundedCornerShape(12.dp)),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF10B981) // Green for verify
-                )
+                    .padding(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Text("Confirm Verify", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                // Reject Button
+                Button(
+                    onClick = onReject,
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(56.dp)
+                        .shadow(4.dp, RoundedCornerShape(12.dp)),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFFEF4444) // Red for reject
+                    )
+                ) {
+                    Text("Reject", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                }
+
+                // Confirm Verify Button
+                Button(
+                    onClick = onConfirmVerify,
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(56.dp)
+                        .shadow(4.dp, RoundedCornerShape(12.dp)),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF10B981) // Green for verify
+                    )
+                ) {
+                    Text("Verify", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                }
             }
         }
     ) { padding ->

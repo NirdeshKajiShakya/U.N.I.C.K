@@ -109,12 +109,31 @@ class SchoolRepository {
         })
     }
     fun updateSchoolVerificationStatus(uid: String, isVerified: Boolean, onComplete: (Boolean) -> Unit) {
-        database.child(uid).child("verified").setValue(isVerified)
+        val updates = mapOf<String, Any>(
+            "verified" to isVerified,
+            "rejected" to false // If verifying, ensure rejected is false
+        )
+        database.child(uid).updateChildren(updates)
             .addOnCompleteListener { task ->
                 onComplete(task.isSuccessful)
             }
             .addOnFailureListener { e ->
                 Log.e("SchoolRepository", "Error updating verification status: ${e.message}")
+                onComplete(false)
+            }
+    }
+
+    fun updateSchoolRejectionStatus(uid: String, isRejected: Boolean, onComplete: (Boolean) -> Unit) {
+        val updates = mapOf<String, Any>(
+            "verified" to false, // If rejecting, ensure verified is false
+            "rejected" to isRejected
+        )
+        database.child(uid).updateChildren(updates)
+            .addOnCompleteListener { task ->
+                onComplete(task.isSuccessful)
+            }
+            .addOnFailureListener { e ->
+                Log.e("SchoolRepository", "Error updating rejection status: ${e.message}")
                 onComplete(false)
             }
     }
