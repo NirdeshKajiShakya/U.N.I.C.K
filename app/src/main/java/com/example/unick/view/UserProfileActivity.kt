@@ -136,7 +136,7 @@ fun UserProfileScreen(viewModel: UserProfileViewModel?) {
                 contentPadding = PaddingValues(bottom = 32.dp)
             ) {
                 // ... content items (Header, Stats, etc.) ...
-                // Re-inserted existing content logic below for clarity if needed, 
+                // Re-inserted existing content logic below for clarity if needed,
                 // but since this tool replaces a block, I must assume the original block contained the lazy column setup.
                 // Wait, the original code had Box -> LazyColumn. I am replacing the Box wrapper with Scaffold wrapper.
 

@@ -1,4 +1,4 @@
- package com.example.unick.view
+package com.example.unick.view
 
 import android.content.Context
 import android.content.Intent
@@ -32,6 +32,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -42,6 +43,7 @@ import coil.compose.SubcomposeAsyncImage
 import com.example.unick.model.SchoolForm
 import com.example.unick.ui.theme.UNICKTheme
 import com.example.unick.viewmodel.SchoolViewModel
+import com.example.unick.viewmodel.UserProfileViewModel
 import com.example.unick.viewmodel.UserType
 import com.example.unick.viewmodel.UserProfileViewModel
 import com.example.unick.repo.UserProfileRepoImpl
@@ -59,7 +61,7 @@ class DashboardActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        
+
         // Load user profile data
         val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
         if (currentUserId != null) {
@@ -93,7 +95,7 @@ fun MainScreen(viewModel: SchoolViewModel, userProfileViewModel: UserProfileView
     }
 
     val userTypeState = viewModel.userType.collectAsState()
-    
+
     Scaffold(
         bottomBar = {
             UnifiedBottomNavigationBar(
