@@ -23,6 +23,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -121,131 +122,179 @@ fun UserProfileScreen(viewModel: UserProfileViewModel?) {
     val applicationsState by viewModel?.applications?.collectAsState() ?: remember { mutableStateOf(UserProfileState.Idle) }
     val context = LocalContext.current
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(BackgroundGray)
-    ) {
-        LazyColumn(
+    Scaffold(
+        bottomBar = {
+            UnifiedBottomNavigationBar(
+                currentRoute = BottomNavItem.Profile.route,
+                onNavigate = { route ->
+                    when (route) {
+                        BottomNavItem.Profile.route -> {
+                            // Already on Profile
+                        }
+                        BottomNavItem.Home.route -> {
+                             val intent = Intent(context, DashboardActivity::class.java)
+                             intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                             context.startActivity(intent)
+                        }
+                        BottomNavItem.AIChat.route -> {
+                             // Go to Dashboard and open AI Chat
+                             val intent = Intent(context, DashboardActivity::class.java)
+                             intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                             intent.putExtra("start_destination", BottomNavItem.AIChat.route)
+                             context.startActivity(intent)
+                        }
+                        else -> {
+                             // For Search/Notification, also go to Dashboard for now
+                             val intent = Intent(context, DashboardActivity::class.java)
+                             intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                             intent.putExtra("start_destination", route)
+                             context.startActivity(intent)
+                        }
+                    }
+                },
+                onProfileClick = {
+                     // Already on Profile
+                },
+                navItems = listOf(
+                    BottomNavItem.Home,
+                    BottomNavItem.Search,
+                    BottomNavItem.AIChat,
+                    BottomNavItem.Notification,
+                    BottomNavItem.Profile
+                )
+            )
+        }
+    ) { innerPadding ->
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .windowInsetsPadding(WindowInsets.systemBars),
-            contentPadding = PaddingValues(bottom = 32.dp)
+                .background(BackgroundGray)
+                .padding(innerPadding) // Important: respect bottom bar padding
         ) {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize(),
+                contentPadding = PaddingValues(bottom = 32.dp)
+            ) {
+                // ... content items (Header, Stats, etc.) ...
+                // Re-inserted existing content logic below for clarity if needed, 
+                // but since this tool replaces a block, I must assume the original block contained the lazy column setup.
+                // Wait, the original code had Box -> LazyColumn. I am replacing the Box wrapper with Scaffold wrapper.
 
-            // ---------------- PROFILE HEADER WITH GRADIENT ----------------
-            item {
-                when (userProfileState) {
-                    is UserProfileState.Loading -> {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(200.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            CircularProgressIndicator(color = PrimaryBlue)
-                        }
-                    }
-                    is UserProfileState.Error -> Text(
-                        "Error: ${(userProfileState as UserProfileState.Error).message}",
-                        Modifier.padding(20.dp),
-                        color = AccentRed
-                    )
-                    is UserProfileState.Success -> {
-                        val user = (userProfileState as UserProfileState.Success<UserProfileModel>).data
-                        ProfileHeaderSection(
-                            userName = user.fullName,
-                            email = user.email,
-                            onEditProfileClick = {
-                                val intent = Intent(context, EditUserProfileActivity::class.java)
-                                context.startActivity(intent)
+                // ---------------- PROFILE HEADER WITH GRADIENT ----------------
+                item {
+                    when (userProfileState) {
+                        is UserProfileState.Loading -> {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(200.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CircularProgressIndicator(color = PrimaryBlue)
                             }
+                        }
+                        is UserProfileState.Error -> Text(
+                            "Error: ${(userProfileState as UserProfileState.Error).message}",
+                            Modifier.padding(20.dp),
+                            color = AccentRed
                         )
-                    }
-                    else -> {}
-                }
-            }
-
-            // ---------------- QUICK STATS ----------------
-            item {
-                val applicationsCount = when (applicationsState) {
-                    is UserProfileState.Success -> (applicationsState as UserProfileState.Success<List<ApplicationItemForUserProfile>>).data.size
-                    else -> 0
-                }
-                val schoolsCount = when (shortlistedSchoolsState) {
-                    is UserProfileState.Success -> (shortlistedSchoolsState as UserProfileState.Success<List<ShortlistedSchoolForUserProfile>>).data.size
-                    else -> 0
-                }
-                QuickStatsSection(applicationsCount = applicationsCount, shortlistedCount = schoolsCount)
-            }
-
-            // ---------------- SHORTLISTED SCHOOLS ----------------
-            item {
-                when (shortlistedSchoolsState) {
-                    is UserProfileState.Loading -> {}
-                    is UserProfileState.Error -> Text(
-                        "Error loading schools",
-                        Modifier.padding(20.dp),
-                        color = AccentRed
-                    )
-                    is UserProfileState.Success -> {
-                        val schools = (shortlistedSchoolsState as UserProfileState.Success<List<ShortlistedSchoolForUserProfile>>).data
-                        ShortlistedSchoolsSectionForUserProfile(
-                            schools = schools,
-                            onSchoolClick = {},
-                            onViewAllClick = {}
-                        )
-                    }
-                    else -> {}
-                }
-            }
-
-            // ---------------- APPLICATIONS HEADER ----------------
-            item {
-                ApplicationsHeaderSectionForUserProfile()
-            }
-
-            // ---------------- APPLICATION LIST ----------------
-            item {
-                when (applicationsState) {
-                    is UserProfileState.Loading -> {}
-                    is UserProfileState.Error -> Text(
-                        "Error loading applications",
-                        Modifier.padding(20.dp),
-                        color = AccentRed
-                    )
-                    is UserProfileState.Success -> {
-                        val applications = (applicationsState as UserProfileState.Success<List<ApplicationItemForUserProfile>>).data
-                        if (applications.isEmpty()) {
-                            EmptyStateCard(
-                                icon = Icons.Outlined.Description,
-                                title = "No Applications Yet",
-                                subtitle = "Start applying to schools to see your applications here"
-                            )
-                        } else {
-                            ApplicationsListSectionForUserProfile(
-                                applications = applications,
-                                onViewSchoolClick = {},
-                                onViewPdfClick = {}
+                        is UserProfileState.Success -> {
+                            val user = (userProfileState as UserProfileState.Success<UserProfileModel>).data
+                            ProfileHeaderSection(
+                                userName = user.fullName,
+                                email = user.email,
+                                onEditProfileClick = {
+                                    val intent = Intent(context, EditUserProfileActivity::class.java)
+                                    context.startActivity(intent)
+                                }
                             )
                         }
+                        else -> {}
                     }
-                    else -> {}
                 }
-            }
 
-            // ---------------- ACCOUNT DETAILS ----------------
-            item {
-                val userProfile = when (userProfileState) {
-                    is UserProfileState.Success -> (userProfileState as UserProfileState.Success<UserProfileModel>).data
-                    else -> null
+                // ---------------- QUICK STATS ----------------
+                item {
+                    val applicationsCount = when (applicationsState) {
+                        is UserProfileState.Success -> (applicationsState as UserProfileState.Success<List<ApplicationItemForUserProfile>>).data.size
+                        else -> 0
+                    }
+                    val schoolsCount = when (shortlistedSchoolsState) {
+                        is UserProfileState.Success -> (shortlistedSchoolsState as UserProfileState.Success<List<ShortlistedSchoolForUserProfile>>).data.size
+                        else -> 0
+                    }
+                    QuickStatsSection(applicationsCount = applicationsCount, shortlistedCount = schoolsCount)
                 }
-                AccountDetailsSectionForUserProfile(userProfile)
-            }
 
-            item { Spacer(modifier = Modifier.height(24.dp)) }
-            item { LogoutButtonForUserProfile() }
-            item { Spacer(modifier = Modifier.height(20.dp)) }
+                // ---------------- SHORTLISTED SCHOOLS ----------------
+                item {
+                    when (shortlistedSchoolsState) {
+                        is UserProfileState.Loading -> {}
+                        is UserProfileState.Error -> Text(
+                            "Error loading schools",
+                            Modifier.padding(20.dp),
+                            color = AccentRed
+                        )
+                        is UserProfileState.Success -> {
+                            val schools = (shortlistedSchoolsState as UserProfileState.Success<List<ShortlistedSchoolForUserProfile>>).data
+                            ShortlistedSchoolsSectionForUserProfile(
+                                schools = schools,
+                                onSchoolClick = {},
+                                onViewAllClick = {}
+                            )
+                        }
+                        else -> {}
+                    }
+                }
+
+                // ---------------- APPLICATIONS HEADER ----------------
+                item {
+                    ApplicationsHeaderSectionForUserProfile()
+                }
+
+                // ---------------- APPLICATION LIST ----------------
+                item {
+                    when (applicationsState) {
+                        is UserProfileState.Loading -> {}
+                        is UserProfileState.Error -> Text(
+                            "Error loading applications",
+                            Modifier.padding(20.dp),
+                            color = AccentRed
+                        )
+                        is UserProfileState.Success -> {
+                            val applications = (applicationsState as UserProfileState.Success<List<ApplicationItemForUserProfile>>).data
+                            if (applications.isEmpty()) {
+                                EmptyStateCard(
+                                    icon = Icons.Outlined.Description,
+                                    title = "No Applications Yet",
+                                    subtitle = "Start applying to schools to see your applications here"
+                                )
+                            } else {
+                                ApplicationsListSectionForUserProfile(
+                                    applications = applications,
+                                    onViewSchoolClick = {},
+                                    onViewPdfClick = {}
+                                )
+                            }
+                        }
+                        else -> {}
+                    }
+                }
+
+                // ---------------- ACCOUNT DETAILS ----------------
+                item {
+                    val userProfile = when (userProfileState) {
+                        is UserProfileState.Success -> (userProfileState as UserProfileState.Success<UserProfileModel>).data
+                        else -> null
+                    }
+                    AccountDetailsSectionForUserProfile(userProfile)
+                }
+
+                item { Spacer(modifier = Modifier.height(24.dp)) }
+                item { LogoutButtonForUserProfile() }
+                item { Spacer(modifier = Modifier.height(20.dp)) }
+            }
         }
     }
 }

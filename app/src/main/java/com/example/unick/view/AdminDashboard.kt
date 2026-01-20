@@ -84,28 +84,7 @@ fun AdminDashboardScreen(schoolSubmissions: List<SchoolForm>) {
     val navController = androidx.navigation.compose.rememberNavController()
 
     androidx.compose.material3.Scaffold(
-        bottomBar = {
-            UnifiedBottomNavigationBar(
-                currentRoute = BottomNavItem.Home.route,
-                onNavigate = { route ->
-                    if (route == BottomNavItem.Home.route) {
-                         // Already on home
-                    } else if (route == "notification") {
-                         // Handle notification click if needed
-                         android.widget.Toast.makeText(context, "Notifications", android.widget.Toast.LENGTH_SHORT).show()
-                    }
-                },
-                onProfileClick = {
-                    val intent = Intent(context, AdminProfileActivity::class.java)
-                    context.startActivity(intent)
-                },
-                navItems = listOf(
-                    BottomNavItem.Home,
-                    BottomNavItem.Notification,
-                    BottomNavItem.Profile
-                )
-            )
-        }
+        // bottomBar removed
     ) { innerPadding ->
         Box(
             modifier = Modifier

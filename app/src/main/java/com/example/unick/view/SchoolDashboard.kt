@@ -72,26 +72,7 @@ fun SchoolDashboardScreen(viewModel: SchoolViewModel, currentUid: String?) {
         if (mySchool != null) {
             // New School Dashboard UI
             Scaffold(
-                bottomBar = {
-                    UnifiedBottomNavigationBar(
-                        currentRoute = BottomNavItem.Home.route,
-                        onNavigate = { route ->
-                             // Handle Navigation
-                             when(route) {
-                                 BottomNavItem.Home.route -> {
-                                     // Already on Home, maybe scroll to top?
-                                 }
-                                 BottomNavItem.Profile.route -> {
-                                     // Navigate to Profile
-                                 }
-                                 // Add other routes as needed
-                             }
-                        },
-                        onProfileClick = {
-                            // Navigate to Profile
-                        }
-                    )
-                }
+                // bottomBar removed
             ) { innerPadding ->
                 Column(
                     modifier = Modifier

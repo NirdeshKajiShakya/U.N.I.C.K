@@ -79,34 +79,7 @@ fun SchoolDetailsScreen(school: SchoolForm, isSchoolView: Boolean, onBack: () ->
             )
         },
         bottomBar = {
-            // Using the shared Bottom Navigation Bar
-            // Highlighting 'Home' as the rough equivalent, or no specific highlight if prefered.
-            // But navigation should work.
-             UnifiedBottomNavigationBar(
-                currentRoute = "", // No specific route selected or maybe 'search' if they came from search
-                onNavigate = { route ->
-                    when (route) {
-                        BottomNavItem.Home.route -> {
-                            // Navigate back to Dashboard based on user type context
-                            val targetActivity = if (isSchoolView) SchoolDashboard::class.java else DashboardActivity::class.java
-                            val intent = Intent(context, targetActivity)
-                            intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
-                            context.startActivity(intent)
-                        }
-                         BottomNavItem.Profile.route -> {
-                             // Assuming standard profile for student. 
-                             // If we need to detect user type, we might need VM access or just launch generic profile
-                             // For now, let's launch UserProfileScreen via its activity or placeholder
-                             // NOTE: DashboardActivity handles navigation. Here we might just finish() to go back if Home
-                        }
-                    }
-                },
-                onProfileClick = {
-                     // Simple placeholder or specific intent if available
-                     // For better UX, might just return to Dashboard with extra "open profile" flag?
-                     // Or just generic Profile Activity if it exists.
-                }
-            )
+            // bottomBar removed
         }
     ) { innerPadding ->
         LazyColumn(

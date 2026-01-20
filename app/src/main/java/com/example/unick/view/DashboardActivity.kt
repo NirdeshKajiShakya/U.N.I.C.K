@@ -65,67 +65,89 @@ class DashboardActivity : ComponentActivity() {
 @Composable
 fun MainScreen(viewModel: SchoolViewModel) {
     val navController = rememberNavController()
+    val context = LocalContext.current
+    val activity = context as? ComponentActivity
+    val intent = activity?.intent
+    val startDestination = intent?.getStringExtra("start_destination")
 
+    LaunchedEffect(startDestination) {
+        if (!startDestination.isNullOrEmpty()) {
+            navController.navigate(startDestination) {
+                popUpTo(navController.graph.startDestinationId)
+                launchSingleTop = true
+            }
+        }
+    }
+
+    val userTypeState = viewModel.userType.collectAsState()
+    
     Scaffold(
         bottomBar = {
-            BottomNavigationBar(navController = navController, viewModel = viewModel)
+            UnifiedBottomNavigationBar(
+                currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route,
+                onNavigate = { route ->
+                    when (route) {
+                        BottomNavItem.Home.route -> {
+                            // If already on home (or any other tab in dashboard), navigate to Home tab
+                             navController.navigate(BottomNavItem.Home.route) {
+                                popUpTo(navController.graph.startDestinationId)
+                                launchSingleTop = true
+                             }
+                        }
+                        BottomNavItem.AIChat.route -> {
+                            // Navigate to AI Chat tab
+                            navController.navigate(BottomNavItem.AIChat.route) {
+                                popUpTo(navController.graph.startDestinationId)
+                                launchSingleTop = true
+                            }
+                        }
+                        BottomNavItem.Profile.route -> {
+                            // Redirect to UserProfileActivity
+                            handleProfileClick(userTypeState.value, context, navController)
+                        }
+                        else -> {
+                            // Other tabs (Search, Notification) - navigate normally within NavHost
+                             navController.navigate(route) {
+                                popUpTo(navController.graph.startDestinationId)
+                                launchSingleTop = true
+                             }
+                        }
+                    }
+                },
+                onProfileClick = {
+                     handleProfileClick(userTypeState.value, context, navController)
+                },
+                navItems = listOf(
+                    BottomNavItem.Home,
+                    BottomNavItem.Search,
+                    BottomNavItem.AIChat,
+                    BottomNavItem.Notification,
+                    BottomNavItem.Profile
+                )
+            )
         }
     ) { innerPadding ->
         Box(modifier = Modifier.padding(innerPadding)) {
-            NavigationHost(navController = navController, viewModel = viewModel)
+            val userName by viewModel.userName.collectAsState()
+            NavigationHost(navController = navController, viewModel = viewModel, userName = userName)
         }
     }
-}
-
-@Composable
-fun BottomNavigationBar(navController: androidx.navigation.NavController, viewModel: SchoolViewModel) {
-    val context = androidx.compose.ui.platform.LocalContext.current
-    val userType by viewModel.userType.collectAsState()
-    val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentRoute = navBackStackEntry?.destination?.route
-
-    UnifiedBottomNavigationBar(
-        currentRoute = currentRoute,
-        onNavigate = { route ->
-            navController.navigate(route) {
-                popUpTo(navController.graph.startDestinationId)
-                launchSingleTop = true
-            }
-        },
-        onProfileClick = {
-            handleProfileClick(userType, context, navController)
-        },
-        navItems = listOf(
-            BottomNavItem.Home,
-            BottomNavItem.Search,
-            BottomNavItem.AIChat,
-            BottomNavItem.Notification,
-            BottomNavItem.Profile
-        )
-    )
 }
 
 private fun handleProfileClick(userType: UserType, context: Context, navController: androidx.navigation.NavController) {
-    when (userType) {
-        is UserType.Normal -> {
-            navController.navigate(BottomNavItem.Profile.route) {
-                popUpTo(navController.graph.startDestinationId)
-                launchSingleTop = true
-            }
-        }
-        is UserType.School -> {
-            val intent = Intent(context, SchoolDetailActivity::class.java)
-            context.startActivity(intent)
-        }
-        is UserType.Unknown -> {
-            // Optional: Show a toast or do nothing while user type is being determined
-        }
+    if (userType is UserType.School) {
+        val intent = Intent(context, SchoolDashboard::class.java)
+        context.startActivity(intent)
+    } else {
+        // Normal user -> UserProfileActivity
+        val intent = Intent(context, UserProfileActivity::class.java)
+        context.startActivity(intent)
     }
 }
 
 
 @Composable
-fun NavigationHost(navController: NavHostController, viewModel: SchoolViewModel) {
+fun NavigationHost(navController: NavHostController, viewModel: SchoolViewModel, userName: String) {
     NavHost(navController = navController, startDestination = BottomNavItem.Home.route) {
         composable(BottomNavItem.Home.route) {
             val schools by viewModel.schools.collectAsState()
@@ -134,7 +156,9 @@ fun NavigationHost(navController: NavHostController, viewModel: SchoolViewModel)
             DashboardScreen(
                 schools = verifiedSchools,
                 isLoading = isLoading,
-                onRefresh = { viewModel.fetchSchools() }
+                onRefresh = { viewModel.fetchSchools() },
+                onCompareClick = { navController.navigate("compare") },
+                userName = userName
             )
         }
         composable(BottomNavItem.Search.route) {
@@ -149,6 +173,9 @@ fun NavigationHost(navController: NavHostController, viewModel: SchoolViewModel)
         composable(BottomNavItem.Profile.route) {
             UserProfileScreen(viewModel = null)
         }
+        composable("compare") {
+            SchoolCompareScreen(onBackClick = { navController.popBackStack() })
+        }
     }
 }
 
@@ -157,7 +184,9 @@ fun NavigationHost(navController: NavHostController, viewModel: SchoolViewModel)
 fun DashboardScreen(
     schools: List<SchoolForm> = emptyList(),
     isLoading: Boolean = false,
-    onRefresh: () -> Unit = {}
+    onRefresh: () -> Unit = {},
+    onCompareClick: () -> Unit = {},
+    userName: String = "Student"
 ) {
     var isSearchActive by remember { mutableStateOf(false) }
     var searchText by remember { mutableStateOf("") }
@@ -186,7 +215,7 @@ fun DashboardScreen(
                     fontWeight = FontWeight.Medium
                 )
                 Text(
-                    text = "Student",
+                    text = if (userName.isNotBlank()) userName else "Student",
                     fontSize = 32.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFF0F172A)
@@ -265,7 +294,7 @@ fun DashboardScreen(
 
         // Compare Button
         OutlinedButton(
-            onClick = { /* Handle compare */ },
+            onClick = onCompareClick,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(58.dp)
