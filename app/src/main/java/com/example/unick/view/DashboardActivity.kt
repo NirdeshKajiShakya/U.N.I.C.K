@@ -197,7 +197,10 @@ fun NavigationHost(navController: NavHostController, viewModel: SchoolViewModel,
             UserProfileScreen(viewModel = userProfileViewModel)
         }
         composable("compare") {
-            SchoolCompareScreen(onBackClick = { navController.popBackStack() })
+            SchoolCompareScreen(
+                onBackClick = { navController.popBackStack() },
+                showBottomBar = false
+            )
         }
     }
 }

@@ -168,18 +168,59 @@ fun StudentRegistrationForm(schoolId: String = "") {
     val context = LocalContext.current
 
     Scaffold(
-        containerColor = Color(0xFFF5F7FA)
-        // bottomBar removed
+        containerColor = Color(0xFFF5F7FA),
+        contentWindowInsets = WindowInsets.safeDrawing, // Ensure safe drawing insets
+        bottomBar = {
+            UnifiedBottomNavigationBar(
+                currentRoute = "",
+                onNavigate = { route ->
+                    when (route) {
+                        BottomNavItem.Home.route -> {
+                             val intent = Intent(context, DashboardActivity::class.java)
+                             intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                             context.startActivity(intent)
+                        }
+                        BottomNavItem.AIChat.route -> {
+                             val intent = Intent(context, DashboardActivity::class.java)
+                             intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                             intent.putExtra("start_destination", BottomNavItem.AIChat.route)
+                             context.startActivity(intent)
+                        }
+                        BottomNavItem.Profile.route -> {
+                             val intent = Intent(context, UserProfileActivity::class.java)
+                             context.startActivity(intent)
+                        }
+                        else -> {
+                             val intent = Intent(context, DashboardActivity::class.java)
+                             intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                             intent.putExtra("start_destination", route)
+                             context.startActivity(intent)
+                        }
+                    }
+                },
+                onProfileClick = {
+                     val intent = Intent(context, UserProfileActivity::class.java)
+                     context.startActivity(intent)
+                },
+                navItems = listOf(
+                    BottomNavItem.Home,
+                    BottomNavItem.Search,
+                    BottomNavItem.AIChat,
+                    BottomNavItem.Notification,
+                    BottomNavItem.Profile
+                )
+            )
+        }
     ) { padding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color(0xFFF5F7FA))
-                .padding(padding),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Top,
-            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 20.dp)
-        ) {
+        Box(modifier = Modifier.padding(padding)) {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color(0xFFF5F7FA)),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Top,
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 20.dp)
+            ) {
             item {
                 Column(
                     modifier = Modifier
@@ -225,6 +266,7 @@ fun StudentRegistrationForm(schoolId: String = "") {
             }
         }
     }
+}
 }
 
 @Composable
