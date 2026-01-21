@@ -9,12 +9,10 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -26,20 +24,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import coil.compose.SubcomposeAsyncImage
 import com.example.unick.model.SchoolForm
 import com.example.unick.ui.theme.UNICKTheme
 import com.example.unick.viewmodel.SchoolViewModel
@@ -119,7 +113,7 @@ fun MainScreen(viewModel: SchoolViewModel, userProfileViewModel: UserProfileView
                         BottomNavItem.Profile.route -> {
                             if (userTypeState.value is UserType.School) {
                                 // School -> Activity
-                                handleProfileClick(userTypeState.value, context, navController)
+                                handleProfileClick(userTypeState.value, context)
                             } else {
                                 // Student -> Smooth Internal Navigation
                                 navController.navigate(BottomNavItem.Profile.route) {
@@ -139,7 +133,7 @@ fun MainScreen(viewModel: SchoolViewModel, userProfileViewModel: UserProfileView
                 },
                 onProfileClick = {
                     if (userTypeState.value is UserType.School) {
-                         handleProfileClick(userTypeState.value, context, navController)
+                         handleProfileClick(userTypeState.value, context)
                     } else {
                          navController.navigate(BottomNavItem.Profile.route) {
                             popUpTo(navController.graph.startDestinationId)
@@ -164,7 +158,7 @@ fun MainScreen(viewModel: SchoolViewModel, userProfileViewModel: UserProfileView
     }
 }
 
-private fun handleProfileClick(userType: UserType, context: Context, navController: androidx.navigation.NavController) {
+private fun handleProfileClick(userType: UserType, context: Context) {
     if (userType is UserType.School) {
         val intent = Intent(context, SchoolDashboard::class.java)
         context.startActivity(intent)
