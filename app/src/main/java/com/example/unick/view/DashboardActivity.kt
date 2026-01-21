@@ -45,7 +45,7 @@ import com.example.unick.ui.theme.UNICKTheme
 import com.example.unick.viewmodel.SchoolViewModel
 import com.example.unick.viewmodel.UserProfileViewModel
 import com.example.unick.viewmodel.UserType
-import com.example.unick.viewmodel.UserProfileViewModel
+
 import com.example.unick.repo.UserProfileRepoImpl
 import com.google.firebase.auth.FirebaseAuth
 

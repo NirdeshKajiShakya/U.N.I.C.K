@@ -72,7 +72,35 @@ fun SchoolDashboardScreen(viewModel: SchoolViewModel, currentUid: String?) {
         if (mySchool != null) {
             // New School Dashboard UI
             Scaffold(
-                // bottomBar removed
+                bottomBar = {
+                    UnifiedBottomNavigationBar(
+                        currentRoute = BottomNavItem.Home.route,
+                        onNavigate = { route ->
+                            when (route) {
+                                BottomNavItem.Home.route -> { /* Stay on Home */ }
+                                BottomNavItem.Profile.route -> {
+                                    if (currentUid != null) {
+                                        val intent = Intent(context, SchoolDetailActivity::class.java)
+                                        intent.putExtra("uid", currentUid)
+                                        context.startActivity(intent)
+                                    }
+                                }
+                                else -> {
+                                    val intent = Intent(context, DashboardActivity::class.java)
+                                    intent.putExtra("start_destination", route)
+                                    context.startActivity(intent)
+                                }
+                            }
+                        },
+                        onProfileClick = {
+                            if (currentUid != null) {
+                                val intent = Intent(context, SchoolDetailActivity::class.java)
+                                intent.putExtra("uid", currentUid)
+                                context.startActivity(intent)
+                            }
+                        }
+                    )
+                }
             ) { innerPadding ->
                 Column(
                     modifier = Modifier
