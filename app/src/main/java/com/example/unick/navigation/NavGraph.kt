@@ -10,8 +10,8 @@ import com.example.unick.view.SchoolDetailScreen
 import com.example.unick.view.ShortlistScreen
 
 object NavRoutes {
-    const val SHORTLIST = "shortlist"
-    const val DETAIL = "school_detail"
+     val SHORTLIST = "shortlist"
+     val DETAIL = "school_detail"
 }
 
 @Composable
