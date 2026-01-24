@@ -450,6 +450,57 @@ fun ActionButtons(onDelete: () -> Unit, onSave: () -> Unit) {
     }
 }
 
+@Composable
+fun DeleteAccountDialog(
+    userName: String,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    var input by remember { mutableStateOf("") }
+    val isValid = input.trim() == userName.trim()
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text("Confirm Account Deletion")
+        },
+        text = {
+            Column {
+                Text("To confirm deleting your account, please retype your name:")
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = input,
+                    onValueChange = { input = it },
+                    placeholder = { Text("Type your name") },
+                    singleLine = true
+                )
+
+                if (input.isNotEmpty() && !isValid) {
+                    Text(
+                        text = "Name does not match",
+                        color = Color.Red,
+                        fontSize = 12.sp
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = onConfirm,
+                enabled = isValid
+            ) {
+                Text("Delete", color = if (isValid) Color.Red else Color.Gray)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
+}
+
+
 @Preview(showBackground = true)
 @Composable
 fun PreviewEditUserProfileScreen() {
