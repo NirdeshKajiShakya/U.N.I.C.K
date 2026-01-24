@@ -77,6 +77,7 @@ fun EditUserProfileScreen(
 ) {
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    var showDeleteDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(uiState.saveSuccess, uiState.deleteSuccess, uiState.errorMessage) {
         uiState.saveSuccess?.let { success ->
@@ -92,6 +93,19 @@ fun EditUserProfileScreen(
             }
             viewModel.clearStatus()
         }
+    }
+
+    if (showDeleteDialog) {
+        DeleteAccountDialog(
+            userName = uiState.profile.fullName,
+            onConfirm = {
+                showDeleteDialog = false
+                viewModel.deleteAccount()
+            },
+            onDismiss = {
+                showDeleteDialog = false
+            }
+        )
     }
 
     Box(
@@ -131,7 +145,7 @@ fun EditUserProfileScreen(
                     typePref = uiState.profile.typePref
                 )}
                 item { ActionButtons(
-                    onDelete = { viewModel.deleteAccount() },
+                    onDelete = { showDeleteDialog = true },
                     onSave = { viewModel.saveUserProfile() }
                 )}
             }
