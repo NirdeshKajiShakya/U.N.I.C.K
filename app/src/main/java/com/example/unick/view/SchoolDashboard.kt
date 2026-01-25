@@ -174,6 +174,15 @@ fun SchoolDashboardScreen(viewModel: SchoolViewModel, currentUid: String?) {
                         Text("Add Your School", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                     }
 
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "if you fill the form again it will replace your previous form.",
+                        color = Color.Red,
+                        fontSize = 12.sp,
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                    )
+
                     Spacer(modifier = Modifier.height(24.dp))
 
                     // Shared School Card

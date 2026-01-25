@@ -66,7 +66,7 @@ fun SchoolDataForm(viewModel: SchoolViewModel) {
     LaunchedEffect(isDataSaved) {
         if (isDataSaved) {
             Toast.makeText(context, "School data saved successfully", Toast.LENGTH_SHORT).show()
-            val intent = Intent(context, DashboardActivity::class.java)
+            val intent = Intent(context, SchoolDashboard::class.java)
             context.startActivity(intent)
             (context as? ComponentActivity)?.finish()
         }
