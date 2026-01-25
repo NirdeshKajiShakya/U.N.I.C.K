@@ -89,6 +89,20 @@ fun MainScreen(viewModel: SchoolViewModel, userProfileViewModel: UserProfileView
     }
 
     val userTypeState = viewModel.userType.collectAsState()
+    val userProfileState by userProfileViewModel.userProfile.collectAsState()
+
+    // Extract userName from userProfile - will be populated as data loads
+    val userName = if (userProfileState.javaClass.simpleName == "Success") {
+        try {
+            val dataField = userProfileState.javaClass.getDeclaredField("data")
+            dataField.isAccessible = true
+            (dataField.get(userProfileState) as? UserProfileModel)?.fullName ?: "Student"
+        } catch (_: Exception) {
+            "Student"
+        }
+    } else {
+        "Student"
+    }
 
     Scaffold(
         bottomBar = {
@@ -112,8 +126,9 @@ fun MainScreen(viewModel: SchoolViewModel, userProfileViewModel: UserProfileView
                         }
                         BottomNavItem.Profile.route -> {
                             if (userTypeState.value is UserType.School) {
-                                // School -> Activity
-                                handleProfileClick(userTypeState.value, context)
+                                // School -> Navigate to SchoolDashboard
+                                val schoolIntent = Intent(context, SchoolDashboard::class.java)
+                                context.startActivity(schoolIntent)
                             } else {
                                 // Student -> Smooth Internal Navigation
                                 navController.navigate(BottomNavItem.Profile.route) {
@@ -133,7 +148,8 @@ fun MainScreen(viewModel: SchoolViewModel, userProfileViewModel: UserProfileView
                 },
                 onProfileClick = {
                     if (userTypeState.value is UserType.School) {
-                         handleProfileClick(userTypeState.value, context)
+                         val schoolIntent = Intent(context, SchoolDashboard::class.java)
+                         context.startActivity(schoolIntent)
                     } else {
                          navController.navigate(BottomNavItem.Profile.route) {
                             popUpTo(navController.graph.startDestinationId)
@@ -152,20 +168,8 @@ fun MainScreen(viewModel: SchoolViewModel, userProfileViewModel: UserProfileView
         }
     ) { innerPadding ->
         Box(modifier = Modifier.padding(innerPadding)) {
-            val userName by viewModel.userName.collectAsState()
             NavigationHost(navController = navController, viewModel = viewModel, userProfileViewModel = userProfileViewModel, userName = userName)
         }
-    }
-}
-
-private fun handleProfileClick(userType: UserType, context: Context) {
-    if (userType is UserType.School) {
-        val intent = Intent(context, SchoolDashboard::class.java)
-        context.startActivity(intent)
-    } else {
-        // Normal user -> UserProfileActivity
-        val intent = Intent(context, UserProfileActivity::class.java)
-        context.startActivity(intent)
     }
 }
 
@@ -180,7 +184,6 @@ fun NavigationHost(navController: NavHostController, viewModel: SchoolViewModel,
             DashboardScreen(
                 schools = verifiedSchools,
                 isLoading = isLoading,
-                onRefresh = { viewModel.fetchSchools() },
                 onCompareClick = { navController.navigate("compare") },
                 userName = userName
             )
@@ -211,7 +214,6 @@ fun NavigationHost(navController: NavHostController, viewModel: SchoolViewModel,
 fun DashboardScreen(
     schools: List<SchoolForm> = emptyList(),
     isLoading: Boolean = false,
-    onRefresh: () -> Unit = {},
     onCompareClick: () -> Unit = {},
     userName: String = "Student"
 ) {
@@ -437,18 +439,159 @@ fun SchoolSection(title: String, subtitle: String, schools: List<SchoolForm>, co
 
 
 
-// Placeholder screens
+// Search Screen with filter integration
 @Composable
 fun SearchScreen() {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text(text = "This is Search Screen")
+    val context = LocalContext.current
+    var searchQuery by remember { mutableStateOf("") }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFFF8F9FA))
+            .padding(20.dp)
+    ) {
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Header
+        Text(
+            text = "Search Schools",
+            fontSize = 28.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFF0F172A)
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(
+            text = "Find your perfect educational institution",
+            fontSize = 15.sp,
+            color = Color(0xFF64748B)
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Search Field
+        OutlinedTextField(
+            value = searchQuery,
+            onValueChange = { searchQuery = it },
+            modifier = Modifier
+                .fillMaxWidth()
+                .shadow(4.dp, RoundedCornerShape(14.dp)),
+            placeholder = { Text("Search by name, location...", color = Color(0xFF94A3B8)) },
+            leadingIcon = { Icon(Icons.Default.Search, null, tint = Color(0xFF2563EB)) },
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = Color(0xFF2563EB),
+                focusedContainerColor = Color.White,
+                unfocusedContainerColor = Color.White
+            ),
+            shape = RoundedCornerShape(14.dp),
+            singleLine = true
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Filter Button
+        Button(
+            onClick = {
+                context.startActivity(Intent(context, FilterActivity::class.java))
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp)
+                .shadow(6.dp, RoundedCornerShape(14.dp)),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB)),
+            shape = RoundedCornerShape(14.dp)
+        ) {
+            Icon(Icons.Default.FilterList, "Advanced Filters", modifier = Modifier.size(22.dp))
+            Spacer(modifier = Modifier.width(10.dp))
+            Text("Advanced Filters", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Info card
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        ) {
+            Column(modifier = Modifier.padding(20.dp)) {
+                Text(
+                    "🔍 Quick Tips",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF0F172A)
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    "• Use filters to narrow down options\n• Search by school name or location\n• Compare multiple schools side by side",
+                    fontSize = 14.sp,
+                    color = Color(0xFF64748B),
+                    lineHeight = 22.sp
+                )
+            }
+        }
     }
 }
 
 @Composable
 fun NotificationScreen() {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text(text = "This is Notification Screen")
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFFF8F9FA))
+            .padding(20.dp)
+    ) {
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Header
+        Text(
+            text = "Notifications",
+            fontSize = 28.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFF0F172A)
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(
+            text = "Stay updated with the latest news",
+            fontSize = 15.sp,
+            color = Color(0xFF64748B)
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Empty state
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text("🔔", fontSize = 72.sp)
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    "No notifications yet",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF0F172A)
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    "We'll notify you when something new arrives",
+                    fontSize = 14.sp,
+                    color = Color(0xFF64748B),
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                )
+            }
+        }
     }
 }
 

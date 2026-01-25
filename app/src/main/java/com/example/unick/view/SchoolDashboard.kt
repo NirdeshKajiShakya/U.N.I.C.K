@@ -85,9 +85,22 @@ fun SchoolDashboardScreen(viewModel: SchoolViewModel, currentUid: String?) {
                                         context.startActivity(intent)
                                     }
                                 }
-                                else -> {
+                                BottomNavItem.Search.route -> {
+                                    // Navigate to student dashboard search
                                     val intent = Intent(context, DashboardActivity::class.java)
-                                    intent.putExtra("start_destination", route)
+                                    intent.putExtra("start_destination", BottomNavItem.Search.route)
+                                    context.startActivity(intent)
+                                }
+                                BottomNavItem.AIChat.route -> {
+                                    // Navigate to student dashboard AI Chat
+                                    val intent = Intent(context, DashboardActivity::class.java)
+                                    intent.putExtra("start_destination", BottomNavItem.AIChat.route)
+                                    context.startActivity(intent)
+                                }
+                                BottomNavItem.Notification.route -> {
+                                    // Navigate to student dashboard notifications
+                                    val intent = Intent(context, DashboardActivity::class.java)
+                                    intent.putExtra("start_destination", BottomNavItem.Notification.route)
                                     context.startActivity(intent)
                                 }
                             }
@@ -195,13 +208,13 @@ fun SchoolDashboardScreen(viewModel: SchoolViewModel, currentUid: String?) {
             }
         } else {
             // Dashboard UI for School Admin when no details are submitted yet
-            SchoolAdminHome(currentUid = currentUid ?: "")
+            SchoolAdminHome()
         }
     }
 }
 
 @Composable
-fun SchoolAdminHome(currentUid: String) {
+fun SchoolAdminHome() {
     val context = LocalContext.current
     
     Column(
