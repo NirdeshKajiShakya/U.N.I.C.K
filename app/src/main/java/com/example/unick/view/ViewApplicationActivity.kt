@@ -190,82 +190,8 @@ fun ViewApplicationScreen(
                     is ApplicationsListState.Success -> {
                         val applications = (applicationsState as ApplicationsListState.Success).applications
 
-                        // DEBUG: Always show test data for now - REMOVE AFTER TESTING
-                        val showTestData = true // Set to false to use real Firebase data
-
-                        if (showTestData || applications.isEmpty()) {
-                            // TODO: Remove this test data after testing - use real data from Firebase
-                            val testApplications = listOf(
-                                StudentApplication(
-                                    applicationId = "test_app_1",
-                                    schoolId = schoolId,
-                                    studentId = "student_123",
-                                    fullName = "Aarav Sharma",
-                                    dob = "2012-05-15",
-                                    gender = "Male",
-                                    bloodGroup = "O+",
-                                    interests = "Football, Music, Science",
-                                    lastSchoolName = "Sunrise Academy",
-                                    standard = "Grade 6",
-                                    fatherName = "Rajesh Sharma",
-                                    fatherPhone = "9841234567",
-                                    motherName = "Sunita Sharma",
-                                    motherPhone = "9851234567",
-                                    presentAddress = "Kathmandu, Nepal",
-                                    permanentAddress = "Lalitpur, Nepal",
-                                    schoolBudget = "50000",
-                                    status = "pending",
-                                    timestamp = System.currentTimeMillis() - 86400000 // 1 day ago
-                                ),
-                                StudentApplication(
-                                    applicationId = "test_app_2",
-                                    schoolId = schoolId,
-                                    studentId = "student_456",
-                                    fullName = "Priya Thapa",
-                                    dob = "2011-08-22",
-                                    gender = "Female",
-                                    bloodGroup = "A+",
-                                    interests = "Reading, Dance, Art",
-                                    lastSchoolName = "Little Angels School",
-                                    standard = "Grade 7",
-                                    fatherName = "Bikram Thapa",
-                                    fatherPhone = "9801234567",
-                                    motherName = "Anita Thapa",
-                                    motherPhone = "9811234567",
-                                    presentAddress = "Bhaktapur, Nepal",
-                                    permanentAddress = "Bhaktapur, Nepal",
-                                    schoolBudget = "60000",
-                                    status = "pending",
-                                    timestamp = System.currentTimeMillis() - 172800000 // 2 days ago
-                                ),
-                                StudentApplication(
-                                    applicationId = "test_app_3",
-                                    schoolId = schoolId,
-                                    studentId = "student_789",
-                                    fullName = "Rohan Gurung",
-                                    dob = "2013-01-10",
-                                    gender = "Male",
-                                    bloodGroup = "B+",
-                                    interests = "Cricket, Chess",
-                                    lastSchoolName = "Everest Public School",
-                                    standard = "Grade 5",
-                                    fatherName = "Deepak Gurung",
-                                    fatherPhone = "9821234567",
-                                    motherName = "Maya Gurung",
-                                    motherPhone = "9831234567",
-                                    presentAddress = "Pokhara, Nepal",
-                                    permanentAddress = "Pokhara, Nepal",
-                                    schoolBudget = "45000",
-                                    status = "accepted",
-                                    reviewedBy = "school_admin",
-                                    reviewedAt = System.currentTimeMillis() - 43200000, // 12 hours ago
-                                    timestamp = System.currentTimeMillis() - 259200000 // 3 days ago
-                                )
-                            )
-                            ApplicationsList(
-                                applications = testApplications,
-                                onApplicationClick = { viewModel.selectApplication(it) }
-                            )
+                        if (applications.isEmpty()) {
+                            EmptyApplicationsView(schoolId = schoolId)
                         } else {
                             ApplicationsList(
                                 applications = applications,

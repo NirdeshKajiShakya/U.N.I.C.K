@@ -17,7 +17,7 @@ import kotlinx.coroutines.TimeoutCancellationException
  * - Firebase Realtime Database must be enabled in Firebase Console
  */
 class ApplicationRepoImpl(
-    private val database: FirebaseDatabase = FirebaseDatabase.getInstance()
+    private val database: FirebaseDatabase = FirebaseDatabase.getInstance("https://vidyakhoj-927fb-default-rtdb.firebaseio.com/")
 ) : ApplicationRepo {
 
     private val COLLECTION = "student_applications"

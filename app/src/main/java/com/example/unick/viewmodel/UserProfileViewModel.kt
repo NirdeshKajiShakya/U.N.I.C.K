@@ -39,8 +39,11 @@ class UserProfileViewModel(
     private val _applications = MutableStateFlow<UserProfileState<List<ApplicationItemForUserProfile>>>(UserProfileState.Idle)
     val applications: StateFlow<UserProfileState<List<ApplicationItemForUserProfile>>> = _applications
 
+    private var currentUserId: String? = null
+
     // -------------------- LOAD USER DATA --------------------
     fun loadUserData(userId: String) {
+        currentUserId = userId
         viewModelScope.launch {
             _userProfile.value = UserProfileState.Loading
             _shortlistedSchools.value = UserProfileState.Loading
@@ -79,6 +82,32 @@ class UserProfileViewModel(
         _userProfile.value = UserProfileState.Idle
         _shortlistedSchools.value = UserProfileState.Idle
         _applications.value = UserProfileState.Idle
+    }
+
+    // -------------------- DELETE APPLICATION --------------------
+    fun deleteApplication(applicationId: String) {
+        viewModelScope.launch {
+            try {
+                Log.d(TAG, "🗑️ Deleting application: $applicationId")
+                repository.deleteApplication(applicationId).fold(
+                    onSuccess = {
+                        Log.d(TAG, "✅ Application deleted, refreshing list")
+                        // Refresh applications list
+                        currentUserId?.let { userId ->
+                            repository.getApplications(userId).fold(
+                                onSuccess = { _applications.value = UserProfileState.Success(it) },
+                                onFailure = { _applications.value = UserProfileState.Error(it.message ?: "Unknown error") }
+                            )
+                        }
+                    },
+                    onFailure = {
+                        Log.e(TAG, "❌ Failed to delete application: ${it.message}")
+                    }
+                )
+            } catch (e: Exception) {
+                Log.e(TAG, "❌ Error deleting application", e)
+            }
+        }
     }
 
     // -------------------- FACTORY --------------------

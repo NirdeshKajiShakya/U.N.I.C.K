@@ -47,6 +47,7 @@ import com.example.unick.R
 import com.example.unick.viewmodel.UserProfileState
 import com.example.unick.viewmodel.UserProfileViewModel
 import com.google.firebase.auth.FirebaseAuth
+import java.util.concurrent.atomic.AtomicInteger
 
 // -------------------- COLORS --------------------
 private val PrimaryBlue = Color(0xFF4A90E2)
@@ -72,6 +73,7 @@ data class ShortlistedSchoolForUserProfile(
 
 data class ApplicationItemForUserProfile(
     val id: String = "",
+    val schoolId: String = "",
     val schoolName: String = "",
     val status: String = "",
     val applicationCode: String = ""
@@ -232,8 +234,16 @@ fun UserProfileScreen(viewModel: UserProfileViewModel?) {
                             } else {
                                 ApplicationsListSectionForUserProfile(
                                     applications = applications,
-                                    onViewSchoolClick = {},
-                                    onViewPdfClick = {}
+                                    onViewSchoolClick = { app ->
+                                        // Navigate to SchoolDetailActivity with school's uid
+                                        val intent = Intent(context, SchoolDetailActivity::class.java)
+                                        intent.putExtra("uid", app.schoolId)
+                                        context.startActivity(intent)
+                                    },
+                                    onViewPdfClick = {},
+                                    onDeleteClick = { app ->
+                                        viewModel?.deleteApplication(app.id)
+                                    }
                                 )
                             }
                         }
@@ -714,7 +724,8 @@ fun ApplicationsHeaderSectionForUserProfile() {
 fun ApplicationsListSectionForUserProfile(
     applications: List<ApplicationItemForUserProfile>,
     onViewSchoolClick: (ApplicationItemForUserProfile) -> Unit,
-    onViewPdfClick: (ApplicationItemForUserProfile) -> Unit
+    onViewPdfClick: (ApplicationItemForUserProfile) -> Unit,
+    onDeleteClick: (ApplicationItemForUserProfile) -> Unit
 ) {
     val screenWidth = LocalConfiguration.current.screenWidthDp.dp
     val cardWidth = screenWidth - 48.dp
@@ -728,7 +739,8 @@ fun ApplicationsListSectionForUserProfile(
                 application = app,
                 width = cardWidth,
                 onViewSchoolClick = { onViewSchoolClick(app) },
-                onViewPdfClick = { onViewPdfClick(app) }
+                onViewPdfClick = { onViewPdfClick(app) },
+                onDeleteClick = { onDeleteClick(app) }
             )
         }
     }
@@ -739,7 +751,8 @@ fun ApplicationCardForUserProfile(
     application: ApplicationItemForUserProfile,
     width: Dp,
     onViewSchoolClick: () -> Unit,
-    onViewPdfClick: () -> Unit
+    onViewPdfClick: () -> Unit,
+    onDeleteClick: () -> Unit
 ) {
     val badgeColor = when (application.status.lowercase()) {
         "accepted" -> AccentGreen
@@ -779,18 +792,40 @@ fun ApplicationCardForUserProfile(
                         modifier = Modifier.padding(top = 4.dp)
                     )
                 }
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(badgeColor.copy(alpha = 0.15f))
-                        .padding(horizontal = 12.dp, vertical = 6.dp)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text(
-                        application.status,
-                        color = badgeColor,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 12.sp
-                    )
+                    // Delete button
+                    Box(
+                        modifier = Modifier
+                            .size(32.dp)
+                            .clip(CircleShape)
+                            .background(AccentRed.copy(alpha = 0.1f))
+                            .clickable { onDeleteClick() },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            Icons.Outlined.Delete,
+                            contentDescription = "Delete",
+                            tint = AccentRed,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                    // Status badge
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(badgeColor.copy(alpha = 0.15f))
+                            .padding(horizontal = 12.dp, vertical = 6.dp)
+                    ) {
+                        Text(
+                            application.status,
+                            color = badgeColor,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 12.sp
+                        )
+                    }
                 }
             }
 

@@ -218,7 +218,7 @@ fun SchoolDetailsScreen(school: SchoolForm, isSchoolView: Boolean, onBack: () ->
                             Button(
                                 onClick = {
                                     val intent = Intent(context, StudentApplicationActivity::class.java)
-                                    intent.putExtra("school_details", school)
+                                    intent.putExtra("schoolId", school.uid)
                                     context.startActivity(intent)
                                 },
                                 modifier = Modifier.weight(1f),

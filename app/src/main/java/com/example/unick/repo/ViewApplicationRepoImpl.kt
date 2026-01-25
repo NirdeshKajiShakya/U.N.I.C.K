@@ -10,7 +10,7 @@ import kotlinx.coroutines.tasks.await
  * Firebase Realtime Database implementation for viewing and managing school applications.
  */
 class ViewApplicationRepoImpl(
-    private val database: FirebaseDatabase = FirebaseDatabase.getInstance()
+    private val database: FirebaseDatabase = FirebaseDatabase.getInstance("https://vidyakhoj-927fb-default-rtdb.firebaseio.com/")
 ) : ViewApplicationRepo {
 
     private val COLLECTION = "student_applications"
@@ -18,24 +18,21 @@ class ViewApplicationRepoImpl(
 
     /**
      * Get all applications for a specific school.
-     * Queries the database where schoolId matches.
+     * Fetches all applications and filters client-side to avoid Firebase index requirement.
      */
     override suspend fun getApplicationsForSchool(schoolId: String): Result<List<StudentApplication>> {
         return try {
             Log.d(TAG, "Fetching applications for school: $schoolId")
 
             val databaseRef = database.getReference(COLLECTION)
-            val snapshot = databaseRef
-                .orderByChild("schoolId")
-                .equalTo(schoolId)
-                .get()
-                .await()
+            // Fetch all applications and filter client-side (avoids Firebase index requirement)
+            val snapshot = databaseRef.get().await()
 
             val applications = mutableListOf<StudentApplication>()
 
             for (child: DataSnapshot in snapshot.children) {
                 val app = child.getValue(StudentApplication::class.java)
-                if (app != null) {
+                if (app != null && app.schoolId == schoolId) {
                     // Include the Firebase key as applicationId
                     val appWithId = app.copy(applicationId = child.key ?: "")
                     applications.add(appWithId)

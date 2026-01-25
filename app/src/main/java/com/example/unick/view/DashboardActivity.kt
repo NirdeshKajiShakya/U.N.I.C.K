@@ -109,6 +109,11 @@ fun MainScreen(viewModel: SchoolViewModel, userProfileViewModel: UserProfileView
                                 launchSingleTop = true
                             }
                         }
+                        BottomNavItem.Notification.route -> {
+                            // Navigate to NotificationActivity
+                            val intent = Intent(context, NotificationActivity::class.java)
+                            context.startActivity(intent)
+                        }
                         BottomNavItem.Profile.route -> {
                             if (userTypeState.value is UserType.School) {
                                 // School -> Activity
