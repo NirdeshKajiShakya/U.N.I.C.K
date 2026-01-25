@@ -204,6 +204,13 @@ fun SchoolDataForm(viewModel: SchoolViewModel) {
                 )
 
                 FormTextField(
+                    value = viewModel.googleMapsLink,
+                    onValueChange = { viewModel.googleMapsLink = it },
+                    label = "Google Maps Link",
+                    placeholder = "e.g., https://maps.app.goo.gl/..."
+                )
+
+                FormTextField(
                     value = viewModel.totalStudents,
                     onValueChange = { viewModel.totalStudents = it },
                     label = "Total Students",

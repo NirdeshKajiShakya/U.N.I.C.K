@@ -30,6 +30,7 @@ class SchoolViewModel : ViewModel() {
 
     var schoolName by mutableStateOf("")
     var location by mutableStateOf("")
+    var googleMapsLink by mutableStateOf("")
     var totalStudents by mutableStateOf("")
     var establishedYear by mutableStateOf("")
     var principalName by mutableStateOf("")
@@ -183,7 +184,8 @@ class SchoolViewModel : ViewModel() {
             transportFacility = transportFacility,
             hostelFacility = hostelFacility,
             extracurricular = extracurricular,
-            description = description
+            description = description,
+            googleMapsLink = googleMapsLink
         )
     }
     fun verifySchool(uid: String, onResult: (Boolean) -> Unit) {

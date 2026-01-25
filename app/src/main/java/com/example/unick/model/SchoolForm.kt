@@ -25,6 +25,7 @@ data class SchoolForm(
     val hostelFacility: Boolean = false,
     val extracurricular: String = "",
     val description: String = "",
+    val googleMapsLink: String = "",
     val verified: Boolean = false,
     val rejected: Boolean = false
 ) : Parcelable

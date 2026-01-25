@@ -174,14 +174,41 @@ fun SchoolDashboardScreen(viewModel: SchoolViewModel, currentUid: String?) {
                         Text("Add Your School", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                     }
 
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "if you fill the form again it will replace your previous form.",
-                        color = Color.Red,
-                        fontSize = 12.sp,
-                        modifier = Modifier.fillMaxWidth(),
-                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color(0xFFFEF2F2), RoundedCornerShape(8.dp))
+                            .border(1.dp, Color(0xFFEF4444), RoundedCornerShape(8.dp))
+                            .padding(12.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    Icons.Default.ErrorOutline,
+                                    contentDescription = null,
+                                    tint = Color(0xFFEF4444),
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "Important Note",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF991B1B)
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "If you fill the form again, it will replace your previous submission entirely.",
+                                color = Color(0xFFB91C1C),
+                                fontSize = 12.sp,
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                            )
+                        }
+                    }
 
                     Spacer(modifier = Modifier.height(24.dp))
 
