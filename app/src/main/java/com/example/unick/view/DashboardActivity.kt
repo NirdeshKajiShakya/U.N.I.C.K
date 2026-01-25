@@ -92,63 +92,84 @@ fun MainScreen(viewModel: SchoolViewModel, userProfileViewModel: UserProfileView
 
     Scaffold(
         bottomBar = {
-            UnifiedBottomNavigationBar(
-                currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route,
-                onNavigate = { route ->
-                    when (route) {
-                        BottomNavItem.Home.route -> {
-                            // If already on home (or any other tab in dashboard), navigate to Home tab
-                             navController.navigate(BottomNavItem.Home.route) {
-                                popUpTo(navController.graph.startDestinationId)
-                                launchSingleTop = true
-                             }
-                        }
-                        BottomNavItem.AIChat.route -> {
-                            // Navigate to AI Chat tab
-                            navController.navigate(BottomNavItem.AIChat.route) {
-                                popUpTo(navController.graph.startDestinationId)
-                                launchSingleTop = true
+            if (userTypeState.value is UserType.School) {
+                SchoolNavBar(
+                    currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route,
+                    onNavigate = { route ->
+                        when (route) {
+                            BottomNavItem.Home.route -> {
+                                // School Home
+                                val intent = Intent(context, SchoolDashboard::class.java)
+                                intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
+                                context.startActivity(intent)
                             }
-                        }
-                        BottomNavItem.Profile.route -> {
-                            if (userTypeState.value is UserType.School) {
-                                // School -> Activity
+                            BottomNavItem.Profile.route -> {
+                                // School Profile
                                 handleProfileClick(userTypeState.value, context)
-                            } else {
-                                // Student -> Smooth Internal Navigation
-                                navController.navigate(BottomNavItem.Profile.route) {
+                            }
+                            else -> {
+                                // Chat, Notification -> Stay in DashboardActivity (NavHost handles it)
+                                navController.navigate(route) {
                                     popUpTo(navController.graph.startDestinationId)
                                     launchSingleTop = true
                                 }
                             }
                         }
-                        else -> {
-                            // Other tabs (Search, Notification) - navigate normally within NavHost
-                             navController.navigate(route) {
-                                popUpTo(navController.graph.startDestinationId)
-                                launchSingleTop = true
-                             }
-                        }
+                    },
+                    onProfileClick = {
+                        handleProfileClick(userTypeState.value, context)
                     }
-                },
-                onProfileClick = {
-                    if (userTypeState.value is UserType.School) {
-                         handleProfileClick(userTypeState.value, context)
-                    } else {
-                         navController.navigate(BottomNavItem.Profile.route) {
-                            popUpTo(navController.graph.startDestinationId)
-                            launchSingleTop = true
-                         }
-                    }
-                },
-                navItems = listOf(
-                    BottomNavItem.Home,
-                    BottomNavItem.Search,
-                    BottomNavItem.AIChat,
-                    BottomNavItem.Notification,
-                    BottomNavItem.Profile
                 )
-            )
+            } else {
+                UnifiedBottomNavigationBar(
+                    currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route,
+                    onNavigate = { route ->
+                        when (route) {
+                            BottomNavItem.Home.route -> {
+                                // Student Home
+                                 navController.navigate(BottomNavItem.Home.route) {
+                                    popUpTo(navController.graph.startDestinationId)
+                                    launchSingleTop = true
+                                 }
+                            }
+                            BottomNavItem.AIChat.route -> {
+                                // Navigate to AI Chat tab
+                                navController.navigate(BottomNavItem.AIChat.route) {
+                                    popUpTo(navController.graph.startDestinationId)
+                                    launchSingleTop = true
+                                }
+                            }
+                            BottomNavItem.Profile.route -> {
+                                // Student Profile
+                                navController.navigate(BottomNavItem.Profile.route) {
+                                    popUpTo(navController.graph.startDestinationId)
+                                    launchSingleTop = true
+                                }
+                            }
+                            else -> {
+                                // Other tabs
+                                 navController.navigate(route) {
+                                    popUpTo(navController.graph.startDestinationId)
+                                    launchSingleTop = true
+                                 }
+                            }
+                        }
+                    },
+                    onProfileClick = {
+                          navController.navigate(BottomNavItem.Profile.route) {
+                             popUpTo(navController.graph.startDestinationId)
+                             launchSingleTop = true
+                          }
+                    },
+                    navItems = listOf(
+                        BottomNavItem.Home,
+                        BottomNavItem.Search,
+                        BottomNavItem.AIChat,
+                        BottomNavItem.Notification,
+                        BottomNavItem.Profile
+                    )
+                )
+            }
         }
     ) { innerPadding ->
         Box(modifier = Modifier.padding(innerPadding)) {

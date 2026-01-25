@@ -73,7 +73,7 @@ fun SchoolDashboardScreen(viewModel: SchoolViewModel, currentUid: String?) {
             // New School Dashboard UI
             Scaffold(
                 bottomBar = {
-                    UnifiedBottomNavigationBar(
+                    SchoolNavBar(
                         currentRoute = BottomNavItem.Home.route,
                         onNavigate = { route ->
                             when (route) {

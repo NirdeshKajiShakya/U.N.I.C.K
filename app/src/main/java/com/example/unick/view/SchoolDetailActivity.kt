@@ -120,6 +120,65 @@ fun SchoolDetailScreen(
                     }
                 }
             )
+        },
+        bottomBar = {
+            SchoolNavBar(
+                currentRoute = BottomNavItem.Profile.route,
+                onNavigate = { route ->
+                    when (route) {
+                        BottomNavItem.Home.route -> {
+                             if (isSchoolOwner) {
+                                // If school owner, go to School Dashboard
+                                val intent = Intent(context, SchoolDashboard::class.java)
+                                intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
+                                context.startActivity(intent)
+                             } else {
+                                // If student/visitor, go to Student Dashboard
+                                val intent = Intent(context, DashboardActivity::class.java)
+                                intent.putExtra("start_destination", BottomNavItem.Home.route)
+                                intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
+                                context.startActivity(intent)
+                             }
+                        }
+                        BottomNavItem.Profile.route -> {
+                             val currentRouteUid = schoolId
+                             if (currentRouteUid == currentUserId) {
+                                // Already on my profile
+                             } else {
+                                 // Wants to go to MY profile
+                                 if (isSchoolOwner) {
+                                     val intent = Intent(context, SchoolDetailActivity::class.java)
+                                     intent.putExtra("uid", currentUserId)
+                                     context.startActivity(intent)
+                                 } else {
+                                     // Student wants to go to their profile
+                                     val intent = Intent(context, UserProfileActivity::class.java)
+                                     context.startActivity(intent)
+                                 }
+                             }
+                        }
+                        else -> {
+                            // Other tabs -> DashboardActivity with specific destination
+                            val intent = Intent(context, DashboardActivity::class.java)
+                            intent.putExtra("start_destination", route)
+                            intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
+                            context.startActivity(intent)
+                        }
+                    }
+                },
+                onProfileClick = {
+                     if (isSchoolOwner) {
+                         if (schoolId != currentUserId) {
+                             val intent = Intent(context, SchoolDetailActivity::class.java)
+                             intent.putExtra("uid", currentUserId)
+                             context.startActivity(intent)
+                         }
+                     } else {
+                         val intent = Intent(context, UserProfileActivity::class.java)
+                         context.startActivity(intent)
+                     }
+                }
+            )
         }
     ) { padding ->
 
