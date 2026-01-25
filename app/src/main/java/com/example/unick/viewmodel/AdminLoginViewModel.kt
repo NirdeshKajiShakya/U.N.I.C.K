@@ -47,20 +47,29 @@ class AdminLoginViewModel : ViewModel() {
     }
 
     fun login() {
-        if (_email.value.isBlank() || _password.value.isBlank()) {
+        // Trim inputs to remove whitespace
+        val trimmedEmail = _email.value.trim()
+        val trimmedPassword = _password.value.trim()
+
+        if (trimmedEmail.isBlank() || trimmedPassword.isBlank()) {
             _errorMessage.value = "Email and password cannot be empty"
             return
         }
 
-        if (!android.util.Patterns.EMAIL_ADDRESS.matcher(_email.value).matches()) {
+        if (!android.util.Patterns.EMAIL_ADDRESS.matcher(trimmedEmail).matches()) {
             _errorMessage.value = "Please enter a valid email"
+            return
+        }
+
+        if (trimmedPassword.length < 6) {
+            _errorMessage.value = "Password must be at least 6 characters"
             return
         }
 
         _isLoading.value = true
         _errorMessage.value = null
 
-        auth.signInWithEmailAndPassword(_email.value.trim(), _password.value)
+        auth.signInWithEmailAndPassword(trimmedEmail, trimmedPassword)
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
                     val firebaseUser = auth.currentUser
@@ -79,7 +88,7 @@ class AdminLoginViewModel : ViewModel() {
 
                             override fun onCancelled(error: DatabaseError) {
                                 _isLoading.value = false
-                                _errorMessage.value = error.message
+                                _errorMessage.value = "Database error: ${error.message}"
                                 auth.signOut()
                             }
                         })
@@ -89,7 +98,18 @@ class AdminLoginViewModel : ViewModel() {
                     }
                 } else {
                     _isLoading.value = false
-                    _errorMessage.value = task.exception?.message ?: "Login failed"
+                    val exception = task.exception
+                    _errorMessage.value = when {
+                        exception?.message?.contains("user-not-found", ignoreCase = true) == true ->
+                            "Admin account not found. Check your email address."
+                        exception?.message?.contains("wrong-password", ignoreCase = true) == true ->
+                            "Incorrect password. Please try again."
+                        exception?.message?.contains("too-many-requests", ignoreCase = true) == true ->
+                            "Too many login attempts. Please try again later."
+                        exception?.message?.contains("malformed", ignoreCase = true) == true ->
+                            "Invalid email or password format. Please check and try again."
+                        else -> exception?.message ?: "Login failed. Please try again."
+                    }
                 }
             }
     }

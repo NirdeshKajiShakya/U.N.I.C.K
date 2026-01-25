@@ -44,12 +44,8 @@
         <activity
             android:name=".MapsActivity"
             android:exported="true"
-            android:label="@string/title_activity_maps">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
+            android:label="@string/title_activity_maps"
+            android:theme="@style/Theme.UNICK" />
 
         <activity
             android:name=".view.ViewApplicationActivity"
@@ -68,17 +64,13 @@
             android:exported="true"
             android:label="@string/title_activity_admin_profile"
             android:theme="@style/Theme.UNICK">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
         </activity>
         <activity
             android:name=".view.AdminDashboardActivity"
             android:exported="false"
             android:label="@string/title_activity_admin_dashboard"
-            android:theme="@style/Theme.UNICK" /> <!-- ============================================ -->
+            android:theme="@style/Theme.UNICK" />
+        <!-- ============================================ -->
         <!-- MAIN LAUNCHER - Welcome/Landing Page -->
         <!-- ============================================ -->
         <activity
@@ -95,6 +87,9 @@
 
         <!-- ============================================ -->
         <!-- Authentication Activities -->
+
+
+
         <!-- ============================================ -->
         <!-- Student/User Login -->
         <activity
