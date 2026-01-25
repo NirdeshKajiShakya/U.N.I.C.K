@@ -80,19 +80,18 @@ fun SchoolDetailsScreen(school: SchoolForm, isSchoolView: Boolean, onBack: () ->
         },
         bottomBar = {
             UnifiedBottomNavigationBar(
-                currentRoute = "", // Pass empty string to avoid any null issues, though null is valid
+                currentRoute = BottomNavItem.Home.route,
                 onNavigate = { route ->
                     when (route) {
                         BottomNavItem.Home.route -> {
-                             val intent = Intent(context, DashboardActivity::class.java)
-                             intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
-                             context.startActivity(intent)
+                             // Navigate back to dashboard home
+                             (context as? ComponentActivity)?.finish()
                         }
                         BottomNavItem.AIChat.route -> {
                              val intent = Intent(context, DashboardActivity::class.java)
-                             intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
                              intent.putExtra("start_destination", BottomNavItem.AIChat.route)
                              context.startActivity(intent)
+                             (context as? ComponentActivity)?.finish()
                         }
                          BottomNavItem.Profile.route -> {
                              val intent = Intent(context, UserProfileActivity::class.java)
@@ -100,9 +99,9 @@ fun SchoolDetailsScreen(school: SchoolForm, isSchoolView: Boolean, onBack: () ->
                         }
                         else -> {
                              val intent = Intent(context, DashboardActivity::class.java)
-                             intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
                              intent.putExtra("start_destination", route)
                              context.startActivity(intent)
+                             (context as? ComponentActivity)?.finish()
                         }
                     }
                 },

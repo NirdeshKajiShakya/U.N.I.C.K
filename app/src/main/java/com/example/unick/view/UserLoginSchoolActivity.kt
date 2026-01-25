@@ -75,6 +75,7 @@ fun UserLoginSchoolScreen() {
                                         val intent = Intent(context, SchoolDashboard::class.java)
                                         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                                         context.startActivity(intent)
+                                        (context as? ComponentActivity)?.finish()
                                     } else {
                                         Toast.makeText(context, "Login failed: ${task.exception?.message}", Toast.LENGTH_SHORT).show()
                                     }

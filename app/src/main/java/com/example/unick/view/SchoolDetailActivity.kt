@@ -38,17 +38,18 @@ class SchoolDetailActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        // get schoolId from intent
-        var schoolId = intent.getStringExtra("uid") ?: ""
-        if (schoolId == "") {
-            schoolId = "XcfjtBIHVfdpHeh8QSMy7j3VGiU2"
-        }
+        // get schoolId from intent - prioritize "uid" then fall back to "schoolId"
+        val schoolId = intent.getStringExtra("uid")
+            ?: intent.getStringExtra("schoolId")
+            ?: ""
 
         setContent {
             val vm = remember { SchoolDetailViewModel() }
 
             LaunchedEffect(schoolId) {
-                vm.loadSchoolDetail(schoolId)
+                if (schoolId.isNotEmpty()) {
+                    vm.loadSchoolDetail(schoolId)
+                }
             }
 
             SchoolDetailScreen(
