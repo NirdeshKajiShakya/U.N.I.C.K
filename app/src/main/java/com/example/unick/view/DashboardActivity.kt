@@ -45,6 +45,12 @@ import com.example.unick.model.SchoolForm
 import com.example.unick.ui.theme.UNICKTheme
 import com.example.unick.viewmodel.SchoolViewModel
 import com.example.unick.viewmodel.UserType
+import android.Manifest
+import android.annotation.SuppressLint
+import android.content.pm.PackageManager
+import androidx.core.app.ActivityCompat
+import com.google.android.gms.location.LocationServices
+
 
 class DashboardActivity : ComponentActivity() {
     private val viewModel: SchoolViewModel by viewModels()
@@ -425,7 +431,38 @@ fun SearchScreen(viewModel: SchoolViewModel) {
     val verifiedSchools = remember(schools) { schools.filter { it.verified } }
 
     var query by remember { mutableStateOf("") }
-    var activeFilter by remember { mutableStateOf(FilterResult()) }
+
+    // IMPORTANT: make sure your FilterResult has default values or create default like this:
+    var activeFilter by remember {
+        mutableStateOf(
+            FilterResult(
+                feeRange = "Any",
+                location = "Any",
+                passRate = "Any",
+                levels = emptyList(),
+                curriculums = emptyList(),
+                facilities = emptyList(),
+                radiusKm = null
+            )
+        )
+    }
+    var userLat by remember { mutableStateOf<Double?>(null) }
+    var userLng by remember { mutableStateOf<Double?>(null) }
+
+// Get location once when screen opens
+    LaunchedEffect(Unit) {
+        requestOneTimeLocation(context) { lat, lng ->
+            userLat = lat
+            userLng = lng
+        }
+    }
+
+
+    // ✅ USER LOCATION (you said you have it upto step 3)
+    // Replace these with your real location values.
+
+    // Example: if you already have location util, call it here and set userLat/userLng
+    // LaunchedEffect(Unit) { val loc = getUserLocation(context); userLat=loc.lat; userLng=loc.lng }
 
     val filterLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
@@ -437,23 +474,37 @@ fun SearchScreen(viewModel: SchoolViewModel) {
         }
     }
 
-    val filtered = remember(query, activeFilter, verifiedSchools) {
+    // ✅ Base filters (name/location/fee/curriculum/facilities/levels)
+    val baseFiltered = remember(query, activeFilter, verifiedSchools) {
         verifiedSchools
             .asSequence()
-            // Name search
             .filter { it.schoolName.contains(query, ignoreCase = true) }
-            // Location chip
             .filter { activeFilter.location == "Any" || it.location.contains(activeFilter.location, ignoreCase = true) }
-            // Fee range (tuitionFee is String in your model)
             .filter { activeFilter.feeRange == "Any" || feeMatches(activeFilter.feeRange, it.tuitionFee) }
-            // Curriculum multi-select (SchoolForm.curriculum is comma-separated String)
             .filter { matchesAllSelected(activeFilter.curriculums, it.curriculum) }
-            // Facilities multi-select (SchoolForm.facilities is comma-separated String)
             .filter { matchesAllSelected(activeFilter.facilities, it.facilities) }
-            // Levels multi-select (best effort on programsOffered text)
             .filter { matchesAnyLevel(activeFilter.levels, it.programsOffered) }
-            // Pass rate ignored (no field in SchoolForm)
             .toList()
+    }
+
+    // ✅ STEP 4: DISTANCE FILTER (apply last)
+    val finalFiltered = remember(baseFiltered, activeFilter.radiusKm, userLat, userLng) {
+        val lat = userLat
+        val lng = userLng
+
+        // If radius is "Any", or user location not available -> don't filter by distance
+        if (activeFilter.radiusKm == null || lat == null || lng == null) {
+            baseFiltered
+        } else {
+            applyDistanceFilterIfNeeded(
+                userLat = lat,
+                userLng = lng,
+                radiusKm = activeFilter.radiusKm,
+                schools = baseFiltered,
+                latOf = { it.latitude },
+                lngOf = { it.longitude }
+            )
+        }
     }
 
     Scaffold(
@@ -492,14 +543,17 @@ fun SearchScreen(viewModel: SchoolViewModel) {
 
             Spacer(Modifier.height(10.dp))
 
+            // Optional: show radius too
             Text(
-                text = "Filters: Location=${activeFilter.location}, Fee=${activeFilter.feeRange}, Curriculum=${activeFilter.curriculums.size}, Facilities=${activeFilter.facilities.size}",
+                text = "Filters: Location=${activeFilter.location}, Fee=${activeFilter.feeRange}, " +
+                        "Curriculum=${activeFilter.curriculums.size}, Facilities=${activeFilter.facilities.size}, " +
+                        "Radius=${activeFilter.radiusKm?.let { "${it}km" } ?: "Any"}",
                 style = MaterialTheme.typography.bodySmall
             )
 
             Spacer(Modifier.height(12.dp))
 
-            if (filtered.isEmpty()) {
+            if (finalFiltered.isEmpty()) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text("No schools match your search/filters.")
                 }
@@ -508,7 +562,7 @@ fun SearchScreen(viewModel: SchoolViewModel) {
                     verticalArrangement = Arrangement.spacedBy(14.dp),
                     contentPadding = PaddingValues(bottom = 90.dp)
                 ) {
-                    items(filtered) { school ->
+                    items(finalFiltered) { school ->
                         SchoolCard(
                             school = school,
                             context = context,
@@ -524,6 +578,7 @@ fun SearchScreen(viewModel: SchoolViewModel) {
         }
     }
 }
+
 
 /* ----------------------------- FILTER HELPERS ----------------------------- */
 
@@ -568,6 +623,34 @@ private fun matchesAnyLevel(selectedLevels: List<String>, programsOffered: Strin
     val text = programsOffered.lowercase()
     return selectedLevels.any { lvl -> text.contains(lvl.lowercase()) }
 }
+@SuppressLint("MissingPermission")
+private fun requestOneTimeLocation(
+    context: android.content.Context,
+    onResult: (Double?, Double?) -> Unit
+) {
+    val fused = LocationServices.getFusedLocationProviderClient(context)
+
+    // permission check
+    val fineGranted = ActivityCompat.checkSelfPermission(
+        context, Manifest.permission.ACCESS_FINE_LOCATION
+    ) == PackageManager.PERMISSION_GRANTED
+
+    val coarseGranted = ActivityCompat.checkSelfPermission(
+        context, Manifest.permission.ACCESS_COARSE_LOCATION
+    ) == PackageManager.PERMISSION_GRANTED
+
+    if (!fineGranted && !coarseGranted) {
+        onResult(null, null)
+        return
+    }
+
+    fused.lastLocation.addOnSuccessListener { loc ->
+        onResult(loc?.latitude, loc?.longitude)
+    }.addOnFailureListener {
+        onResult(null, null)
+    }
+}
+
 
 /* ----------------------------- PLACEHOLDER ----------------------------- */
 

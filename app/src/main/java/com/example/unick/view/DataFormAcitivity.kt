@@ -27,12 +27,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
@@ -45,6 +43,9 @@ class DataFormAcitivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        viewModel.fetchSchoolIfExists()
+
         setContent {
             UNICKTheme {
                 Surface(
@@ -64,33 +65,31 @@ fun SchoolDataForm(viewModel: SchoolViewModel) {
 
     val context = LocalContext.current
     val isLoading by viewModel.isLoading.collectAsState()
-    val isDataSaved by viewModel.isDataSaved.collectAsState()
+    val currentSchool by viewModel.currentSchool.collectAsState()
+    val isEditMode = currentSchool != null
 
-    LaunchedEffect(isDataSaved) {
-        if (isDataSaved) {
-            Toast.makeText(context, "School data saved successfully", Toast.LENGTH_SHORT).show()
-            context.startActivity(Intent(context, DashboardActivity::class.java))
-            (context as? ComponentActivity)?.finish()
-        }
-    }
-
-    val imagePickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        viewModel.imageUri = uri
-    }
-
-    // ✅ SAFE STATE (THIS FIXES ALL `it` ERRORS)
+    // ---------- CHIP STATES ----------
     var selectedCurriculum by remember { mutableStateOf<List<String>>(emptyList()) }
     var selectedPrograms by remember { mutableStateOf<List<String>>(emptyList()) }
     var selectedFacilities by remember { mutableStateOf<List<String>>(emptyList()) }
 
-    var googleMapUrl by remember { mutableStateOf("") }
-    val extractedLatLng = remember(googleMapUrl) {
-        extractLatLngFromGoogleMapsUrl(googleMapUrl)
+    // ---------- IMAGE PICKER ----------
+    val imagePicker = rememberLauncherForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        viewModel.imageUri = uri
     }
 
-    // Sync chip selections to viewModel (comma-separated)
+    // ---------- PREFILL CHIPS ----------
+    LaunchedEffect(currentSchool) {
+        currentSchool?.let {
+            selectedCurriculum = it.curriculum.split(",").map { s -> s.trim() }.filter { s -> s.isNotEmpty() }
+            selectedPrograms = it.programsOffered.split(",").map { s -> s.trim() }.filter { s -> s.isNotEmpty() }
+            selectedFacilities = it.facilities.split(",").map { s -> s.trim() }.filter { s -> s.isNotEmpty() }
+        }
+    }
+
+    // ---------- SYNC CHIPS → TEXT ----------
     LaunchedEffect(selectedCurriculum) {
         viewModel.curriculum = selectedCurriculum.joinToString(", ")
     }
@@ -107,8 +106,14 @@ fun SchoolDataForm(viewModel: SchoolViewModel) {
             .background(Color(0xFFF8F9FA))
             .statusBarsPadding()
     ) {
+
         TopAppBar(
-            title = { Text("Add School Information", fontWeight = FontWeight.Bold) },
+            title = {
+                Text(
+                    if (isEditMode) "Edit School Information" else "Add School Information",
+                    fontWeight = FontWeight.Bold
+                )
+            },
             navigationIcon = {
                 IconButton(onClick = { (context as ComponentActivity).finish() }) {
                     Icon(Icons.Default.ArrowBack, null)
@@ -130,7 +135,7 @@ fun SchoolDataForm(viewModel: SchoolViewModel) {
                 .padding(20.dp)
         ) {
 
-            // Image
+            // ---------- IMAGE ----------
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -138,7 +143,7 @@ fun SchoolDataForm(viewModel: SchoolViewModel) {
                     .clip(RoundedCornerShape(16.dp))
                     .background(Color(0xFFE2E8F0))
                     .border(2.dp, Color(0xFF2563EB), RoundedCornerShape(16.dp))
-                    .clickable { imagePickerLauncher.launch("image/*") },
+                    .clickable { imagePicker.launch("image/*") },
                 contentAlignment = Alignment.Center
             ) {
                 if (viewModel.imageUri != null) {
@@ -149,57 +154,74 @@ fun SchoolDataForm(viewModel: SchoolViewModel) {
                         contentScale = ContentScale.Crop
                     )
                 } else {
-                    Icon(Icons.Default.CameraAlt, null, tint = Color(0xFF2563EB), modifier = Modifier.size(48.dp))
+                    Icon(Icons.Default.CameraAlt, null, modifier = Modifier.size(48.dp))
                 }
             }
 
             Spacer(Modifier.height(24.dp))
 
-            SectionHeader("Basic Info")
-
-            FormTextField(viewModel.schoolName, { viewModel.schoolName = it }, "School Name *", "St. Xavier's")
+            SectionHeader("Basic Information")
+            FormTextField(viewModel.schoolName, { viewModel.schoolName = it }, "School Name *", "St. Xavier's College")
             FormTextField(viewModel.location, { viewModel.location = it }, "Location *", "Kathmandu")
+            FormTextField(viewModel.totalStudents, { viewModel.totalStudents = it }, "Total Students", "1500")
+            FormTextField(viewModel.establishedYear, { viewModel.establishedYear = it }, "Established Year", "1998")
 
-            // Google Maps URL
-            Text("Google Maps Link *", fontWeight = FontWeight.Medium)
-            OutlinedTextField(
-                value = googleMapUrl,
-                onValueChange = { googleMapUrl = it },
-                modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("https://www.google.com/maps/place/.../@27.xx,85.xx") },
-                trailingIcon = {
-                    IconButton(onClick = {
-                        if (googleMapUrl.isNotBlank()) {
-                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(googleMapUrl)))
-                        }
-                    }) {
-                        Icon(Icons.Default.OpenInNew, null)
-                    }
-                }
+            SectionHeader("Contact Information")
+            FormTextField(viewModel.principalName, { viewModel.principalName = it }, "Principal Name", "Dr. John Doe")
+            FormTextField(viewModel.contactNumber, { viewModel.contactNumber = it }, "Contact Number *", "+977-1-XXXXXX")
+            FormTextField(viewModel.email, { viewModel.email = it }, "Email", "info@school.edu.np")
+            FormTextField(viewModel.website, { viewModel.website = it }, "Website", "https://school.edu.np")
+
+            SectionHeader("Google Maps Location")
+            FormTextField(
+                viewModel.googleMapUrl,
+                { viewModel.googleMapUrl = it },
+                "Google Maps URL",
+                "https://www.google.com/maps/place/.../@27.xx,85.xx"
             )
-
-            if (extractedLatLng != null) {
-                Text("✅ Location detected: ${extractedLatLng.first}, ${extractedLatLng.second}",
-                    fontSize = 13.sp, color = Color(0xFF065F46))
-            } else if (googleMapUrl.isNotBlank()) {
-                Text("⚠️ Use a Google Maps link with @lat,lng",
-                    fontSize = 13.sp, color = Color(0xFF92400E))
+            // 🔹 Extract lat/lng whenever URL changes
+            val latLng = remember(viewModel.googleMapUrl) {
+                extractLatLngFromGoogleMapsUrl(viewModel.googleMapUrl)
             }
 
-            Spacer(Modifier.height(24.dp))
+// 🔹 Save lat/lng into ViewModel
+            LaunchedEffect(latLng) {
+                if (latLng != null) {
+                    viewModel.latitude = latLng.first
+                    viewModel.longitude = latLng.second
+                }
+            }
+
+// 🔹 User feedback
+            if (viewModel.googleMapUrl.isNotBlank()) {
+                if (latLng != null) {
+                    Text(
+                        text = "✅ Location detected (Lat: ${latLng.first}, Lng: ${latLng.second})",
+                        fontSize = 13.sp,
+                        color = Color(0xFF065F46)
+                    )
+                } else {
+                    Text(
+                        text = "⚠️ Invalid link. Please use a Google Maps link with '@lat,lng'",
+                        fontSize = 13.sp,
+                        color = Color(0xFF92400E)
+                    )
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+            }
+
 
             SectionHeader("Curriculum Type")
-            MultiSelectChipGroup(
-                items = listOf("National Curriculum", "A-Levels",
-                    "IB Program", "Montessori", "International"),
+            FormTextField(viewModel.curriculum, { viewModel.curriculum = it }, "Curriculum", "National, A-Levels")
+            FormMultiSelectChipGroup(
+                items = listOf("National Curriculum", "A-Levels", "IB Program", "Montessori", "International"),
                 selectedItems = selectedCurriculum,
-                onItemsSelected = { newList -> selectedCurriculum = newList }
+                onItemsSelected = { selectedCurriculum = it }
             )
 
-            Spacer(Modifier.height(16.dp))
-
             SectionHeader("Programs Offered")
-            MultiSelectChipGroup(
+            FormTextField(viewModel.programsOffered, { viewModel.programsOffered = it }, "Programs", "Science, Management")
+            FormMultiSelectChipGroup(
                 items = listOf(
                     "Nursery - Grade 5",
                     "Grade 6-10 (SEE)",
@@ -210,13 +232,12 @@ fun SchoolDataForm(viewModel: SchoolViewModel) {
                     "IB Diploma"
                 ),
                 selectedItems = selectedPrograms,
-                onItemsSelected = { newList -> selectedPrograms = newList }
+                onItemsSelected = { selectedPrograms = it }
             )
 
-            Spacer(Modifier.height(16.dp))
-
             SectionHeader("Facilities")
-            MultiSelectChipGroup(
+            FormTextField(viewModel.facilities, { viewModel.facilities = it }, "Facilities", "Library, Labs", multiline = true)
+            FormMultiSelectChipGroup(
                 items = listOf(
                     "Science Labs",
                     "Computer Labs",
@@ -229,31 +250,68 @@ fun SchoolDataForm(viewModel: SchoolViewModel) {
                     "Auditorium"
                 ),
                 selectedItems = selectedFacilities,
-                onItemsSelected = { newList -> selectedFacilities = newList }
+                onItemsSelected = { selectedFacilities = it }
+            )
+
+            SectionHeader("Facilities Options")
+            CheckboxRow("Scholarship Available", viewModel.scholarshipAvailable) {
+                viewModel.scholarshipAvailable = it
+            }
+            CheckboxRow("Transport Facility", viewModel.transportFacility) {
+                viewModel.transportFacility = it
+            }
+            CheckboxRow("Hostel Facility", viewModel.hostelFacility) {
+                viewModel.hostelFacility = it
+            }
+
+            SectionHeader("Fee Structure")
+            FormTextField(viewModel.tuitionFee, { viewModel.tuitionFee = it }, "Annual Tuition Fee", "NPR 500,000")
+            FormTextField(viewModel.admissionFee, { viewModel.admissionFee = it }, "Admission Fee", "NPR 50,000")
+
+            SectionHeader("Extracurricular Activities")
+            FormTextField(viewModel.extracurricular, { viewModel.extracurricular = it }, "Activities", "Sports, Music")
+
+            SectionHeader("Description")
+            FormTextField(
+                viewModel.description,
+                { viewModel.description = it },
+                "School Description",
+                "Describe your school...",
+                multiline = true,
+                minLines = 4
             )
 
             Spacer(Modifier.height(32.dp))
 
             Button(
                 onClick = {
-                    // later you will store googleMapUrl + extractedLatLng in ViewModel
-                    viewModel.saveSchoolData(context)
+                    viewModel.saveOrUpdateSchool(context)
+                    Toast.makeText(
+                        context,
+                        if (isEditMode) "School updated successfully" else "School added successfully",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    context.startActivity(Intent(context, SchoolDashboard::class.java))
+                    (context as ComponentActivity).finish()
                 },
-                modifier = Modifier.fillMaxWidth().height(56.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .shadow(8.dp, RoundedCornerShape(14.dp)),
                 shape = RoundedCornerShape(14.dp)
             ) {
-                Text("Submit School Information", fontWeight = FontWeight.Bold)
+                Text(if (isEditMode) "Update School Information" else "Submit School Information")
             }
         }
     }
 }
 
-/* ---------------- COMPONENTS ---------------- */
+/* ----------------- REUSABLE UI ----------------- */
 
 @Composable
 fun SectionHeader(title: String) {
     Text(title, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-    Spacer(Modifier.height(8.dp))
+    Spacer(Modifier.height(12.dp))
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -262,7 +320,9 @@ fun FormTextField(
     value: String,
     onValueChange: (String) -> Unit,
     label: String,
-    placeholder: String
+    placeholder: String,
+    multiline: Boolean = false,
+    minLines: Int = 1
 ) {
     Column {
         Text(label, fontWeight = FontWeight.Medium)
@@ -270,9 +330,19 @@ fun FormTextField(
             value = value,
             onValueChange = onValueChange,
             modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text(placeholder) }
+            placeholder = { Text(placeholder) },
+            singleLine = !multiline,
+            minLines = minLines
         )
         Spacer(Modifier.height(16.dp))
+    }
+}
+
+@Composable
+fun CheckboxRow(text: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Checkbox(checked = checked, onCheckedChange = onCheckedChange)
+        Text(text)
     }
 }
 
@@ -290,9 +360,9 @@ fun FormMultiSelectChipGroup(
                     FilterChip(
                         selected = selected,
                         onClick = {
-                            val newList =
+                            val updated =
                                 if (selected) selectedItems - item else selectedItems + item
-                            onItemsSelected(newList)
+                            onItemsSelected(updated)
                         },
                         label = { Text(item) },
                         modifier = Modifier.weight(1f)
@@ -303,9 +373,6 @@ fun FormMultiSelectChipGroup(
         }
     }
 }
-
-/* -------- MAP URL PARSER -------- */
-
 private fun extractLatLngFromGoogleMapsUrl(url: String): Pair<Double, Double>? {
     val regex = Regex("@(-?\\d+\\.\\d+),(-?\\d+\\.\\d+)")
     val match = regex.find(url) ?: return null
@@ -313,3 +380,4 @@ private fun extractLatLngFromGoogleMapsUrl(url: String): Pair<Double, Double>? {
     val lng = match.groupValues[2].toDoubleOrNull()
     return if (lat != null && lng != null) lat to lng else null
 }
+

@@ -156,6 +156,10 @@ class SchoolViewModel : ViewModel() {
         hostelFacility = school.hostelFacility
         extracurricular = school.extracurricular
         description = school.description
+        googleMapUrl = school.googleMapUrl
+        latitude = school.latitude
+        longitude = school.longitude
+
     }
 
     /* ---------------- SAVE OR UPDATE ---------------- */
@@ -176,6 +180,9 @@ class SchoolViewModel : ViewModel() {
                 imageUrl = null,
                 schoolName = schoolName,
                 location = location,
+                googleMapUrl = googleMapUrl,
+                latitude = latitude,
+                longitude = longitude,
                 totalStudents = totalStudents,
                 establishedYear = establishedYear,
                 principalName = principalName,
