@@ -49,6 +49,7 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import androidx.core.app.ActivityCompat
+import com.example.unick.utils.applyDistanceFilterIfNeeded
 import com.google.android.gms.location.LocationServices
 
 

@@ -8,6 +8,36 @@ import kotlin.math.*
  * - No separate backend/repo needed
  */
 
+fun <T> applyDistanceFilterIfNeeded(
+    userLat: Double,
+    userLng: Double,
+    radiusKm: Double?,
+    schools: List<T>,
+    latOf: (T) -> Double,
+    lngOf: (T) -> Double
+): List<T> {
+
+    if (radiusKm == null) return schools
+
+    return schools.filter { item ->
+        val lat = latOf(item)
+        val lng = lngOf(item)
+
+        // ❗ Ignore invalid coordinates
+        if (lat == 0.0 || lng == 0.0) return@filter false
+
+        val distance = distanceInKm(
+            userLat,
+            userLng,
+            lat,
+            lng
+        )
+
+        distance <= radiusKm
+    }
+}
+
+
 /** Returns distance in KM between two geo points */
 fun distanceInKm(
     lat1: Double,
@@ -15,19 +45,19 @@ fun distanceInKm(
     lat2: Double,
     lon2: Double
 ): Double {
-    val earthRadiusKm = 6371.0
-
+    val r = 6371.0 // Earth radius in KM
     val dLat = Math.toRadians(lat2 - lat1)
     val dLon = Math.toRadians(lon2 - lon1)
+    val a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(Math.toRadians(lat1)) *
+                Math.cos(Math.toRadians(lat2)) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2)
 
-    val a = sin(dLat / 2).pow(2) +
-            cos(Math.toRadians(lat1)) *
-            cos(Math.toRadians(lat2)) *
-            sin(dLon / 2).pow(2)
-
-    val c = 2 * atan2(sqrt(a), sqrt(1 - a))
-    return earthRadiusKm * c
+    val c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+    return r * c
 }
+
 
 /**
  * Filters items within a radius in KM.
