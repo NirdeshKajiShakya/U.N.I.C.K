@@ -1,18 +1,24 @@
 package com.example.unick.view
 
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -34,36 +40,21 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.example.unick.model.FilterResult
 import com.example.unick.model.SchoolForm
 import com.example.unick.ui.theme.UNICKTheme
 import com.example.unick.viewmodel.SchoolViewModel
-import com.example.unick.viewmodel.UserProfileViewModel
 import com.example.unick.viewmodel.UserType
-import com.example.unick.repo.UserProfileRepoImpl
-import com.google.firebase.auth.FirebaseAuth
-
-// BottomNavItem moved to UnifiedNavBar.kt
-
 
 class DashboardActivity : ComponentActivity() {
     private val viewModel: SchoolViewModel by viewModels()
-    private val userProfileViewModel: UserProfileViewModel by viewModels {
-        UserProfileViewModel.Factory(UserProfileRepoImpl())
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-
-        // Load user profile data
-        val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
-        if (currentUserId != null) {
-            userProfileViewModel.loadUserData(currentUserId)
-        }
-
         setContent {
             UNICKTheme {
-                MainScreen(viewModel = viewModel, userProfileViewModel = userProfileViewModel)
+                MainScreen(viewModel = viewModel)
             }
         }
     }
@@ -71,148 +62,98 @@ class DashboardActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainScreen(viewModel: SchoolViewModel, userProfileViewModel: UserProfileViewModel) {
+fun MainScreen(viewModel: SchoolViewModel) {
     val navController = rememberNavController()
-    val context = LocalContext.current
-    val activity = context as? ComponentActivity
-    val intent = activity?.intent
-    val startDestination = intent?.getStringExtra("start_destination")
 
-    LaunchedEffect(startDestination) {
-        if (!startDestination.isNullOrEmpty()) {
-            navController.navigate(startDestination) {
+    Scaffold(
+        bottomBar = { BottomNavigationBar(navController = navController, viewModel = viewModel) }
+    ) { innerPadding ->
+        Box(modifier = Modifier.padding(innerPadding)) {
+            NavigationHost(navController = navController, viewModel = viewModel)
+        }
+    }
+}
+
+@Composable
+fun BottomNavigationBar(navController: androidx.navigation.NavController, viewModel: SchoolViewModel) {
+    val context = LocalContext.current
+    val userType by viewModel.userType.collectAsState()
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
+
+    UnifiedBottomNavigationBar(
+        currentRoute = currentRoute,
+        onNavigate = { route ->
+            navController.navigate(route) {
+                popUpTo(navController.graph.startDestinationId)
+                launchSingleTop = true
+            }
+        },
+        onProfileClick = { handleProfileClick(userType, context, navController) },
+        navItems = listOf(
+            BottomNavItem.Home,
+            BottomNavItem.Search,
+            BottomNavItem.AIChat,
+            BottomNavItem.Notification,
+            BottomNavItem.Profile
+        )
+    )
+}
+
+private fun handleProfileClick(
+    userType: UserType,
+    context: Context,
+    navController: androidx.navigation.NavController
+) {
+    when (userType) {
+        is UserType.Normal -> {
+            navController.navigate(BottomNavItem.Profile.route) {
                 popUpTo(navController.graph.startDestinationId)
                 launchSingleTop = true
             }
         }
-    }
-
-    val userTypeState = viewModel.userType.collectAsState()
-
-    Scaffold(
-        bottomBar = {
-            UnifiedBottomNavigationBar(
-                currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route,
-                onNavigate = { route ->
-                    when (route) {
-                        BottomNavItem.Home.route -> {
-                            // If already on home (or any other tab in dashboard), navigate to Home tab
-                             navController.navigate(BottomNavItem.Home.route) {
-                                popUpTo(navController.graph.startDestinationId)
-                                launchSingleTop = true
-                             }
-                        }
-                        BottomNavItem.AIChat.route -> {
-                            // Navigate to AI Chat tab
-                            navController.navigate(BottomNavItem.AIChat.route) {
-                                popUpTo(navController.graph.startDestinationId)
-                                launchSingleTop = true
-                            }
-                        }
-                        BottomNavItem.Profile.route -> {
-                            if (userTypeState.value is UserType.School) {
-                                // School -> Activity
-                                handleProfileClick(userTypeState.value, context)
-                            } else {
-                                // Student -> Smooth Internal Navigation
-                                navController.navigate(BottomNavItem.Profile.route) {
-                                    popUpTo(navController.graph.startDestinationId)
-                                    launchSingleTop = true
-                                }
-                            }
-                        }
-                        else -> {
-                            // Other tabs (Search, Notification) - navigate normally within NavHost
-                             navController.navigate(route) {
-                                popUpTo(navController.graph.startDestinationId)
-                                launchSingleTop = true
-                             }
-                        }
-                    }
-                },
-                onProfileClick = {
-                    if (userTypeState.value is UserType.School) {
-                         handleProfileClick(userTypeState.value, context)
-                    } else {
-                         navController.navigate(BottomNavItem.Profile.route) {
-                            popUpTo(navController.graph.startDestinationId)
-                            launchSingleTop = true
-                         }
-                    }
-                },
-                navItems = listOf(
-                    BottomNavItem.Home,
-                    BottomNavItem.Search,
-                    BottomNavItem.AIChat,
-                    BottomNavItem.Notification,
-                    BottomNavItem.Profile
-                )
-            )
+        is UserType.School -> {
+            val intent = Intent(context, SchoolDetailActivity::class.java)
+            context.startActivity(intent)
         }
-    ) { innerPadding ->
-        Box(modifier = Modifier.padding(innerPadding)) {
-            val userName by viewModel.userName.collectAsState()
-            NavigationHost(navController = navController, viewModel = viewModel, userProfileViewModel = userProfileViewModel, userName = userName)
-        }
+        is UserType.Unknown -> Unit
     }
 }
-
-private fun handleProfileClick(userType: UserType, context: Context) {
-    if (userType is UserType.School) {
-        val intent = Intent(context, SchoolDashboard::class.java)
-        context.startActivity(intent)
-    } else {
-        // Normal user -> UserProfileActivity
-        val intent = Intent(context, UserProfileActivity::class.java)
-        context.startActivity(intent)
-    }
-}
-
 
 @Composable
-fun NavigationHost(navController: NavHostController, viewModel: SchoolViewModel, userProfileViewModel: UserProfileViewModel, userName: String) {
+fun NavigationHost(navController: NavHostController, viewModel: SchoolViewModel) {
     NavHost(navController = navController, startDestination = BottomNavItem.Home.route) {
+
         composable(BottomNavItem.Home.route) {
             val schools by viewModel.schools.collectAsState()
             val verifiedSchools = schools.filter { it.verified }
             val isLoading by viewModel.isLoadingSchools.collectAsState()
+
             DashboardScreen(
                 schools = verifiedSchools,
                 isLoading = isLoading,
-                onRefresh = { viewModel.fetchSchools() },
-                onCompareClick = { navController.navigate("compare") },
-                userName = userName
+                onRefresh = { viewModel.fetchSchools() }
             )
         }
+
+        // ✅ Real search + filter
         composable(BottomNavItem.Search.route) {
-            SearchScreen()
+            SearchScreen(viewModel = viewModel)
         }
-        composable(BottomNavItem.AIChat.route) {
-            AiChatScreen()
-        }
-        composable(BottomNavItem.Notification.route) {
-            NotificationScreen()
-        }
-        composable(BottomNavItem.Profile.route) {
-            UserProfileScreen(viewModel = userProfileViewModel)
-        }
-        composable("compare") {
-            SchoolCompareScreen(
-                onBackClick = { navController.popBackStack() },
-                showBottomBar = false
-            )
-        }
+
+        composable(BottomNavItem.AIChat.route) { AiChatScreen() }
+        composable(BottomNavItem.Notification.route) { NotificationScreen() }
+        composable(BottomNavItem.Profile.route) { UserProfileScreen(viewModel = null) }
     }
 }
 
+/* ----------------------------- HOME DASHBOARD ----------------------------- */
 
 @Composable
 fun DashboardScreen(
     schools: List<SchoolForm> = emptyList(),
     isLoading: Boolean = false,
-    onRefresh: () -> Unit = {},
-    onCompareClick: () -> Unit = {},
-    userName: String = "Student"
+    onRefresh: () -> Unit = {}
 ) {
     var isSearchActive by remember { mutableStateOf(false) }
     var searchText by remember { mutableStateOf("") }
@@ -241,10 +182,34 @@ fun DashboardScreen(
                     fontWeight = FontWeight.Medium
                 )
                 Text(
-                    text = if (userName.isNotBlank()) userName else "Student",
+                    text = "Student",
                     fontSize = 32.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFF0F172A)
+                )
+            }
+
+            Box(
+                modifier = Modifier
+                    .size(52.dp)
+                    .shadow(4.dp, CircleShape)
+                    .background(
+                        Brush.linearGradient(
+                            colors = listOf(Color(0xFF667EEA), Color(0xFF764BA2))
+                        ),
+                        CircleShape
+                    )
+                    .clickable {
+                        val intent = Intent(context, DataFormAcitivity::class.java)
+                        context.startActivity(intent)
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Person,
+                    contentDescription = "User",
+                    tint = Color.White,
+                    modifier = Modifier.size(26.dp)
                 )
             }
         }
@@ -260,7 +225,7 @@ fun DashboardScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Search Section
+        // Home Search UI (not used for filtering yet)
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -298,9 +263,8 @@ fun DashboardScreen(
                 )
             }
 
-            // Filter Button
             OutlinedButton(
-                onClick = { /* Handle filter */ },
+                onClick = { /* optional later */ },
                 modifier = Modifier
                     .size(58.dp)
                     .shadow(4.dp, RoundedCornerShape(14.dp)),
@@ -320,7 +284,7 @@ fun DashboardScreen(
 
         // Compare Button
         OutlinedButton(
-            onClick = onCompareClick,
+            onClick = { /* Handle compare */ },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(58.dp)
@@ -337,7 +301,25 @@ fun DashboardScreen(
             Text("Compare Academic Programs", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color(0xFF2563EB))
         }
 
+        Spacer(modifier = Modifier.height(14.dp))
 
+        // Add School Button
+        Button(
+            onClick = {
+                val intent = Intent(context, DataFormAcitivity::class.java)
+                context.startActivity(intent)
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(58.dp)
+                .shadow(8.dp, RoundedCornerShape(14.dp)),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981)),
+            shape = RoundedCornerShape(14.dp)
+        ) {
+            Icon(Icons.Default.Add, "Add School", modifier = Modifier.size(22.dp), tint = Color.White)
+            Spacer(modifier = Modifier.width(10.dp))
+            Text("Add Your School", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+        }
 
         Spacer(modifier = Modifier.height(32.dp))
 
@@ -348,9 +330,7 @@ fun DashboardScreen(
                     .fillMaxWidth()
                     .height(200.dp),
                 contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator(color = Color(0xFF2563EB))
-            }
+            ) { CircularProgressIndicator(color = Color(0xFF2563EB)) }
         } else if (schools.isEmpty()) {
             Box(
                 modifier = Modifier
@@ -361,10 +341,7 @@ fun DashboardScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        text = "🏫",
-                        fontSize = 48.sp
-                    )
+                    Text(text = "🏫", fontSize = 48.sp)
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
                         text = "No schools added yet",
@@ -421,7 +398,7 @@ fun SchoolSection(title: String, subtitle: String, schools: List<SchoolForm>, co
         LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             items(schools) { school ->
                 SchoolCard(
-                    school = school, 
+                    school = school,
                     context = context,
                     onClick = {
                         val intent = Intent(context, DashboardCard::class.java)
@@ -434,15 +411,165 @@ fun SchoolSection(title: String, subtitle: String, schools: List<SchoolForm>, co
     }
 }
 
+/* ----------------------------- SEARCH TAB ----------------------------- */
 
-
-// Placeholder screens
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SearchScreen() {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text(text = "This is Search Screen")
+fun SearchScreen(viewModel: SchoolViewModel) {
+    val context = LocalContext.current
+
+    // load data
+    LaunchedEffect(Unit) { viewModel.fetchSchools() }
+
+    val schools by viewModel.schools.collectAsState()
+    val verifiedSchools = remember(schools) { schools.filter { it.verified } }
+
+    var query by remember { mutableStateOf("") }
+    var activeFilter by remember { mutableStateOf(FilterResult()) }
+
+    val filterLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { res ->
+        if (res.resultCode == Activity.RESULT_OK) {
+            val returned =
+                res.data?.getParcelableExtra<FilterResult>(FilterActivity.EXTRA_FILTER_RESULT)
+            if (returned != null) activeFilter = returned
+        }
+    }
+
+    val filtered = remember(query, activeFilter, verifiedSchools) {
+        verifiedSchools
+            .asSequence()
+            // Name search
+            .filter { it.schoolName.contains(query, ignoreCase = true) }
+            // Location chip
+            .filter { activeFilter.location == "Any" || it.location.contains(activeFilter.location, ignoreCase = true) }
+            // Fee range (tuitionFee is String in your model)
+            .filter { activeFilter.feeRange == "Any" || feeMatches(activeFilter.feeRange, it.tuitionFee) }
+            // Curriculum multi-select (SchoolForm.curriculum is comma-separated String)
+            .filter { matchesAllSelected(activeFilter.curriculums, it.curriculum) }
+            // Facilities multi-select (SchoolForm.facilities is comma-separated String)
+            .filter { matchesAllSelected(activeFilter.facilities, it.facilities) }
+            // Levels multi-select (best effort on programsOffered text)
+            .filter { matchesAnyLevel(activeFilter.levels, it.programsOffered) }
+            // Pass rate ignored (no field in SchoolForm)
+            .toList()
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Search Schools") },
+                actions = {
+                    if (query.isNotBlank()) {
+                        IconButton(onClick = { query = "" }) {
+                            Icon(Icons.Default.Close, contentDescription = "Clear")
+                        }
+                    }
+                }
+            )
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = { filterLauncher.launch(Intent(context, FilterActivity::class.java)) }
+            ) { Text("🎯") }
+        }
+    ) { pad ->
+        Column(
+            modifier = Modifier
+                .padding(pad)
+                .fillMaxSize()
+                .padding(16.dp)
+        ) {
+            OutlinedTextField(
+                value = query,
+                onValueChange = { query = it },
+                modifier = Modifier.fillMaxWidth(),
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                placeholder = { Text("Search by school name...") },
+                singleLine = true
+            )
+
+            Spacer(Modifier.height(10.dp))
+
+            Text(
+                text = "Filters: Location=${activeFilter.location}, Fee=${activeFilter.feeRange}, Curriculum=${activeFilter.curriculums.size}, Facilities=${activeFilter.facilities.size}",
+                style = MaterialTheme.typography.bodySmall
+            )
+
+            Spacer(Modifier.height(12.dp))
+
+            if (filtered.isEmpty()) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("No schools match your search/filters.")
+                }
+            } else {
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(14.dp),
+                    contentPadding = PaddingValues(bottom = 90.dp)
+                ) {
+                    items(filtered) { school ->
+                        SchoolCard(
+                            school = school,
+                            context = context,
+                            onClick = {
+                                val intent = Intent(context, DashboardCard::class.java)
+                                intent.putExtra("school_details", school)
+                                context.startActivity(intent)
+                            }
+                        )
+                    }
+                }
+            }
+        }
     }
 }
+
+/* ----------------------------- FILTER HELPERS ----------------------------- */
+
+private fun parseFeeToInt(fee: String?): Int? {
+    if (fee.isNullOrBlank()) return null
+    val digitsOnly = fee.filter { it.isDigit() }
+    return digitsOnly.toIntOrNull()
+}
+
+private fun feeMatches(selectedRange: String, tuitionFee: String): Boolean {
+    val fee = parseFeeToInt(tuitionFee) ?: return false
+
+    return when (selectedRange) {
+        "Under NPR 1 Lakh" -> fee < 100_000
+        "NPR 1-3 Lakhs" -> fee in 100_000..300_000
+        "NPR 3-5 Lakhs" -> fee in 300_000..500_000
+        "NPR 5-10 Lakhs" -> fee in 500_000..1_000_000
+        "Above NPR 10 Lakhs" -> fee > 1_000_000
+        else -> true
+    }
+}
+
+private fun tokenizeCommaString(raw: String): Set<String> {
+    return raw
+        .split(",", ";")
+        .map { it.trim() }
+        .filter { it.isNotBlank() }
+        .map { it.lowercase() }
+        .toSet()
+}
+
+/** curriculums/facilities: require ALL selected items to exist in the school's string list */
+private fun matchesAllSelected(selected: List<String>, raw: String): Boolean {
+    if (selected.isEmpty()) return true
+    val tokens = tokenizeCommaString(raw)
+    return selected.all { it.lowercase() in tokens }
+}
+
+/** levels: best effort match against programsOffered string */
+private fun matchesAnyLevel(selectedLevels: List<String>, programsOffered: String): Boolean {
+    if (selectedLevels.isEmpty()) return true
+    val text = programsOffered.lowercase()
+    return selectedLevels.any { lvl -> text.contains(lvl.lowercase()) }
+}
+
+/* ----------------------------- PLACEHOLDER ----------------------------- */
 
 @Composable
 fun NotificationScreen() {
@@ -450,7 +577,6 @@ fun NotificationScreen() {
         Text(text = "This is Notification Screen")
     }
 }
-
 
 @Preview(showBackground = true)
 @Composable
@@ -461,11 +587,16 @@ fun DashboardPreview() {
                 uid = "1",
                 schoolName = "St. Xavier's College",
                 location = "Maitighar, Kathmandu",
-                curriculum = "A-Levels, National",
+                curriculum = "A-Levels, National Curriculum",
+                facilities = "Library, Transportation, Science Labs",
+                programsOffered = "+2 Science, A-Levels",
                 totalStudents = "1500",
                 scholarshipAvailable = true,
                 transportFacility = true,
-                imageUrl = "https://images.unsplash.com/photo-1562774053-701939374585?w=400"
+                imageUrl = "https://images.unsplash.com/photo-1562774053-701939374585?w=400",
+                verified = true,
+                tuitionFee = "200000",
+                admissionFee = "50000"
             )
         )
         DashboardScreen(schools = schools, isLoading = false)

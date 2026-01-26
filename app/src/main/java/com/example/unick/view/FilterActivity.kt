@@ -1,5 +1,7 @@
 package com.example.unick.view
 
+import android.app.Activity
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -21,45 +23,39 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.unick.model.FilterResult
 import com.example.unick.ui.theme.UNICKTheme
-import com.example.unick.utils.filterWithinRadius // ✅ uses your previous utils file
+import com.example.unick.utils.filterWithinRadius
 
 class FilterActivity : ComponentActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
         setContent {
             UNICKTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = Color(0xFFF8F9FA)
                 ) {
-                    // You can pass callbacks later if needed
                     FilterScreen(
                         onBack = { finish() },
                         onApply = { result ->
-                            // For now: you can return result to previous screen via intent extras later
-                            // or store in shared ViewModel
+                            val data = Intent().putExtra(EXTRA_FILTER_RESULT, result)
+                            setResult(Activity.RESULT_OK, data)
+                            finish()
                         }
                     )
                 }
             }
         }
     }
-}
 
-/**
- * Later you can store this in a shared ViewModel or pass through navigation.
- */
-data class FilterResult(
-    val feeRange: String,
-    val location: String,
-    val passRate: String,
-    val levels: List<String>,
-    val curriculums: List<String>,
-    val facilities: List<String>,
-    val radiusKm: Double? // null = Any radius
-)
+    companion object {
+        const val EXTRA_FILTER_RESULT = "extra_filter_result"
+    }
+}
 
 @Composable
 fun FilterScreen(
@@ -72,15 +68,14 @@ fun FilterScreen(
     var selectedCurriculum by remember { mutableStateOf<List<String>>(emptyList()) }
     var selectedFacilities by remember { mutableStateOf<List<String>>(emptyList()) }
     var selectedLevel by remember { mutableStateOf<List<String>>(emptyList()) }
-
-    // ✅ NEW: Radius filter
-    // UI shows strings, logic converts to km
     var selectedRadiusLabel by remember { mutableStateOf("Any") }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFFF8F9FA))
+            .statusBarsPadding()      // ✅ fixes top overlap
+            .navigationBarsPadding()  // ✅ avoids gesture bar overlap
     ) {
         // Top Bar
         Row(
@@ -109,7 +104,6 @@ fun FilterScreen(
             }
 
             TextButton(onClick = {
-                // Reset all filters
                 selectedFeeRange = "Any"
                 selectedLocation = "Any"
                 selectedPassRate = "Any"
@@ -127,21 +121,17 @@ fun FilterScreen(
             }
         }
 
+        // ✅ IMPORTANT FIX:
+        // Use weight(1f) instead of fillMaxSize so bottom buttons ALWAYS show.
         Column(
             modifier = Modifier
-                .fillMaxSize()
+                .weight(1f)
                 .verticalScroll(rememberScrollState())
                 .padding(20.dp)
         ) {
-            // ✅ NEW: Distance / Radius
+            // Distance / Radius
             FilterSection(title = "Distance From You") {
-                val radiusOptions = listOf(
-                    "Any",
-                    "2 km",
-                    "5 km",
-                    "10 km",
-                    "20 km"
-                )
+                val radiusOptions = listOf("Any", "2 km", "5 km", "10 km", "20 km")
                 FilterChipGroup(
                     items = radiusOptions,
                     selectedItem = selectedRadiusLabel,
@@ -170,7 +160,7 @@ fun FilterScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Location (Area)
+            // Location
             FilterSection(title = "Location") {
                 val locations = listOf(
                     "Any",
@@ -190,7 +180,7 @@ fun FilterScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Pass Rate (Students Success Rate)
+            // Pass Rate
             FilterSection(title = "Student Pass Rate") {
                 val passRates = listOf(
                     "Any",
@@ -266,10 +256,10 @@ fun FilterScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(100.dp))
+            Spacer(modifier = Modifier.height(24.dp))
         }
 
-        // Bottom Action Buttons
+        // Bottom Buttons (Always visible now)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -298,7 +288,6 @@ fun FilterScreen(
                 onClick = {
                     val radiusKm = radiusLabelToKm(selectedRadiusLabel)
 
-                    // You can send this result to your listing screen / viewmodel
                     onApply(
                         FilterResult(
                             feeRange = selectedFeeRange,
@@ -328,10 +317,7 @@ fun FilterScreen(
     }
 }
 
-/**
- * Converts UI chip label -> KM value.
- * null means "Any".
- */
+/** Converts UI chip label -> KM value. null means "Any". */
 private fun radiusLabelToKm(label: String): Double? {
     return when (label.trim()) {
         "2 km" -> 2.0
@@ -342,14 +328,6 @@ private fun radiusLabelToKm(label: String): Double? {
     }
 }
 
-/**
- * ✅ THIS is the function you call from your listing screen / viewmodel
- * once you have:
- * - userLat/userLng
- * - schools list containing lat/lng
- *
- * It uses your previous utils: filterWithinRadius(...)
- */
 fun <T> applyDistanceFilterIfNeeded(
     userLat: Double,
     userLng: Double,
@@ -358,7 +336,6 @@ fun <T> applyDistanceFilterIfNeeded(
     latOf: (T) -> Double,
     lngOf: (T) -> Double
 ): List<T> {
-    // if "Any", return original list
     if (radiusKm == null) return schools
 
     return filterWithinRadius(
@@ -446,7 +423,8 @@ fun MultiSelectChipGroup(
                     FilterChip(
                         selected = isSelected,
                         onClick = {
-                            val newSelection = if (isSelected) selectedItems - item else selectedItems + item
+                            val newSelection =
+                                if (isSelected) selectedItems - item else selectedItems + item
                             onItemsSelected(newSelection)
                         },
                         label = {
