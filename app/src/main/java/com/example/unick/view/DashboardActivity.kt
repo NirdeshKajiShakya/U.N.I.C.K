@@ -119,13 +119,21 @@ private fun handleProfileClick(
                 launchSingleTop = true
             }
         }
+
         is UserType.School -> {
-            val intent = Intent(context, SchoolDetailActivity::class.java)
+            val uid = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid
+            if (uid.isNullOrBlank()) return
+
+            val intent = Intent(context, SchoolDetailActivity::class.java).apply {
+                putExtra("uid", uid)
+            }
             context.startActivity(intent)
         }
+
         is UserType.Unknown -> Unit
     }
 }
+
 
 @Composable
 fun NavigationHost(navController: NavHostController, viewModel: SchoolViewModel) {

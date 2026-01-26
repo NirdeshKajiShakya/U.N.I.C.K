@@ -38,10 +38,17 @@ class SchoolDetailActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        // get schoolId from intent
-        var schoolId = intent.getStringExtra("uid") ?: ""
-        if (schoolId == "") {
-            schoolId = "XcfjtBIHVfdpHeh8QSMy7j3VGiU2"
+        // ✅ Get real schoolId from intent (no hardcoded fallback)
+        val schoolId: String? =
+            intent.getStringExtra("uid")
+                ?: intent.getStringExtra("schoolId")  // optional (you sometimes use this key too)
+                ?: intent.getParcelableExtra<com.example.unick.model.SchoolForm>("school_details")?.uid
+
+        if (schoolId.isNullOrBlank()) {
+            // No valid id passed -> close safely
+            android.widget.Toast.makeText(this, "School ID missing!", android.widget.Toast.LENGTH_SHORT).show()
+            finish()
+            return
         }
 
         setContent {
@@ -66,13 +73,11 @@ class SchoolDetailActivity : ComponentActivity() {
                     )
                 },
                 onApplyNow = {
-                    // Navigate to student application form with schoolId
                     startActivity(
                         Intent(this, StudentApplicationActivity::class.java).putExtra("schoolId", schoolId)
                     )
                 },
                 onViewApplications = {
-                    // Navigate to view applications (for school admin)
                     startActivity(
                         Intent(this, ViewApplicationActivity::class.java).putExtra("schoolId", schoolId)
                     )
@@ -80,6 +85,7 @@ class SchoolDetailActivity : ComponentActivity() {
             )
         }
     }
+
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
