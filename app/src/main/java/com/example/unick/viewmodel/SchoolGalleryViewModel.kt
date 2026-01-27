@@ -3,8 +3,10 @@ package com.example.unick.viewmodel
 import android.content.Context
 import android.net.Uri
 import android.util.Log
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import com.cloudinary.android.MediaManager
 import com.cloudinary.android.callback.ErrorInfo
@@ -13,10 +15,11 @@ import com.google.firebase.database.*
 
 class SchoolGalleryViewModel(private val appContext: Context) : ViewModel() {
 
-    var loading = mutableStateOf(false).value
+    // ✅ MUST be Compose state
+    var loading by mutableStateOf(false)
         private set
 
-    var error = mutableStateOf<String?>(null).value
+    var error by mutableStateOf<String?>(null)
         private set
 
     val galleryImageUrls = mutableStateListOf<String>()
@@ -24,7 +27,6 @@ class SchoolGalleryViewModel(private val appContext: Context) : ViewModel() {
     private val db =
         FirebaseDatabase.getInstance("https://vidyakhoj-927fb-default-rtdb.firebaseio.com/")
 
-    // ✅ storing gallery in a separate node
     private fun galleryRef(schoolId: String): DatabaseReference {
         return db.getReference("SchoolGallery").child(schoolId).child("images")
     }
@@ -41,12 +43,16 @@ class SchoolGalleryViewModel(private val appContext: Context) : ViewModel() {
             "api_key" to "947959738234575",
             "api_secret" to "IhyBcq5TBPqdDzA5qa5LjyrQhAY"
         )
-        MediaManager.init(appContext, config)
+        MediaManager.init(appContext.applicationContext, config)
         cloudinaryInitialized = true
     }
 
     fun loadGallery(schoolId: String) {
-        if (schoolId.isBlank()) return
+        if (schoolId.isBlank()) {
+            error = "School ID missing"
+            loading = false
+            return
+        }
 
         loading = true
         error = null
@@ -54,79 +60,98 @@ class SchoolGalleryViewModel(private val appContext: Context) : ViewModel() {
 
         galleryRef(schoolId).addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                loading = false
                 val urls = mutableListOf<String>()
                 for (child in snapshot.children) {
                     val url = child.getValue(String::class.java)
                     if (!url.isNullOrBlank()) urls.add(url)
                 }
+
+                galleryImageUrls.clear()
                 galleryImageUrls.addAll(urls.reversed()) // newest first
+
+                loading = false
             }
 
             override fun onCancelled(err: DatabaseError) {
-                loading = false
                 error = err.message
+                loading = false
             }
         })
     }
 
-    fun uploadGalleryImage(
+    /** ✅ Upload multiple images one-by-one */
+    fun uploadGalleryImages(
         schoolId: String,
-        imageUri: Uri,
+        imageUris: List<Uri>,
         onMessage: (String) -> Unit
     ) {
         if (schoolId.isBlank()) {
             onMessage("School ID missing!")
             return
         }
+        if (imageUris.isEmpty()) return
 
         initCloudinary()
-
         loading = true
         error = null
-        onMessage("Uploading image...")
 
-        MediaManager.get().upload(imageUri).callback(object : UploadCallback {
-            override fun onStart(requestId: String) {
-                Log.d("GalleryUpload", "Upload started")
+        var index = 0
+        var successCount = 0
+
+        fun uploadNext() {
+            if (index >= imageUris.size) {
+                loading = false
+                onMessage("✅ Uploaded $successCount/${imageUris.size} images")
+                loadGallery(schoolId)
+                return
             }
 
-            override fun onProgress(requestId: String, bytes: Long, totalBytes: Long) {}
+            val uri = imageUris[index]
+            index++
 
-            override fun onSuccess(requestId: String, resultData: Map<*, *>) {
-                val url = resultData["url"]?.toString().orEmpty()
-                if (url.isBlank()) {
-                    loading = false
-                    onMessage("Upload failed: empty url")
-                    return
+            onMessage("Uploading ${index}/${imageUris.size} ...")
+
+            MediaManager.get().upload(uri).callback(object : UploadCallback {
+                override fun onStart(requestId: String) {
+                    Log.d("GalleryUpload", "Upload started")
                 }
 
-                // ✅ save URL to Firebase
-                val pushKey = galleryRef(schoolId).push().key ?: System.currentTimeMillis().toString()
-                galleryRef(schoolId).child(pushKey).setValue(url)
-                    .addOnSuccessListener {
-                        loading = false
-                        onMessage("✅ Uploaded!")
-                        loadGallery(schoolId)
-                    }
-                    .addOnFailureListener { e ->
-                        loading = false
-                        error = e.message
-                        onMessage("Failed saving to database")
-                    }
-            }
+                override fun onProgress(requestId: String, bytes: Long, totalBytes: Long) {}
 
-            override fun onError(requestId: String, errorInfo: ErrorInfo) {
-                loading = false
-                error = errorInfo.description
-                onMessage("Upload error: ${errorInfo.description}")
-            }
+                override fun onSuccess(requestId: String, resultData: Map<*, *>) {
+                    val url = resultData["url"]?.toString().orEmpty()
+                    if (url.isBlank()) {
+                        Log.e("GalleryUpload", "Empty URL from cloudinary")
+                        uploadNext()
+                        return
+                    }
 
-            override fun onReschedule(requestId: String, errorInfo: ErrorInfo) {
-                loading = false
-                error = errorInfo.description
-                onMessage("Upload rescheduled: ${errorInfo.description}")
-            }
-        }).dispatch()
+                    val pushKey =
+                        galleryRef(schoolId).push().key ?: System.currentTimeMillis().toString()
+
+                    galleryRef(schoolId).child(pushKey).setValue(url)
+                        .addOnSuccessListener {
+                            successCount++
+                            uploadNext()
+                        }
+                        .addOnFailureListener { e ->
+                            Log.e("GalleryUpload", "DB save failed: ${e.message}")
+                            uploadNext()
+                        }
+                }
+
+                override fun onError(requestId: String, errorInfo: ErrorInfo) {
+                    Log.e("GalleryUpload", "Upload error: ${errorInfo.description}")
+                    uploadNext()
+                }
+
+                override fun onReschedule(requestId: String, errorInfo: ErrorInfo) {
+                    Log.e("GalleryUpload", "Reschedule: ${errorInfo.description}")
+                    uploadNext()
+                }
+            }).dispatch()
+        }
+
+        uploadNext()
     }
 }

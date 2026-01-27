@@ -1,5 +1,6 @@
 package com.example.unick.view
 
+import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -7,26 +8,69 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.google.firebase.auth.FirebaseAuth
 
 class SchoolSettingsActivity : ComponentActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        // ✅ receive schoolId from SchoolDetailActivity
+        val schoolId = intent.getStringExtra("schoolId")
+            ?: intent.getStringExtra("uid")
+            ?: FirebaseAuth.getInstance().currentUser?.uid
+            ?: ""
+
         setContent {
+            val context = LocalContext.current
+
             SchoolSettingsScreen(
                 onBack = { finish() },
+
                 onEditProfile = {
                     startActivity(Intent(this, DataFormAcitivity::class.java))
                 },
+
+                // ✅ FIX: pass schoolId to gallery
                 onGallery = {
-                    startActivity(Intent(this, SchoolGalleryActivity::class.java))
+                    if (schoolId.isBlank()) {
+                        android.widget.Toast.makeText(
+                            this,
+                            "School ID missing!",
+                            android.widget.Toast.LENGTH_SHORT
+                        ).show()
+                    } else {
+                        startActivity(
+                            Intent(this, SchoolGalleryActivity::class.java)
+                                .putExtra("schoolId", schoolId)
+                        )
+                    }
+                },
+
+                // ✅ Change password -> your reset activity
+                onChangePassword = {
+                    startActivity(Intent(this, SendCodeToEmailActivity::class.java))
+                },
+
+                // ✅ Logout -> go to school login screen
+                onLogout = {
+                    FirebaseAuth.getInstance().signOut()
+                    val i = Intent(this, UserLoginSchoolActivity::class.java).apply {
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                    }
+                    startActivity(i)
+                    (context as? Activity)?.finish()
                 }
             )
         }
@@ -38,8 +82,9 @@ class SchoolSettingsActivity : ComponentActivity() {
 fun SchoolSettingsScreen(
     onBack: () -> Unit,
     onEditProfile: () -> Unit,
-    onGallery: () -> Unit
-
+    onGallery: () -> Unit,
+    onChangePassword: () -> Unit,
+    onLogout: () -> Unit
 ) {
     var isVisible by remember { mutableStateOf(true) }
     var acceptingApplications by remember { mutableStateOf(true) }
@@ -62,10 +107,10 @@ fun SchoolSettingsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .verticalScroll(rememberScrollState())   // ✅ ADD THIS
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-
             // ---------- PROFILE ----------
             SectionTitle("Profile & Management")
 
@@ -105,15 +150,16 @@ fun SchoolSettingsScreen(
             // ---------- SECURITY ----------
             SectionTitle("Security")
 
-            SettingsItem("Change Password", Icons.Default.Lock) {
-                // Navigate later to reset/change password
-            }
+            SettingsItem(
+                text = "Change Password",
+                icon = Icons.Default.Lock,
+                onClick = onChangePassword
+            )
 
             Divider()
 
             // ---------- INFO ----------
             SectionTitle("Legal & Info")
-
             SettingsItem("Privacy Policy", Icons.Default.PrivacyTip) { }
             SettingsItem("Terms & Conditions", Icons.Default.Description) { }
 
@@ -123,13 +169,15 @@ fun SchoolSettingsScreen(
             SettingsItem(
                 text = "Logout",
                 icon = Icons.Default.Logout,
-                isDanger = true
-            ) {
-                // FirebaseAuth.getInstance().signOut() later
-            }
+                isDanger = true,
+                onClick = onLogout
+            )
+
+            Spacer(Modifier.height(30.dp)) // ✅ extra space at bottom
         }
     }
 }
+
 
 @Composable
 private fun SectionTitle(title: String) {

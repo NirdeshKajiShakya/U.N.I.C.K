@@ -37,16 +37,10 @@ class SchoolGalleryActivity : ComponentActivity() {
         val schoolId = intent.getStringExtra("schoolId") ?: ""
 
         setContent {
-            val context = LocalContext.current
             val vm = remember { SchoolGalleryViewModel(applicationContext) }
 
-            // load images
             LaunchedEffect(schoolId) {
-                if (schoolId.isBlank()) {
-                    Toast.makeText(context, "School ID missing!", Toast.LENGTH_SHORT).show()
-                } else {
-                    vm.loadGallery(schoolId)
-                }
+                if (schoolId.isNotBlank()) vm.loadGallery(schoolId)
             }
 
             SchoolGalleryScreen(
@@ -67,21 +61,18 @@ fun SchoolGalleryScreen(
 ) {
     val context = LocalContext.current
 
-    // only owner can upload
     val currentUid = FirebaseAuth.getInstance().currentUser?.uid ?: ""
     val isOwner = currentUid.isNotBlank() && currentUid == schoolId
 
-    // Image picker
-    val pickImageLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        if (uri != null) {
-            vm.uploadGalleryImage(
+    // ✅ MULTI image picker
+    val pickMultipleLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetMultipleContents()
+    ) { uris: List<Uri> ->
+        if (uris.isNotEmpty()) {
+            vm.uploadGalleryImages(
                 schoolId = schoolId,
-                imageUri = uri,
-                onMessage = { msg ->
-                    Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
-                }
+                imageUris = uris,
+                onMessage = { msg -> Toast.makeText(context, msg, Toast.LENGTH_SHORT).show() }
             )
         }
     }
@@ -98,12 +89,17 @@ fun SchoolGalleryScreen(
             )
         },
         floatingActionButton = {
-            // ✅ show upload button only for school owner
             if (isOwner) {
                 FloatingActionButton(
-                    onClick = { pickImageLauncher.launch("image/*") }
+                    onClick = {
+                        if (schoolId.isBlank()) {
+                            Toast.makeText(context, "School ID missing!", Toast.LENGTH_SHORT).show()
+                        } else {
+                            pickMultipleLauncher.launch("image/*")
+                        }
+                    }
                 ) {
-                    Icon(Icons.Default.Add, contentDescription = "Add Image")
+                    Icon(Icons.Default.Add, contentDescription = "Add Images")
                 }
             }
         }
@@ -116,6 +112,14 @@ fun SchoolGalleryScreen(
                 .background(Color.White)
         ) {
             when {
+                schoolId.isBlank() -> {
+                    Text(
+                        text = "School ID missing!",
+                        modifier = Modifier.align(Alignment.Center),
+                        color = Color.Red
+                    )
+                }
+
                 vm.loading -> {
                     CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
                 }
@@ -161,7 +165,6 @@ private fun GalleryImageCard(url: String) {
         modifier = Modifier
             .fillMaxWidth()
             .aspectRatio(1f),
-        shape = MaterialTheme.shapes.medium,
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         AsyncImage(
