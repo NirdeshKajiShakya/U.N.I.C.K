@@ -143,7 +143,7 @@ fun SchoolDashboardScreen(viewModel: SchoolViewModel, currentUid: String?) {
                     ) {
                         Icon(Icons.Default.Add, "Add School", modifier = Modifier.size(22.dp), tint = Color.White)
                         Spacer(modifier = Modifier.width(10.dp))
-                        Text("Add Your School", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        Text("Update Your School", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                     }
 
                     Spacer(modifier = Modifier.height(24.dp))
@@ -154,7 +154,7 @@ fun SchoolDashboardScreen(viewModel: SchoolViewModel, currentUid: String?) {
                         context = context,
                         showStatus = true, // Enable Status Indicator
                         onClick = {
-                            val intent = Intent(context, DashboardCard::class.java)
+                            val intent = Intent(context, SchoolDetailActivity::class.java)
                             intent.putExtra("school_details", mySchool)
                             intent.putExtra("is_school_view", true) // Flag for navigation
                             context.startActivity(intent)
