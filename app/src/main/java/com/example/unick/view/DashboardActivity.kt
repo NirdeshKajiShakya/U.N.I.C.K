@@ -1,8 +1,11 @@
 package com.example.unick.view
 
+import android.Manifest
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -35,6 +38,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.app.ActivityCompat
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -43,15 +47,10 @@ import androidx.navigation.compose.rememberNavController
 import com.example.unick.model.FilterResult
 import com.example.unick.model.SchoolForm
 import com.example.unick.ui.theme.UNICKTheme
+import com.example.unick.utils.applyDistanceFilterIfNeeded
 import com.example.unick.viewmodel.SchoolViewModel
 import com.example.unick.viewmodel.UserType
-import android.Manifest
-import android.annotation.SuppressLint
-import android.content.pm.PackageManager
-import androidx.core.app.ActivityCompat
-import com.example.unick.utils.applyDistanceFilterIfNeeded
 import com.google.android.gms.location.LocationServices
-
 
 class DashboardActivity : ComponentActivity() {
     private val viewModel: SchoolViewModel by viewModels()
@@ -134,7 +133,6 @@ private fun handleProfileClick(
     }
 }
 
-
 @Composable
 fun NavigationHost(navController: NavHostController, viewModel: SchoolViewModel) {
     NavHost(navController = navController, startDestination = BottomNavItem.Home.route) {
@@ -173,6 +171,74 @@ fun DashboardScreen(
     var isSearchActive by remember { mutableStateOf(false) }
     var searchText by remember { mutableStateOf("") }
     val context = LocalContext.current
+
+    // ✅ Active filter for HOME too (same as SearchScreen)
+    var activeFilter by remember {
+        mutableStateOf(
+            FilterResult(
+                feeRange = "Any",
+                location = "Any",
+                passRate = "Any",
+                levels = emptyList(),
+                curriculums = emptyList(),
+                facilities = emptyList(),
+                radiusKm = null
+            )
+        )
+    }
+
+    // ✅ User location (for distance filter)
+    var userLat by remember { mutableStateOf<Double?>(null) }
+    var userLng by remember { mutableStateOf<Double?>(null) }
+
+    LaunchedEffect(Unit) {
+        requestOneTimeLocation(context) { lat, lng ->
+            userLat = lat
+            userLng = lng
+        }
+    }
+
+    // ✅ Filter launcher (HOME filter button 🎯)
+    val filterLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { res ->
+        if (res.resultCode == Activity.RESULT_OK) {
+            val returned =
+                res.data?.getParcelableExtra<FilterResult>(FilterActivity.EXTRA_FILTER_RESULT)
+            if (returned != null) activeFilter = returned
+        }
+    }
+
+    // ✅ Apply SAME filters as SearchScreen (name/location/fee/curriculum/facilities/levels)
+    val baseFiltered = remember(searchText, activeFilter, schools) {
+        schools
+            .asSequence()
+            .filter { it.schoolName.contains(searchText, ignoreCase = true) }
+            .filter { activeFilter.location == "Any" || it.location.contains(activeFilter.location, ignoreCase = true) }
+            .filter { activeFilter.feeRange == "Any" || feeMatches(activeFilter.feeRange, it.tuitionFee) }
+            .filter { matchesAllSelected(activeFilter.curriculums, it.curriculum) }
+            .filter { matchesAllSelected(activeFilter.facilities, it.facilities) }
+            .filter { matchesAnyLevel(activeFilter.levels, it.programsOffered) }
+            .toList()
+    }
+
+    // ✅ Distance filter last (only if radius + user location available)
+    val finalFilteredSchools = remember(baseFiltered, activeFilter.radiusKm, userLat, userLng) {
+        val lat = userLat
+        val lng = userLng
+        if (activeFilter.radiusKm == null || lat == null || lng == null) {
+            baseFiltered
+        } else {
+            applyDistanceFilterIfNeeded(
+                userLat = lat,
+                userLng = lng,
+                radiusKm = activeFilter.radiusKm,
+                schools = baseFiltered,
+                latOf = { it.latitude },
+                lngOf = { it.longitude }
+            )
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -240,7 +306,7 @@ fun DashboardScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Home Search UI (not used for filtering yet)
+        // Home Search UI (NOW FILTERS LIST)
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -268,6 +334,13 @@ fun DashboardScreen(
                         .shadow(4.dp, RoundedCornerShape(14.dp)),
                     placeholder = { Text("e.g. St. Xavier's, Budhanilkantha...", color = Color(0xFF94A3B8)) },
                     leadingIcon = { Icon(Icons.Default.Search, null, tint = Color(0xFF2563EB)) },
+                    trailingIcon = {
+                        if (searchText.isNotBlank()) {
+                            IconButton(onClick = { searchText = "" }) {
+                                Icon(Icons.Default.Close, contentDescription = "Clear")
+                            }
+                        }
+                    },
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = Color(0xFF2563EB),
                         focusedContainerColor = Color.White,
@@ -278,8 +351,11 @@ fun DashboardScreen(
                 )
             }
 
+            // ✅ Filter button -> opens FilterActivity and updates activeFilter
             OutlinedButton(
-                onClick = { /* optional later */ },
+                onClick = {
+                    filterLauncher.launch(Intent(context, FilterActivity::class.java))
+                },
                 modifier = Modifier
                     .size(58.dp)
                     .shadow(4.dp, RoundedCornerShape(14.dp)),
@@ -295,11 +371,24 @@ fun DashboardScreen(
             }
         }
 
+        // Optional small filter summary (same style as SearchScreen)
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text =
+                "Filters: Location=${activeFilter.location}, Fee=${activeFilter.feeRange}, " +
+                        "Curriculum=${activeFilter.curriculums.size}, Facilities=${activeFilter.facilities.size}, " +
+                        "Radius=${activeFilter.radiusKm?.let { "${it}km" } ?: "Any"}",
+            style = MaterialTheme.typography.bodySmall,
+            color = Color(0xFF64748B)
+        )
+
         Spacer(modifier = Modifier.height(14.dp))
 
-        // Compare Button
+        // ✅ Compare Button -> CompareActivity
         OutlinedButton(
-            onClick = { /* Handle compare */ },
+            onClick = {
+                context.startActivity(Intent(context, CompareActivity::class.java))
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(58.dp)
@@ -373,12 +462,25 @@ fun DashboardScreen(
                 }
             }
         } else {
-            SchoolSection(
-                title = "Recently Added Schools",
-                subtitle = "Newly registered educational institutions",
-                schools = schools,
-                context = context
-            )
+            // ✅ show filtered schools on HOME
+            if (finalFilteredSchools.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color.White, RoundedCornerShape(16.dp))
+                        .padding(22.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("No schools match your search/filters.", color = Color(0xFF64748B))
+                }
+            } else {
+                SchoolSection(
+                    title = "Recently Added Schools",
+                    subtitle = "Newly registered educational institutions",
+                    schools = finalFilteredSchools,
+                    context = context
+                )
+            }
         }
 
         Spacer(modifier = Modifier.height(40.dp))
@@ -458,20 +560,13 @@ fun SearchScreen(viewModel: SchoolViewModel) {
     var userLat by remember { mutableStateOf<Double?>(null) }
     var userLng by remember { mutableStateOf<Double?>(null) }
 
-// Get location once when screen opens
+    // Get location once when screen opens
     LaunchedEffect(Unit) {
         requestOneTimeLocation(context) { lat, lng ->
             userLat = lat
             userLng = lng
         }
     }
-
-
-    // ✅ USER LOCATION (you said you have it upto step 3)
-    // Replace these with your real location values.
-
-    // Example: if you already have location util, call it here and set userLat/userLng
-    // LaunchedEffect(Unit) { val loc = getUserLocation(context); userLat=loc.lat; userLng=loc.lng }
 
     val filterLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
@@ -588,7 +683,6 @@ fun SearchScreen(viewModel: SchoolViewModel) {
     }
 }
 
-
 /* ----------------------------- FILTER HELPERS ----------------------------- */
 
 private fun parseFeeToInt(fee: String?): Int? {
@@ -632,6 +726,7 @@ private fun matchesAnyLevel(selectedLevels: List<String>, programsOffered: Strin
     val text = programsOffered.lowercase()
     return selectedLevels.any { lvl -> text.contains(lvl.lowercase()) }
 }
+
 @SuppressLint("MissingPermission")
 private fun requestOneTimeLocation(
     context: android.content.Context,
@@ -659,7 +754,6 @@ private fun requestOneTimeLocation(
         onResult(null, null)
     }
 }
-
 
 /* ----------------------------- PLACEHOLDER ----------------------------- */
 
