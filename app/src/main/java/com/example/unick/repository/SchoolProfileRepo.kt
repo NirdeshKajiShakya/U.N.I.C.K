@@ -5,6 +5,7 @@ import com.example.unick.model.SchoolProfileModel
 import com.example.unick.model.SchoolReviewModel
 
 interface SchoolProfileRepo {
+
     fun observeSchoolProfile(
         schoolId: String,
         onData: (SchoolProfileModel?) -> Unit,
@@ -37,9 +38,11 @@ interface SchoolProfileRepo {
         onError: (String) -> Unit
     )
 
+    // ✅ UPDATED: reviewerName added
     fun addReview(
         schoolId: String,
         reviewerUid: String,
+        reviewerName: String,
         rating: Int,
         comment: String,
         onSuccess: () -> Unit,

@@ -31,6 +31,10 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.unick.viewmodel.SchoolDetailViewModel
 import com.example.unick.model.SchoolReviewModel
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 
 class SchoolDetailActivity : ComponentActivity() {
 
@@ -618,17 +622,22 @@ private fun ReviewCard(review: SchoolReviewModel) {
         shape = RoundedCornerShape(18.dp)
     ) {
         Column(Modifier.padding(16.dp)) {
-            Text("Reviewer: ${review.reviewerUid}", fontWeight = FontWeight.Bold)
+
+            // ✅ show Full Name instead of UID
+            ReviewerNameText(review.reviewerUid)
+
             Spacer(Modifier.height(6.dp))
+
             Row(verticalAlignment = Alignment.CenterVertically) {
                 repeat(review.rating.coerceIn(0, 5)) {
-                    Icon(Icons.Filled.Star, null)
+                    Icon(Icons.Filled.Star, contentDescription = null)
                 }
                 Spacer(Modifier.width(8.dp))
                 Text("${review.rating}/5", color = Color.DarkGray)
             }
 
             Spacer(Modifier.height(8.dp))
+
             val text = review.comment
             Text(
                 text = if (expanded || text.length < 120) text else text.take(120) + "...",
@@ -647,6 +656,35 @@ private fun ReviewCard(review: SchoolReviewModel) {
         }
     }
 }
+
+
+@Composable
+fun ReviewerNameText(reviewerUid: String) {
+    var name by remember(reviewerUid) { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(reviewerUid) {
+        val db = FirebaseDatabase
+            .getInstance("https://vidyakhoj-927fb-default-rtdb.firebaseio.com/")
+            .reference
+
+        db.child("Users").child(reviewerUid).child("fullName")
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    val fullName = snapshot.getValue(String::class.java)?.trim()
+                    name = if (fullName.isNullOrBlank()) "Anonymous" else fullName
+                }
+                override fun onCancelled(error: DatabaseError) {
+                    name = "Anonymous"
+                }
+            })
+    }
+
+    Text(
+        text = "Reviewer: ${name ?: "Loading..."}",
+        fontWeight = FontWeight.Bold
+    )
+}
+
 
 private fun ensureUrl(url: String): String {
     return if (url.startsWith("http://") || url.startsWith("https://")) url else "https://$url"
