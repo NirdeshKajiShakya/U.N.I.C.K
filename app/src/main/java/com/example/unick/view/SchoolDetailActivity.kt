@@ -114,7 +114,13 @@ fun SchoolDetailScreen(
         modifier = Modifier.windowInsetsPadding(WindowInsets.systemBars),
         topBar = {
             TopAppBar(
-                title = { Text(schoolId, fontWeight = FontWeight.Bold) },
+                title = {
+                    Text(
+                        text = profile?.schoolName?.takeIf { it.isNotBlank() } ?: "School Profile",
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
@@ -126,6 +132,7 @@ fun SchoolDetailScreen(
                     }
                 }
             )
+
         }
     ) { padding ->
 
@@ -339,7 +346,7 @@ fun SchoolDetailScreen(
                             value = "Open in Google Maps",
                             leadingIcon = { Icon(Icons.Default.LocationOn, null) },
                             onClick = {
-                                val q = profile?.location ?: profile?.schoolName ?: "School"
+                                val q = profile?.googleMapUrl ?: profile?.schoolName ?: "School"
                                 val mapUri = Uri.parse("geo:0,0?q=${Uri.encode(q)}")
                                 val i = Intent(Intent.ACTION_VIEW, mapUri).apply {
                                     setPackage("com.google.android.apps.maps")

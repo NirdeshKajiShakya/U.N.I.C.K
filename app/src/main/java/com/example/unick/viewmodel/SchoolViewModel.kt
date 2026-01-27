@@ -117,17 +117,23 @@ class SchoolViewModel : ViewModel() {
 
     fun fetchSchoolIfExists() {
         val uid = auth.currentUser?.uid ?: return
-        val ref = database.getReference("schools").child(uid)
+
+        // ✅ IMPORTANT: read from SchoolForm node (not schools)
+        val ref = database.getReference("SchoolForm").child(uid)
 
         _isLoading.value = true
 
         ref.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 _isLoading.value = false
+
                 if (snapshot.exists()) {
                     val school = snapshot.getValue(SchoolForm::class.java)
                     _currentSchool.value = school
                     school?.let { populateForm(it) }
+                } else {
+                    // no form data exists yet -> keep empty form
+                    _currentSchool.value = null
                 }
             }
 
@@ -136,6 +142,7 @@ class SchoolViewModel : ViewModel() {
             }
         })
     }
+
 
     private fun populateForm(school: SchoolForm) {
         schoolName = school.schoolName
