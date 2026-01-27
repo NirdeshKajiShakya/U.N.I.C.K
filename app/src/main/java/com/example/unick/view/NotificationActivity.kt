@@ -36,6 +36,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -50,6 +51,16 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.unick.view.ui.theme.UNICKTheme
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.FirebaseDatabase
+
+data class Notification(
+    val id: String = "",
+    val title: String = "",
+    val description: String = "",
+    val timestamp: String = "",
+    val isRead: Boolean = false
+)
 
 class NotificationActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -65,25 +76,38 @@ class NotificationActivity : ComponentActivity() {
     }
 }
 
-data class Notification(
-    val id: Int,
-    val title: String,
-    val description: String,
-    val timestamp: String,
-    val isRead: Boolean = false
-)
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NotificationScreen(onBackClick: () -> Unit = {}) {
-    var notifications by remember {
-        mutableStateOf(
-            listOf(
-                Notification(1, "Application Accepted", "Your application to St. Xavier's College has been accepted! Congratulations!", "2026-01-22 10:00 AM"),
-                Notification(2, "Application Rejected", "Unfortunately, your application to Budhanilkantha School was not accepted.", "2026-01-21 02:30 PM"),
-                Notification(3, "New School Added", "A new school 'Trinity International College' is now available for applications.", "2026-01-20 09:15 AM")
-            )
-        )
+    var notifications by remember { mutableStateOf<List<Notification>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(true) }
+
+    val userId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
+    val database = FirebaseDatabase.getInstance()
+
+    // Fetch notifications from Firebase
+    LaunchedEffect(userId) {
+        if (userId.isNotEmpty()) {
+            database.reference
+                .child("notifications")
+                .child(userId)
+                .get()
+                .addOnSuccessListener { snapshot ->
+                    val notificationsList = mutableListOf<Notification>()
+                    snapshot.children.forEach { child ->
+                        val notification = child.getValue(Notification::class.java)
+                        if (notification != null) {
+                            notificationsList.add(notification)
+                        }
+                    }
+                    notificationsList.sortByDescending { it.timestamp }
+                    notifications = notificationsList
+                    isLoading = false
+                }
+                .addOnFailureListener {
+                    isLoading = false
+                }
+        }
     }
 
     val unreadCount = notifications.count { !it.isRead }
@@ -143,7 +167,6 @@ fun NotificationScreen(onBackClick: () -> Unit = {}) {
                 )
                 .padding(innerPadding)
         ) {
-            // Header with notification icon
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -167,41 +190,60 @@ fun NotificationScreen(onBackClick: () -> Unit = {}) {
                 }
             }
 
-            if (notifications.isEmpty()) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("🔔", fontSize = 48.sp)
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            text = "No notifications yet",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = Color(0xFF64748B)
-                        )
+            when {
+                isLoading -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("Loading notifications...")
                     }
                 }
-            } else {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 16.dp)
-                ) {
-                    items(notifications, key = { it.id }) { notification ->
-                        NotificationCard(
-                            notification = notification,
-                            onMarkAsRead = { readNotification ->
-                                notifications = notifications.map {
-                                    if (it.id == readNotification.id) it.copy(isRead = true)
-                                    else it
-                                }
-                            }
-                        )
+                notifications.isEmpty() -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("🔔", fontSize = 48.sp)
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                text = "No notifications yet",
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = Color(0xFF64748B)
+                            )
+                        }
                     }
-                    item {
-                        Spacer(modifier = Modifier.height(16.dp))
+                }
+                else -> {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 16.dp)
+                    ) {
+                        items(notifications, key = { it.id }) { notification ->
+                            NotificationCard(
+                                notification = notification,
+                                onMarkAsRead = { readNotification ->
+                                    // Update in Firebase
+                                    database.reference
+                                        .child("notifications")
+                                        .child(userId)
+                                        .child(readNotification.id)
+                                        .child("isRead")
+                                        .setValue(true)
+
+                                    // Update locally
+                                    notifications = notifications.map {
+                                        if (it.id == readNotification.id) it.copy(isRead = true) else it
+                                    }
+                                }
+                            )
+                        }
+                        item {
+                            Spacer(modifier = Modifier.height(16.dp))
+                        }
                     }
                 }
             }
@@ -212,7 +254,6 @@ fun NotificationScreen(onBackClick: () -> Unit = {}) {
 @Composable
 fun NotificationCard(notification: Notification, onMarkAsRead: (Notification) -> Unit) {
     val cardColor = if (notification.isRead) Color(0xFFF5F5F5) else Color(0xFFE3F2FD)
-    val borderColor = if (notification.isRead) Color(0xFFBDBDBD) else Color(0xFF2563EB)
 
     Card(
         modifier = Modifier
@@ -229,7 +270,6 @@ fun NotificationCard(notification: Notification, onMarkAsRead: (Notification) ->
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.Top
         ) {
-            // Unread indicator dot
             if (!notification.isRead) {
                 Box(
                     modifier = Modifier
@@ -272,21 +312,6 @@ fun NotificationCard(notification: Notification, onMarkAsRead: (Notification) ->
                     tint = if (notification.isRead) Color(0xFF4CAF50) else Color(0xFF9E9E9E),
                     modifier = Modifier.size(28.dp)
                 )
-            }
-        }
-    }
-}
-
-@Composable
-fun NotificationActivityUI(notifications: List<Notification>, modifier: Modifier = Modifier) {
-    var completedNotifications by remember { mutableStateOf(setOf<Notification>()) }
-
-    LazyColumn(modifier = modifier.fillMaxSize().padding(16.dp)) {
-        items(notifications) { notification ->
-            if (!completedNotifications.contains(notification)) {
-                NotificationCard(notification) { completedNotification ->
-                    completedNotifications = completedNotifications + completedNotification
-                }
             }
         }
     }
