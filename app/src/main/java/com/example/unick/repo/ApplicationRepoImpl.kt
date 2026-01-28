@@ -17,7 +17,8 @@ import kotlinx.coroutines.TimeoutCancellationException
  * - Firebase Realtime Database must be enabled in Firebase Console
  */
 class ApplicationRepoImpl(
-    private val database: FirebaseDatabase = FirebaseDatabase.getInstance("https://vidyakhoj-927fb-default-rtdb.firebaseio.com/")
+    private val database: FirebaseDatabase = FirebaseDatabase.getInstance("https://vidyakhoj-927fb-default-rtdb.firebaseio.com/"),
+    private val notificationRepo: NotificationRepo = NotificationRepoImpl()
 ) : ApplicationRepo {
 
     private val COLLECTION = "student_applications"
@@ -50,6 +51,19 @@ class ApplicationRepoImpl(
             }
 
             Log.d(TAG, "✅ Application submitted successfully! Application ID: $applicationId")
+
+            // Create notification for school after successful submission
+            try {
+                notificationRepo.createNotificationForSchool(
+                    schoolId = application.schoolId,
+                    applicationId = applicationId,
+                    studentName = application.fullName
+                )
+            } catch (e: Exception) {
+                // Log but don't fail the application submission if notification fails
+                Log.w(TAG, "⚠️ Failed to create school notification: ${e.message}")
+            }
+
             Result.success(Unit)
 
         } catch (e: DatabaseException) {

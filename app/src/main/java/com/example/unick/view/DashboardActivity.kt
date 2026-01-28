@@ -772,7 +772,7 @@ private fun requestOneTimeLocation(
 /* ----------------------------- PLACEHOLDER ----------------------------- */
 
 @Composable
-fun NotificationScreen() {
+fun NotificationScreenWithinDashboard() {
     Column(
         modifier = Modifier
             .fillMaxSize()

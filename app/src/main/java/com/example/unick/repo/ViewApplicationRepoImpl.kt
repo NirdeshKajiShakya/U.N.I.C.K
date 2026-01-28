@@ -126,7 +126,7 @@ class ViewApplicationRepoImpl(
 
             // Get school name from database
             val schoolSnapshot = database.getReference("schools").child(schoolId).get().await()
-            val schoolName = schoolSnapshot.child("name").value as? String ?: "School"
+            val schoolName = schoolSnapshot.child("schoolName").value as? String ?: "School"
 
             // Format timestamp
             val currentTime = SimpleDateFormat("yyyy-MM-dd hh:mm a", Locale.getDefault()).format(Date())
@@ -150,7 +150,11 @@ class ViewApplicationRepoImpl(
                 "title" to title,
                 "description" to description,
                 "timestamp" to currentTime,
-                "isRead" to false
+                "isRead" to false,
+                "type" to "student",
+                "applicationId" to "",
+                "schoolId" to schoolId,
+                "studentName" to ""
             )
 
             // Save to Firebase
@@ -166,6 +170,57 @@ class ViewApplicationRepoImpl(
 
         } catch (e: Exception) {
             Log.e(TAG, "❌ Error creating notification: ${e.message}", e)
+            // Don't fail the whole operation if notification fails
+        }
+    }
+
+    /**
+     * Create a notification for the school when a student applies
+     */
+    suspend fun createNotificationForSchool(
+        schoolId: String,
+        applicationId: String,
+        studentName: String
+    ) {
+        try {
+            Log.d(TAG, "Creating notification for school: $schoolId for application: $applicationId")
+
+            // Generate unique notification ID
+            val notificationId = database.getReference(NOTIFICATIONS).child(schoolId).push().key
+
+            // Format timestamp
+            val currentTime = SimpleDateFormat("yyyy-MM-dd hh:mm a", Locale.getDefault()).format(Date())
+
+            // Create notification message
+            val title = "New Application Received 📝"
+            val description = "$studentName has applied to your school. Review and take action."
+
+            // Build notification object
+            val notification = mapOf(
+                "id" to notificationId,
+                "title" to title,
+                "description" to description,
+                "timestamp" to currentTime,
+                "isRead" to false,
+                "type" to "school",
+                "applicationId" to applicationId,
+                "schoolId" to schoolId,
+                "studentName" to studentName
+            )
+
+            // Save to Firebase
+            if (notificationId != null) {
+                database.getReference(NOTIFICATIONS)
+                    .child(schoolId)
+                    .child(notificationId)
+                    .setValue(notification)
+                    .await()
+
+                Log.d(TAG, "✅ Notification created for school: $schoolId")
+            }
+
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ Error creating school notification: ${e.message}", e)
             // Don't fail the whole operation if notification fails
         }
     }

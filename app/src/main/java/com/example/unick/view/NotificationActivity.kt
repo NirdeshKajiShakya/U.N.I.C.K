@@ -1,10 +1,12 @@
 package com.example.unick.view
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -46,11 +48,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.unick.view.ui.theme.UNICKTheme
+import com.example.unick.viewmodel.UserType
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
 
@@ -59,7 +63,15 @@ data class Notification(
     val title: String = "",
     val description: String = "",
     val timestamp: String = "",
-    val isRead: Boolean = false
+    val isRead: Boolean = false,
+    // Type: "student" for student notifications, "school" for school notifications
+    val type: String = "student",
+    // Application ID for navigation (used in school notifications)
+    val applicationId: String = "",
+    // School ID for context (used in student notifications)
+    val schoolId: String = "",
+    // Student name for school notifications
+    val studentName: String = ""
 )
 
 class NotificationActivity : ComponentActivity() {
@@ -81,9 +93,36 @@ class NotificationActivity : ComponentActivity() {
 fun NotificationScreen(onBackClick: () -> Unit = {}) {
     var notifications by remember { mutableStateOf<List<Notification>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
+    var userType by remember { mutableStateOf<UserType>(UserType.Unknown) }
 
     val userId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
     val database = FirebaseDatabase.getInstance()
+    val context = LocalContext.current
+
+    // Detect user type (student vs school)
+    LaunchedEffect(userId) {
+        if (userId.isNotEmpty()) {
+            val usersRef = database.reference.child("Users")
+            val schoolsRef = database.reference.child("schools")
+
+            usersRef.child(userId).get()
+                .addOnSuccessListener { snapshot ->
+                    if (snapshot.exists()) {
+                        userType = UserType.Normal
+                    } else {
+                        // If not in Users, check in schools
+                        schoolsRef.child(userId).get()
+                            .addOnSuccessListener { schoolSnapshot ->
+                                if (schoolSnapshot.exists()) {
+                                    userType = UserType.School
+                                } else {
+                                    userType = UserType.Unknown
+                                }
+                            }
+                    }
+                }
+        }
+    }
 
     // Fetch notifications from Firebase
     LaunchedEffect(userId) {
@@ -110,7 +149,14 @@ fun NotificationScreen(onBackClick: () -> Unit = {}) {
         }
     }
 
-    val unreadCount = notifications.count { !it.isRead }
+    // Filter notifications based on user type
+    val filteredNotifications = when (userType) {
+        is UserType.School -> notifications.filter { it.type == "school" }
+        is UserType.Normal -> notifications.filter { it.type == "student" }
+        else -> notifications
+    }
+
+    val unreadCount = filteredNotifications.count { !it.isRead }
 
     Scaffold(
         topBar = {
@@ -143,16 +189,13 @@ fun NotificationScreen(onBackClick: () -> Unit = {}) {
                 },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
-                            tint = Color.White
-                        )
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = Color(0xFF2563EB),
-                    titleContentColor = Color.White
+                    titleContentColor = Color.White,
+                    navigationIconContentColor = Color.White
                 )
             )
         }
@@ -199,7 +242,7 @@ fun NotificationScreen(onBackClick: () -> Unit = {}) {
                         Text("Loading notifications...")
                     }
                 }
-                notifications.isEmpty() -> {
+                filteredNotifications.isEmpty() -> {
                     Box(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
@@ -222,9 +265,10 @@ fun NotificationScreen(onBackClick: () -> Unit = {}) {
                             .fillMaxSize()
                             .padding(horizontal = 16.dp)
                     ) {
-                        items(notifications, key = { it.id }) { notification ->
+                        items(filteredNotifications, key = { it.id }) { notification ->
                             NotificationCard(
                                 notification = notification,
+                                isSchoolNotification = userType is UserType.School,
                                 onMarkAsRead = { readNotification ->
                                     // Update in Firebase
                                     database.reference
@@ -237,6 +281,16 @@ fun NotificationScreen(onBackClick: () -> Unit = {}) {
                                     // Update locally
                                     notifications = notifications.map {
                                         if (it.id == readNotification.id) it.copy(isRead = true) else it
+                                    }
+                                },
+                                onNavigate = { notification ->
+                                    // Navigate to ViewApplicationActivity for school notifications
+                                    if (userType is UserType.School && notification.applicationId.isNotEmpty()) {
+                                        val intent = Intent(context, ViewApplicationActivity::class.java).apply {
+                                            putExtra("schoolId", userId)
+                                            putExtra("applicationId", notification.applicationId)
+                                        }
+                                        context.startActivity(intent)
                                     }
                                 }
                             )
@@ -252,13 +306,27 @@ fun NotificationScreen(onBackClick: () -> Unit = {}) {
 }
 
 @Composable
-fun NotificationCard(notification: Notification, onMarkAsRead: (Notification) -> Unit) {
+fun NotificationCard(
+    notification: Notification,
+    isSchoolNotification: Boolean = false,
+    onMarkAsRead: (Notification) -> Unit = {},
+    onNavigate: (Notification) -> Unit = {}
+) {
     val cardColor = if (notification.isRead) Color(0xFFF5F5F5) else Color(0xFFE3F2FD)
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp),
+            .padding(vertical = 8.dp)
+            .clickable {
+                if (!notification.isRead) {
+                    onMarkAsRead(notification)
+                }
+                // Navigate for school notifications
+                if (isSchoolNotification && notification.applicationId.isNotEmpty()) {
+                    onNavigate(notification)
+                }
+            },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = cardColor),
         elevation = CardDefaults.cardElevation(defaultElevation = if (notification.isRead) 2.dp else 6.dp)
@@ -332,3 +400,4 @@ fun NotificationActivityPreview() {
         NotificationScreen()
     }
 }
+
