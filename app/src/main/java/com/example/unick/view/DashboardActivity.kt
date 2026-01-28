@@ -128,7 +128,7 @@ fun BottomNavigationBar(navController: androidx.navigation.NavController, viewMo
 private fun handleProfileClick(userType: UserType, context: Context) {
     when (userType) {
         is UserType.Normal -> {
-            val intent = Intent(context, DataFormAcitivity::class.java)
+            val intent = Intent(context, UserProfileActivity::class.java)
             context.startActivity(intent)
         }
         is UserType.School -> {
@@ -294,7 +294,7 @@ fun DashboardScreen(
                         CircleShape
                     )
                     .clickable {
-                        val intent = Intent(context, DataFormAcitivity::class.java)
+                        val intent = Intent(context, UserProfileActivity::class.java)
                         context.startActivity(intent)
                     },
                 contentAlignment = Alignment.Center
