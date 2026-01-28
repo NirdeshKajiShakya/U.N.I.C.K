@@ -8,5 +8,5 @@ interface UserProfileRepo {
     suspend fun getUserProfile(userId: String): Result<UserProfileModel>
     suspend fun getShortlistedSchools(userId: String): Result<List<ShortlistedSchoolForUserProfile>>
     suspend fun getApplications(userId: String): Result<List<ApplicationItemForUserProfile>>
-
+    suspend fun deleteApplication(applicationId: String): Result<Unit>
 }

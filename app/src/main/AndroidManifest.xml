@@ -24,7 +24,11 @@
         android:theme="@style/Theme.UNICK"
         android:usesCleartextTraffic="true"
         tools:replace="android:fullBackupContent">
-
+        <activity
+            android:name=".view.NotificationActivity"
+            android:exported="true"
+            android:label="@string/title_activity_notification"
+            android:theme="@style/Theme.UNICK" />
         <!--
              TODO: Before you run your application, you need a Google Maps API key.
 
@@ -275,6 +279,10 @@
         <activity
             android:name=".MainActivity"
             android:exported="false"
+            android:theme="@style/Theme.UNICK" />
+        <activity
+            android:name=".view.NavBarActivity"
+            android:exported="true"
             android:theme="@style/Theme.UNICK" />
     </application>
 

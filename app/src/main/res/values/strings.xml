@@ -37,4 +37,5 @@
     <string name="title_activity_admin_profile">AdminProfileActivity</string>
     <string name="title_activity_admin_cards_form">AdminCardsForm</string>
     <string name="title_activity_school_dashbaord">SchoolDashbaord</string>
+    <string name="title_activity_notification">NotificationActivity</string>
 </resources>

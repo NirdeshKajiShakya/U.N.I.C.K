@@ -5,44 +5,34 @@ import com.example.unick.model.StudentApplication
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.FirebaseDatabase
 import kotlinx.coroutines.tasks.await
+import java.text.SimpleDateFormat
+import java.util.*
 
-/**
- * Firebase Realtime Database implementation for viewing and managing school applications.
- */
 class ViewApplicationRepoImpl(
-    private val database: FirebaseDatabase = FirebaseDatabase.getInstance()
+    private val database: FirebaseDatabase = FirebaseDatabase.getInstance("https://vidyakhoj-927fb-default-rtdb.firebaseio.com/")
 ) : ViewApplicationRepo {
 
     private val COLLECTION = "student_applications"
+    private val NOTIFICATIONS = "notifications"
     private val TAG = "ViewApplicationRepoImpl"
 
-    /**
-     * Get all applications for a specific school.
-     * Queries the database where schoolId matches.
-     */
     override suspend fun getApplicationsForSchool(schoolId: String): Result<List<StudentApplication>> {
         return try {
             Log.d(TAG, "Fetching applications for school: $schoolId")
 
             val databaseRef = database.getReference(COLLECTION)
-            val snapshot = databaseRef
-                .orderByChild("schoolId")
-                .equalTo(schoolId)
-                .get()
-                .await()
+            val snapshot = databaseRef.get().await()
 
             val applications = mutableListOf<StudentApplication>()
 
             for (child: DataSnapshot in snapshot.children) {
                 val app = child.getValue(StudentApplication::class.java)
-                if (app != null) {
-                    // Include the Firebase key as applicationId
+                if (app != null && app.schoolId == schoolId) {
                     val appWithId = app.copy(applicationId = child.key ?: "")
                     applications.add(appWithId)
                 }
             }
 
-            // Sort by timestamp descending (newest first)
             applications.sortByDescending { it.timestamp }
 
             Log.d(TAG, "✅ Found ${applications.size} applications for school: $schoolId")
@@ -54,9 +44,6 @@ class ViewApplicationRepoImpl(
         }
     }
 
-    /**
-     * Get a single application by its ID.
-     */
     override suspend fun getApplicationById(applicationId: String): Result<StudentApplication> {
         return try {
             Log.d(TAG, "Fetching application: $applicationId")
@@ -81,10 +68,6 @@ class ViewApplicationRepoImpl(
         }
     }
 
-    /**
-     * Update the status of an application (accept or reject).
-     * Also records who reviewed it and when.
-     */
     override suspend fun updateApplicationStatus(
         applicationId: String,
         status: String,
@@ -93,23 +76,97 @@ class ViewApplicationRepoImpl(
         return try {
             Log.d(TAG, "Updating application $applicationId status to: $status")
 
-            val databaseRef = database.getReference(COLLECTION).child(applicationId)
+            // First, get the application to retrieve student info
+            val appSnapshot = database.getReference(COLLECTION).child(applicationId).get().await()
+            val application = appSnapshot.getValue(StudentApplication::class.java)
 
-            // Update status, reviewedBy, and reviewedAt fields
-            val updates = mapOf(
-                "status" to status,
-                "reviewedBy" to reviewedBy,
-                "reviewedAt" to System.currentTimeMillis()
-            )
+            if (application != null) {
+                val databaseRef = database.getReference(COLLECTION).child(applicationId)
 
-            databaseRef.updateChildren(updates).await()
+                // Update application status
+                val updates = mapOf(
+                    "status" to status,
+                    "reviewedBy" to reviewedBy,
+                    "reviewedAt" to System.currentTimeMillis()
+                )
 
-            Log.d(TAG, "✅ Application status updated to: $status")
-            Result.success(Unit)
+                databaseRef.updateChildren(updates).await()
+
+                // Create notification for the student
+                createNotificationForStudent(
+                    studentId = application.studentId,
+                    status = status,
+                    schoolId = application.schoolId,
+                    studentName = application.fullName
+                )
+
+                Log.d(TAG, "✅ Application status updated to: $status")
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Application not found"))
+            }
 
         } catch (e: Exception) {
             Log.e(TAG, "❌ Error updating application status: ${e.message}", e)
             Result.failure(Exception("Failed to update status: ${e.message}"))
+        }
+    }
+
+    private suspend fun createNotificationForStudent(
+        studentId: String,
+        status: String,
+        schoolId: String,
+        studentName: String
+    ) {
+        try {
+            Log.d(TAG, "Creating notification for student: $studentId, status: $status")
+
+            // Generate unique notification ID
+            val notificationId = database.getReference(NOTIFICATIONS).child(studentId).push().key
+
+            // Get school name from database
+            val schoolSnapshot = database.getReference("schools").child(schoolId).get().await()
+            val schoolName = schoolSnapshot.child("name").value as? String ?: "School"
+
+            // Format timestamp
+            val currentTime = SimpleDateFormat("yyyy-MM-dd hh:mm a", Locale.getDefault()).format(Date())
+
+            // Create notification message based on status
+            val (title, description) = when (status.lowercase()) {
+                "accepted" -> {
+                    "Application Accepted! 🎉" to "Your application to $schoolName has been accepted. Congratulations! 🎊"
+                }
+                "rejected" -> {
+                    "Application Update" to "Your application to $schoolName was not accepted. Better luck next time!"
+                }
+                else -> {
+                    "Application Status Update" to "Your application to $schoolName has been updated."
+                }
+            }
+
+            // Build notification object
+            val notification = mapOf(
+                "id" to notificationId,
+                "title" to title,
+                "description" to description,
+                "timestamp" to currentTime,
+                "isRead" to false
+            )
+
+            // Save to Firebase
+            if (notificationId != null) {
+                database.getReference(NOTIFICATIONS)
+                    .child(studentId)
+                    .child(notificationId)
+                    .setValue(notification)
+                    .await()
+
+                Log.d(TAG, "✅ Notification created for student: $studentId")
+            }
+
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ Error creating notification: ${e.message}", e)
+            // Don't fail the whole operation if notification fails
         }
     }
 }

@@ -44,6 +44,17 @@ class StudentApplicationActivity : ComponentActivity() {
         // Debug: Show which schoolId will be used
         android.util.Log.d("StudentApplicationActivity", "Applying to schoolId: $schoolId")
 
+        // Validate schoolId - cannot submit application without knowing which school
+        if (schoolId.isEmpty()) {
+            android.widget.Toast.makeText(
+                this,
+                "Error: School ID is missing. Please select a school first.",
+                android.widget.Toast.LENGTH_LONG
+            ).show()
+            finish()
+            return
+        }
+
         setContent {
             UNICKTheme {
                 StudentRegistrationForm(schoolId = schoolId)
