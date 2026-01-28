@@ -89,23 +89,30 @@ fun MainScreen(viewModel: SchoolViewModel, userProfileViewModel: UserProfileView
     }
 
     val userTypeState = viewModel.userType.collectAsState()
+    val isSchoolIntent = activity?.intent?.getBooleanExtra("is_school_view", false) == true
 
     Scaffold(
         bottomBar = {
-            if (userTypeState.value is UserType.School) {
+            if (isSchoolIntent || userTypeState.value is UserType.School) {
+                val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
                 SchoolNavBar(
                     currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route,
                     onNavigate = { route ->
                         when (route) {
                             BottomNavItem.Home.route -> {
-                                // School Home
+                                // School Home -> Dashboard (Activity)
                                 val intent = Intent(context, SchoolDashboard::class.java)
                                 intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
                                 context.startActivity(intent)
                             }
                             BottomNavItem.Profile.route -> {
-                                // School Profile
-                                handleProfileClick(userTypeState.value, context)
+                                // Strict Navigation: Always open SchoolDetailActivity for School Profile
+                                if (currentUserId != null) {
+                                    val intent = Intent(context, SchoolDetailActivity::class.java)
+                                    intent.putExtra("uid", currentUserId)
+                                    intent.putExtra("is_school_view", true)
+                                    context.startActivity(intent)
+                                }
                             }
                             else -> {
                                 // Chat, Notification -> Stay in DashboardActivity (NavHost handles it)
@@ -117,7 +124,13 @@ fun MainScreen(viewModel: SchoolViewModel, userProfileViewModel: UserProfileView
                         }
                     },
                     onProfileClick = {
-                        handleProfileClick(userTypeState.value, context)
+                         // Strict Navigation: Always open SchoolDetailActivity for School Profile
+                        if (currentUserId != null) {
+                            val intent = Intent(context, SchoolDetailActivity::class.java)
+                            intent.putExtra("uid", currentUserId)
+                            intent.putExtra("is_school_view", true)
+                            context.startActivity(intent)
+                        }
                     }
                 )
             } else {
@@ -193,6 +206,7 @@ private fun handleProfileClick(userType: UserType, context: Context) {
 
 @Composable
 fun NavigationHost(navController: NavHostController, viewModel: SchoolViewModel, userProfileViewModel: UserProfileViewModel, userName: String) {
+    val context = LocalContext.current
     NavHost(navController = navController, startDestination = BottomNavItem.Home.route) {
         composable(BottomNavItem.Home.route) {
             val schools by viewModel.schools.collectAsState()
@@ -216,7 +230,39 @@ fun NavigationHost(navController: NavHostController, viewModel: SchoolViewModel,
             NotificationScreen()
         }
         composable(BottomNavItem.Profile.route) {
-            UserProfileScreen(viewModel = userProfileViewModel)
+            val userTypeState = viewModel.userType.collectAsState()
+            val isSchoolUser = userTypeState.value is UserType.School
+
+            if (isSchoolUser) {
+                 // Integrate SchoolDetailContent seamlessly
+                 // We need a ViewModel for this. Since we are in DashboardActivity, we can instantiate it.
+                 // We need the school ID (current user ID).
+                 val currentUserId = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid ?: ""
+                 val schoolDetailViewModel: com.example.unick.viewmodel.SchoolDetailViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
+                 
+                 LaunchedEffect(currentUserId) {
+                     schoolDetailViewModel.loadSchoolDetail(currentUserId)
+                 }
+                 
+                 SchoolDetailContent(
+                    padding = PaddingValues(0.dp), // Padding already handled by Dashboard Scaffolding ? No, NavigationHost is in Box with padding. Let's send 0.
+                    vm = schoolDetailViewModel,
+                    isSchoolOwner = true,
+                    onOpenGallery = {
+                        context.startActivity(
+                            Intent(context, SchoolGalleryActivity::class.java).putExtra("schoolId", currentUserId)
+                        )
+                    },
+                    onViewApplications = {
+                         context.startActivity(
+                            Intent(context, ViewApplicationActivity::class.java).putExtra("schoolId", currentUserId)
+                        )
+                    },
+                    onApplyNow = { /* Not used for owner */ }
+                 )
+            } else {
+                UserProfileScreen(viewModel = userProfileViewModel)
+            }
         }
         composable("compare") {
             SchoolCompareScreen(

@@ -44,6 +44,9 @@ class SchoolDetailActivity : ComponentActivity() {
             schoolId = "XcfjtBIHVfdpHeh8QSMy7j3VGiU2"
         }
 
+        // get isSchoolView from intent
+        val isSchoolView = intent.getBooleanExtra("is_school_view", false)
+
         setContent {
             val vm = remember { SchoolDetailViewModel() }
 
@@ -54,6 +57,7 @@ class SchoolDetailActivity : ComponentActivity() {
             SchoolDetailScreen(
                 vm = vm,
                 schoolId = schoolId,
+                isSchoolView = isSchoolView, // Pass it here
                 onBack = { finish() },
                 onOpenGallery = {
                     startActivity(
@@ -87,6 +91,7 @@ class SchoolDetailActivity : ComponentActivity() {
 fun SchoolDetailScreen(
     schoolId: String,
     vm: SchoolDetailViewModel = SchoolDetailViewModel(),
+    isSchoolView: Boolean = false, // Add parameter
     onBack: () -> Unit = {},
     onOpenGallery: () -> Unit = {},
     onSchoolSetting: () -> Unit = {},
@@ -94,15 +99,9 @@ fun SchoolDetailScreen(
     onViewApplications: () -> Unit = {}
 ) {
     val context = LocalContext.current
-    var selectedTab by remember { mutableStateOf("Overview") }
-
-    val profile = vm.schoolProfile
-    val gallery = vm.gallery
-    val reviews = vm.reviews
-
-    // Check if current user is the school owner/admin
     val currentUserId = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid ?: ""
     val isSchoolOwner = currentUserId == schoolId
+    val finalIsSchoolView = isSchoolView || isSchoolOwner // Use parameter
 
     Scaffold(
         modifier = Modifier.windowInsetsPadding(WindowInsets.systemBars),
@@ -122,345 +121,376 @@ fun SchoolDetailScreen(
             )
         },
         bottomBar = {
-            SchoolNavBar(
-                currentRoute = BottomNavItem.Profile.route,
-                onNavigate = { route ->
-                    when (route) {
-                        BottomNavItem.Home.route -> {
-                             if (isSchoolOwner) {
-                                // If school owner, go to School Dashboard
+            if (finalIsSchoolView) {
+                SchoolNavBar(
+                    currentRoute = BottomNavItem.Profile.route,
+                    onNavigate = { route ->
+                        when (route) {
+                            BottomNavItem.Home.route -> {
+                                // School Home -> SchoolDashboard
                                 val intent = Intent(context, SchoolDashboard::class.java)
                                 intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
                                 context.startActivity(intent)
-                             } else {
-                                // If student/visitor, go to Student Dashboard
-                                val intent = Intent(context, DashboardActivity::class.java)
-                                intent.putExtra("start_destination", BottomNavItem.Home.route)
-                                intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
-                                context.startActivity(intent)
-                             }
-                        }
-                        BottomNavItem.Profile.route -> {
-                             val currentRouteUid = schoolId
-                             if (currentRouteUid == currentUserId) {
-                                // Already on my profile
-                             } else {
-                                 // Wants to go to MY profile
-                                 if (isSchoolOwner) {
+                            }
+                            BottomNavItem.Profile.route -> {
+                                // Already on SchoolDetailActivity (Profile), but ensure it's MY profile
+                                if (schoolId != currentUserId) {
                                      val intent = Intent(context, SchoolDetailActivity::class.java)
                                      intent.putExtra("uid", currentUserId)
+                                     intent.putExtra("is_school_view", true)
                                      context.startActivity(intent)
-                                 } else {
-                                     // Student wants to go to their profile
-                                     val intent = Intent(context, UserProfileActivity::class.java)
-                                     context.startActivity(intent)
-                                 }
-                             }
+                                }
+                            }
+                            else -> {
+                                // Chat, Notification -> DashboardActivity (School View)
+                                val intent = Intent(context, DashboardActivity::class.java)
+                                intent.putExtra("start_destination", route)
+                                intent.putExtra("is_school_view", true)
+                                intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
+                                context.startActivity(intent)
+                            }
                         }
-                        else -> {
-                            // Other tabs -> DashboardActivity with specific destination
-                            val intent = Intent(context, DashboardActivity::class.java)
-                            intent.putExtra("start_destination", route)
-                            intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
-                            context.startActivity(intent)
-                        }
-                    }
-                },
-                onProfileClick = {
-                     if (isSchoolOwner) {
-                         if (schoolId != currentUserId) {
+                    },
+                    onProfileClick = {
+                        if (schoolId != currentUserId) {
                              val intent = Intent(context, SchoolDetailActivity::class.java)
                              intent.putExtra("uid", currentUserId)
+                             intent.putExtra("is_school_view", true)
                              context.startActivity(intent)
-                         }
-                     } else {
-                         val intent = Intent(context, UserProfileActivity::class.java)
-                         context.startActivity(intent)
-                     }
-                }
-            )
+                        }
+                    }
+                )
+            } else {
+                UnifiedBottomNavigationBar(
+                    currentRoute = null, // No specific tab selected when viewing a school detail from student view? Or maybe 'Home' or 'Search'? Leaving null or unselected.
+                    onNavigate = { route ->
+                        when(route) {
+                           BottomNavItem.Profile.route -> {
+                               // Student Profile
+                               val intent = Intent(context, UserProfileActivity::class.java)
+                               context.startActivity(intent)
+                           }
+                           else -> {
+                               // Home, Search, etc -> DashboardActivity
+                               val intent = Intent(context, DashboardActivity::class.java)
+                               intent.putExtra("start_destination", route)
+                               intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
+                               context.startActivity(intent)
+                           }
+                        }
+                    },
+                    onProfileClick = {
+                        val intent = Intent(context, UserProfileActivity::class.java)
+                        context.startActivity(intent)
+                    }
+                )
+            }
         }
     ) { padding ->
+        SchoolDetailContent(
+            padding = padding,
+            vm = vm,
+            isSchoolOwner = isSchoolOwner,
+            onOpenGallery = onOpenGallery,
+            onViewApplications = onViewApplications,
+            onApplyNow = onApplyNow
+        )
+    }
+}
 
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .background(Color.White)
-        ) {
+@Composable
+fun SchoolDetailContent(
+    padding: PaddingValues,
+    vm: SchoolDetailViewModel,
+    isSchoolOwner: Boolean,
+    onOpenGallery: () -> Unit,
+    onViewApplications: () -> Unit,
+    onApplyNow: () -> Unit
+) {
+    val profile = vm.schoolProfile
+    val gallery = vm.gallery
+    val reviews = vm.reviews
+    var selectedTab by remember { mutableStateOf("Overview") }
+    val context = LocalContext.current
 
-            // ---- Banner + Gallery Button ----
-            item {
-                Box(modifier = Modifier.fillMaxWidth()) {
-                    AsyncImage(
-                        model = profile?.imageUrl,
-                        contentDescription = "Banner",
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(180.dp),
-                        contentScale = ContentScale.Crop
-                    )
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(padding)
+            .background(Color.White)
+    ) {
 
-                    Button(
-                        onClick = onOpenGallery,
-                        modifier = Modifier
-                            .align(Alignment.BottomEnd)
-                            .padding(12.dp),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Text("Gallery")
-                    }
-                }
-            }
-
-            // ---- Header ----
-            item {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        text = profile?.schoolName ?: "Loading...",
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        text = profile?.location ?: "",
-                        color = Color.DarkGray
-                    )
-
-                    Spacer(Modifier.height(12.dp))
-
-                    // Action Buttons - Show based on user role
-                    if (isSchoolOwner) {
-                        // School Owner: Show "View Applications" button
-                        Button(
-                            onClick = onViewApplications,
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFF3B82F6)
-                            ),
-                            shape = RoundedCornerShape(8.dp)
-                        ) {
-                            Text("View Applications", fontWeight = FontWeight.SemiBold)
-                        }
-                    } else {
-                        // Student/Visitor: Show "Apply Now" button
-                        Button(
-                            onClick = onApplyNow,
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFF10B981)
-                            ),
-                            shape = RoundedCornerShape(8.dp)
-                        ) {
-                            Text("Apply Now", fontWeight = FontWeight.SemiBold)
-                        }
-                    }
-                }
-            }
-
-            // ---- Tab Row ----
-            item {
-                Row(
+        // ---- Banner + Gallery Button ----
+        item {
+            Box(modifier = Modifier.fillMaxWidth()) {
+                AsyncImage(
+                    model = profile?.imageUrl,
+                    contentDescription = "Banner",
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 8.dp),
-                    horizontalArrangement = Arrangement.SpaceEvenly
+                        .height(180.dp),
+                    contentScale = ContentScale.Crop
+                )
+
+                Button(
+                    onClick = onOpenGallery,
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(12.dp),
+                    shape = RoundedCornerShape(12.dp)
                 ) {
-                    SchoolTabItem("Overview", selectedTab == "Overview") { selectedTab = "Overview" }
-                    SchoolTabItem("Academics", selectedTab == "Academics") { selectedTab = "Academics" }
-                    SchoolTabItem("Connect", selectedTab == "Connect") { selectedTab = "Connect" }
-                    SchoolTabItem("Reviews", selectedTab == "Reviews") { selectedTab = "Reviews" }
-                }
-                Divider()
-            }
-
-            // ---- Tab Content ----
-            when (selectedTab) {
-
-                "Overview" -> {
-                    item {
-                        OverviewCard(
-                            title = "About",
-                            text = profile?.description ?: "No description"
-                        )
-                    }
-                    item {
-                        OverviewCard(
-                            title = "Programs",
-                            text = profile?.programsOffered ?: "Not added",
-                            onSeeMore = { selectedTab = "Academics" }
-                        )
-                    }
-                    item {
-                        OverviewCard(
-                            title = "Facilities",
-                            text = profile?.facilities ?: "Not added",
-                            onSeeMore = { selectedTab = "Academics" }
-                        )
-                    }
-                    item {
-                        OverviewCard(
-                            title = "Scholarship",
-                            text = if (profile?.scholarshipAvailable == true) "Available" else "Not available",
-                            onSeeMore = { selectedTab = "Academics" }
-                        )
-                    }
-                }
-
-                "Academics" -> {
-                    item {
-                        SectionTitle("Academics")
-                    }
-                    item {
-                        InfoCard("Curriculum", profile?.curriculum ?: "Not added")
-                    }
-                    item {
-                        InfoCard("Programs Offered (Class 1–12)", profile?.programsOffered ?: "Not added")
-                    }
-                    item {
-                        InfoCard("Total Students", profile?.totalStudents ?: "Not added")
-                    }
-                    item {
-                        InfoCard("Extracurricular", profile?.extracurricular ?: "Not added")
-                    }
-                    item {
-                        InfoCard("Transport Facility", if (profile?.transportFacility == true) "Yes" else "No")
-                    }
-                    item {
-                        InfoCard("Hostel Facility", if (profile?.hostelFacility == true) "Yes" else "No")
-                    }
-                    item {
-                        InfoCard("Tuition Fee", profile?.tuitionFee ?: "Not added")
-                    }
-                    item {
-                        InfoCard("Admission Fee", profile?.admissionFee ?: "Not added")
-                    }
-                    item {
-                        InfoCard("Established Year", profile?.establishedYear ?: "Not added")
-                    }
-                    item {
-                        InfoCard("Principal Name", profile?.principalName ?: "Not added")
-                    }
-                }
-
-                "Connect" -> {
-                    item { SectionTitle("Contact & Location") }
-
-                    item {
-                        ContactRow(
-                            label = "Email",
-                            value = profile?.email ?: "Not added",
-                            onClick = {
-                                val email = profile?.email ?: return@ContactRow
-                                val intent = Intent(Intent.ACTION_SENDTO).apply {
-                                    data = Uri.parse("mailto:$email")
-                                }
-                                context.startActivity(intent)
-                            }
-                        )
-                    }
-
-                    item {
-                        ContactRow(
-                            label = "Phone",
-                            value = profile?.contactNumber ?: "Not added",
-                            onClick = {
-                                val phone = profile?.contactNumber ?: return@ContactRow
-                                val intent = Intent(Intent.ACTION_DIAL).apply {
-                                    data = Uri.parse("tel:$phone")
-                                }
-                                context.startActivity(intent)
-                            }
-                        )
-                    }
-
-                    item {
-                        ContactRow(
-                            label = "Website",
-                            value = profile?.website ?: "Not added",
-                            onClick = {
-                                val url = profile?.website ?: return@ContactRow
-                                val open = Intent(Intent.ACTION_VIEW, Uri.parse(ensureUrl(url)))
-                                context.startActivity(open)
-                            }
-                        )
-                    }
-
-                    item {
-                        ContactRow(
-                            label = "Map Location",
-                            value = "Open in Google Maps",
-                            leadingIcon = { Icon(Icons.Default.LocationOn, null) },
-                            onClick = {
-                                val q = profile?.location ?: profile?.schoolName ?: "School"
-                                val mapUri = Uri.parse("geo:0,0?q=${Uri.encode(q)}")
-                                val i = Intent(Intent.ACTION_VIEW, mapUri).apply {
-                                    setPackage("com.google.android.apps.maps")
-                                }
-                                context.startActivity(i)
-                            }
-                        )
-                    }
-
-                    item {
-                        Spacer(Modifier.height(12.dp))
-                        Text(
-                            text = "Address: ${profile?.location ?: "Not added"}",
-                            modifier = Modifier.padding(horizontal = 16.dp),
-                            color = Color.DarkGray
-                        )
-                        Spacer(Modifier.height(16.dp))
-                    }
-                }
-
-                "Reviews" -> {
-                    item {
-                        ReviewsHeader(
-                            avg = vm.avgRating,
-                            total = vm.totalReviews,
-                            onWriteReview = {}
-                        )
-                    }
-
-                    item {
-                        ReviewComposer(
-                            onSubmit = { rating, comment ->
-                                val demoUserUid = "demo_reviewer_uid"
-                                vm.submitReview(
-                                    reviewerUid = demoUserUid,
-                                    rating = rating,
-                                    comment = comment
-                                )
-                            }
-                        )
-                    }
-
-                    items(reviews.size) { idx ->
-                        ReviewCard(review = reviews[idx])
-                    }
-
-                    item { Spacer(Modifier.height(28.dp)) }
+                    Text("Gallery")
                 }
             }
+        }
 
-            // ---- Loading / Error ----
-            item {
-                if (vm.loading) {
-                    Spacer(Modifier.height(12.dp))
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-                        CircularProgressIndicator()
+        // ---- Header ----
+        item {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    text = profile?.schoolName ?: "Loading...",
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = profile?.location ?: "",
+                    color = Color.DarkGray
+                )
+
+                Spacer(Modifier.height(12.dp))
+
+                // Action Buttons - Show based on user role
+                if (isSchoolOwner) {
+                    // School Owner: Show "View Applications" button
+                    Button(
+                        onClick = onViewApplications,
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF3B82F6)
+                        ),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Text("View Applications", fontWeight = FontWeight.SemiBold)
                     }
-                    Spacer(Modifier.height(12.dp))
+                } else {
+                    // Student/Visitor: Show "Apply Now" button
+                    Button(
+                        onClick = onApplyNow,
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF10B981)
+                        ),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Text("Apply Now", fontWeight = FontWeight.SemiBold)
+                    }
                 }
+            }
+        }
 
-                vm.error?.let {
-                    Spacer(Modifier.height(12.dp))
-                    Text(
-                        text = it,
-                        color = Color.Red,
-                        modifier = Modifier.padding(16.dp)
+        // ---- Tab Row ----
+        item {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                SchoolTabItem("Overview", selectedTab == "Overview") { selectedTab = "Overview" }
+                SchoolTabItem("Academics", selectedTab == "Academics") { selectedTab = "Academics" }
+                SchoolTabItem("Connect", selectedTab == "Connect") { selectedTab = "Connect" }
+                SchoolTabItem("Reviews", selectedTab == "Reviews") { selectedTab = "Reviews" }
+            }
+            Divider()
+        }
+
+        // ---- Tab Content ----
+        when (selectedTab) {
+
+            "Overview" -> {
+                item {
+                    OverviewCard(
+                        title = "About",
+                        text = profile?.description ?: "No description"
                     )
                 }
+                item {
+                    OverviewCard(
+                        title = "Programs",
+                        text = profile?.programsOffered ?: "Not added",
+                        onSeeMore = { selectedTab = "Academics" }
+                    )
+                }
+                item {
+                    OverviewCard(
+                        title = "Facilities",
+                        text = profile?.facilities ?: "Not added",
+                        onSeeMore = { selectedTab = "Academics" }
+                    )
+                }
+                item {
+                    OverviewCard(
+                        title = "Scholarship",
+                        text = if (profile?.scholarshipAvailable == true) "Available" else "Not available",
+                        onSeeMore = { selectedTab = "Academics" }
+                    )
+                }
+            }
+
+            "Academics" -> {
+                item {
+                    SectionTitle("Academics")
+                }
+                item {
+                    InfoCard("Curriculum", profile?.curriculum ?: "Not added")
+                }
+                item {
+                    InfoCard("Programs Offered (Class 1–12)", profile?.programsOffered ?: "Not added")
+                }
+                item {
+                    InfoCard("Total Students", profile?.totalStudents ?: "Not added")
+                }
+                item {
+                    InfoCard("Extracurricular", profile?.extracurricular ?: "Not added")
+                }
+                item {
+                    InfoCard("Transport Facility", if (profile?.transportFacility == true) "Yes" else "No")
+                }
+                item {
+                    InfoCard("Hostel Facility", if (profile?.hostelFacility == true) "Yes" else "No")
+                }
+                item {
+                    InfoCard("Tuition Fee", profile?.tuitionFee ?: "Not added")
+                }
+                item {
+                    InfoCard("Admission Fee", profile?.admissionFee ?: "Not added")
+                }
+                item {
+                    InfoCard("Established Year", profile?.establishedYear ?: "Not added")
+                }
+                item {
+                    InfoCard("Principal Name", profile?.principalName ?: "Not added")
+                }
+            }
+
+            "Connect" -> {
+                item { SectionTitle("Contact & Location") }
+
+                item {
+                    ContactRow(
+                        label = "Email",
+                        value = profile?.email ?: "Not added",
+                        onClick = {
+                            val email = profile?.email ?: return@ContactRow
+                            val intent = Intent(Intent.ACTION_SENDTO).apply {
+                                data = Uri.parse("mailto:$email")
+                            }
+                            context.startActivity(intent)
+                        }
+                    )
+                }
+
+                item {
+                    ContactRow(
+                        label = "Phone",
+                        value = profile?.contactNumber ?: "Not added",
+                        onClick = {
+                            val phone = profile?.contactNumber ?: return@ContactRow
+                            val intent = Intent(Intent.ACTION_DIAL).apply {
+                                data = Uri.parse("tel:$phone")
+                            }
+                            context.startActivity(intent)
+                        }
+                    )
+                }
+
+                item {
+                    ContactRow(
+                        label = "Website",
+                        value = profile?.website ?: "Not added",
+                        onClick = {
+                            val url = profile?.website ?: return@ContactRow
+                            val open = Intent(Intent.ACTION_VIEW, Uri.parse(ensureUrl(url)))
+                            context.startActivity(open)
+                        }
+                    )
+                }
+
+                item {
+                    ContactRow(
+                        label = "Map Location",
+                        value = "Open in Google Maps",
+                        leadingIcon = { Icon(Icons.Default.LocationOn, null) },
+                        onClick = {
+                            val q = profile?.location ?: profile?.schoolName ?: "School"
+                            val mapUri = Uri.parse("geo:0,0?q=${Uri.encode(q)}")
+                            val i = Intent(Intent.ACTION_VIEW, mapUri).apply {
+                                setPackage("com.google.android.apps.maps")
+                            }
+                            context.startActivity(i)
+                        }
+                    )
+                }
+
+                item {
+                    Spacer(Modifier.height(12.dp))
+                    Text(
+                        text = "Address: ${profile?.location ?: "Not added"}",
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                        color = Color.DarkGray
+                    )
+                    Spacer(Modifier.height(16.dp))
+                }
+            }
+
+            "Reviews" -> {
+                item {
+                    ReviewsHeader(
+                        avg = vm.avgRating,
+                        total = vm.totalReviews,
+                        onWriteReview = {}
+                    )
+                }
+
+                item {
+                    ReviewComposer(
+                        onSubmit = { rating, comment ->
+                            val demoUserUid = "demo_reviewer_uid"
+                            vm.submitReview(
+                                reviewerUid = demoUserUid,
+                                rating = rating,
+                                comment = comment
+                            )
+                        }
+                    )
+                }
+
+                items(reviews.size) { idx ->
+                    ReviewCard(review = reviews[idx])
+                }
+
+                item { Spacer(Modifier.height(28.dp)) }
+            }
+        }
+
+        // ---- Loading / Error ----
+        item {
+            if (vm.loading) {
+                Spacer(Modifier.height(12.dp))
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                    CircularProgressIndicator()
+                }
+                Spacer(Modifier.height(12.dp))
+            }
+
+            vm.error?.let {
+                Spacer(Modifier.height(12.dp))
+                Text(
+                    text = it,
+                    color = Color.Red,
+                    modifier = Modifier.padding(16.dp)
+                )
             }
         }
     }

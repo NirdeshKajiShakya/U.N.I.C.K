@@ -82,12 +82,14 @@ fun SchoolDashboardScreen(viewModel: SchoolViewModel, currentUid: String?) {
                                     if (currentUid != null) {
                                         val intent = Intent(context, SchoolDetailActivity::class.java)
                                         intent.putExtra("uid", currentUid)
+                                        intent.putExtra("is_school_view", true)
                                         context.startActivity(intent)
                                     }
                                 }
                                 else -> {
                                     val intent = Intent(context, DashboardActivity::class.java)
                                     intent.putExtra("start_destination", route)
+                                    intent.putExtra("is_school_view", true)
                                     context.startActivity(intent)
                                 }
                             }
@@ -96,6 +98,7 @@ fun SchoolDashboardScreen(viewModel: SchoolViewModel, currentUid: String?) {
                             if (currentUid != null) {
                                 val intent = Intent(context, SchoolDetailActivity::class.java)
                                 intent.putExtra("uid", currentUid)
+                                intent.putExtra("is_school_view", true)
                                 context.startActivity(intent)
                             }
                         }
