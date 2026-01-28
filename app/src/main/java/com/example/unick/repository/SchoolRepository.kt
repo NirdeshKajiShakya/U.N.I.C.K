@@ -14,7 +14,10 @@ import com.google.firebase.database.ValueEventListener
 
 class SchoolRepository {
 
-    private val database = FirebaseDatabase.getInstance().getReference("SchoolForm")
+    private val database =
+        FirebaseDatabase.getInstance("https://vidyakhoj-927fb-default-rtdb.firebaseio.com/")
+            .getReference("SchoolForm")
+
 
     companion object {
         private var isCloudinaryInitialized = false

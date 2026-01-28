@@ -10,10 +10,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.Star
@@ -21,16 +20,21 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.net.toUri
 import coil.compose.AsyncImage
 import com.example.unick.viewmodel.SchoolDetailViewModel
 import com.example.unick.model.SchoolReviewModel
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
+import java.util.Locale
 
 class SchoolDetailActivity : ComponentActivity() {
 
@@ -38,10 +42,18 @@ class SchoolDetailActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        // get schoolId from intent - prioritize "uid" then fall back to "schoolId"
+        // Get schoolId from intent - prioritize "uid" then fall back to "schoolId"
+        @Suppress("DEPRECATION")
         val schoolId = intent.getStringExtra("uid")
             ?: intent.getStringExtra("schoolId")
+            ?: intent.getParcelableExtra<com.example.unick.model.SchoolForm>("school_details")?.uid
             ?: ""
+
+        if (schoolId.isBlank()) {
+            android.widget.Toast.makeText(this, "School ID missing!", android.widget.Toast.LENGTH_SHORT).show()
+            finish()
+            return
+        }
 
         setContent {
             val vm = remember { SchoolDetailViewModel() }
@@ -67,13 +79,11 @@ class SchoolDetailActivity : ComponentActivity() {
                     )
                 },
                 onApplyNow = {
-                    // Navigate to student application form with schoolId
                     startActivity(
                         Intent(this, StudentApplicationActivity::class.java).putExtra("schoolId", schoolId)
                     )
                 },
                 onViewApplications = {
-                    // Navigate to view applications (for school admin)
                     startActivity(
                         Intent(this, ViewApplicationActivity::class.java).putExtra("schoolId", schoolId)
                     )
@@ -81,6 +91,7 @@ class SchoolDetailActivity : ComponentActivity() {
             )
         }
     }
+
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -98,6 +109,7 @@ fun SchoolDetailScreen(
     var selectedTab by remember { mutableStateOf("Overview") }
 
     val profile = vm.schoolProfile
+    @Suppress("UNUSED_VARIABLE")
     val gallery = vm.gallery
     val reviews = vm.reviews
 
@@ -109,10 +121,16 @@ fun SchoolDetailScreen(
         modifier = Modifier.windowInsetsPadding(WindowInsets.systemBars),
         topBar = {
             TopAppBar(
-                title = { Text(schoolId, fontWeight = FontWeight.Bold) },
+                title = {
+                    Text(
+                        text = profile?.schoolName?.takeIf { it.isNotBlank() } ?: "School Profile",
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
                 actions = {
@@ -121,6 +139,7 @@ fun SchoolDetailScreen(
                     }
                 }
             )
+
         }
     ) { padding ->
 
@@ -213,7 +232,7 @@ fun SchoolDetailScreen(
                     SchoolTabItem("Connect", selectedTab == "Connect") { selectedTab = "Connect" }
                     SchoolTabItem("Reviews", selectedTab == "Reviews") { selectedTab = "Reviews" }
                 }
-                Divider()
+                HorizontalDivider()
             }
 
             // ---- Tab Content ----
@@ -295,7 +314,7 @@ fun SchoolDetailScreen(
                             onClick = {
                                 val email = profile?.email ?: return@ContactRow
                                 val intent = Intent(Intent.ACTION_SENDTO).apply {
-                                    data = Uri.parse("mailto:$email")
+                                    data = "mailto:$email".toUri()
                                 }
                                 context.startActivity(intent)
                             }
@@ -309,7 +328,7 @@ fun SchoolDetailScreen(
                             onClick = {
                                 val phone = profile?.contactNumber ?: return@ContactRow
                                 val intent = Intent(Intent.ACTION_DIAL).apply {
-                                    data = Uri.parse("tel:$phone")
+                                    data = "tel:$phone".toUri()
                                 }
                                 context.startActivity(intent)
                             }
@@ -322,7 +341,7 @@ fun SchoolDetailScreen(
                             value = profile?.website ?: "Not added",
                             onClick = {
                                 val url = profile?.website ?: return@ContactRow
-                                val open = Intent(Intent.ACTION_VIEW, Uri.parse(ensureUrl(url)))
+                                val open = Intent(Intent.ACTION_VIEW, ensureUrl(url).toUri())
                                 context.startActivity(open)
                             }
                         )
@@ -334,8 +353,8 @@ fun SchoolDetailScreen(
                             value = "Open in Google Maps",
                             leadingIcon = { Icon(Icons.Default.LocationOn, null) },
                             onClick = {
-                                val q = profile?.location ?: profile?.schoolName ?: "School"
-                                val mapUri = Uri.parse("geo:0,0?q=${Uri.encode(q)}")
+                                val q = profile?.googleMapUrl ?: profile?.schoolName ?: "School"
+                                val mapUri = "geo:0,0?q=${Uri.encode(q)}".toUri()
                                 val i = Intent(Intent.ACTION_VIEW, mapUri).apply {
                                     setPackage("com.google.android.apps.maps")
                                 }
@@ -520,7 +539,7 @@ private fun ReviewsHeader(avg: Double, total: Int, onWriteReview: () -> Unit) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             StarsRow(rating = avg)
             Spacer(Modifier.width(10.dp))
-            Text(String.format("%.1f", avg), fontWeight = FontWeight.Bold)
+            Text(String.format(Locale.US, "%.1f", avg), fontWeight = FontWeight.Bold)
             Spacer(Modifier.width(10.dp))
             Text("($total reviews)", color = Color.DarkGray)
         }
@@ -606,17 +625,22 @@ private fun ReviewCard(review: SchoolReviewModel) {
         shape = RoundedCornerShape(18.dp)
     ) {
         Column(Modifier.padding(16.dp)) {
-            Text("Reviewer: ${review.reviewerUid}", fontWeight = FontWeight.Bold)
+
+            // ✅ show Full Name instead of UID
+            ReviewerNameText(review.reviewerUid)
+
             Spacer(Modifier.height(6.dp))
+
             Row(verticalAlignment = Alignment.CenterVertically) {
                 repeat(review.rating.coerceIn(0, 5)) {
-                    Icon(Icons.Filled.Star, null)
+                    Icon(Icons.Filled.Star, contentDescription = null)
                 }
                 Spacer(Modifier.width(8.dp))
                 Text("${review.rating}/5", color = Color.DarkGray)
             }
 
             Spacer(Modifier.height(8.dp))
+
             val text = review.comment
             Text(
                 text = if (expanded || text.length < 120) text else text.take(120) + "...",
@@ -635,6 +659,35 @@ private fun ReviewCard(review: SchoolReviewModel) {
         }
     }
 }
+
+
+@Composable
+fun ReviewerNameText(reviewerUid: String) {
+    var name by remember(reviewerUid) { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(reviewerUid) {
+        val db = FirebaseDatabase
+            .getInstance("https://vidyakhoj-927fb-default-rtdb.firebaseio.com/")
+            .reference
+
+        db.child("Users").child(reviewerUid).child("fullName")
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    val fullName = snapshot.getValue(String::class.java)?.trim()
+                    name = if (fullName.isNullOrBlank()) "Anonymous" else fullName
+                }
+                override fun onCancelled(error: DatabaseError) {
+                    name = "Anonymous"
+                }
+            })
+    }
+
+    Text(
+        text = "Reviewer: ${name ?: "Loading..."}",
+        fontWeight = FontWeight.Bold
+    )
+}
+
 
 private fun ensureUrl(url: String): String {
     return if (url.startsWith("http://") || url.startsWith("https://")) url else "https://$url"

@@ -1,9 +1,16 @@
 package com.example.unick.view
 
+import android.Manifest
+import android.annotation.SuppressLint
+import android.app.Activity
+import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -17,70 +24,111 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
+import com.example.unick.model.FilterResult
 import com.example.unick.ui.theme.UNICKTheme
-import com.example.unick.utils.filterWithinRadius // ✅ uses your previous utils file
+import com.example.unick.utils.filterWithinRadius
+import com.google.android.gms.location.LocationServices
 
 class FilterActivity : ComponentActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
         setContent {
             UNICKTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = Color(0xFFF8F9FA)
                 ) {
-                    // You can pass callbacks later if needed
                     FilterScreen(
                         onBack = { finish() },
                         onApply = { result ->
-                            // For now: you can return result to previous screen via intent extras later
-                            // or store in shared ViewModel
+                            val data = Intent().putExtra(EXTRA_FILTER_RESULT, result)
+                            setResult(Activity.RESULT_OK, data)
+                            finish()
                         }
                     )
                 }
             }
         }
     }
-}
 
-/**
- * Later you can store this in a shared ViewModel or pass through navigation.
- */
-data class FilterResult(
-    val feeRange: String,
-    val location: String,
-    val passRate: String,
-    val levels: List<String>,
-    val curriculums: List<String>,
-    val facilities: List<String>,
-    val radiusKm: Double? // null = Any radius
-)
+    companion object {
+        const val EXTRA_FILTER_RESULT = "extra_filter_result"
+    }
+}
 
 @Composable
 fun FilterScreen(
     onBack: () -> Unit = {},
     onApply: (FilterResult) -> Unit = {}
 ) {
+    val context = LocalContext.current
+
     var selectedFeeRange by remember { mutableStateOf("Any") }
     var selectedLocation by remember { mutableStateOf("Any") }
     var selectedPassRate by remember { mutableStateOf("Any") }
     var selectedCurriculum by remember { mutableStateOf<List<String>>(emptyList()) }
     var selectedFacilities by remember { mutableStateOf<List<String>>(emptyList()) }
     var selectedLevel by remember { mutableStateOf<List<String>>(emptyList()) }
-
-    // ✅ NEW: Radius filter
-    // UI shows strings, logic converts to km
     var selectedRadiusLabel by remember { mutableStateOf("Any") }
+
+    // ---------- Location status ----------
+    var userLat by remember { mutableStateOf<Double?>(null) }
+    var userLng by remember { mutableStateOf<Double?>(null) }
+    var permissionGranted by remember { mutableStateOf(false) }
+    var locationTried by remember { mutableStateOf(false) } // to show better messages
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { result ->
+        val fine = result[Manifest.permission.ACCESS_FINE_LOCATION] == true
+        val coarse = result[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+        permissionGranted = fine || coarse
+        // After permission, try location again
+        if (permissionGranted) {
+            fetchLastLocation(context) { lat, lng ->
+                userLat = lat
+                userLng = lng
+                locationTried = true
+            }
+        } else {
+            locationTried = true
+        }
+    }
+
+    // Initial permission check + fetch
+    LaunchedEffect(Unit) {
+        val fine = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        val coarse = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        permissionGranted = fine || coarse
+
+        if (permissionGranted) {
+            fetchLastLocation(context) { lat, lng ->
+                userLat = lat
+                userLng = lng
+                locationTried = true
+            }
+        } else {
+            locationTried = true
+        }
+    }
+
+    val radiusKm = remember(selectedRadiusLabel) { radiusLabelToKm(selectedRadiusLabel) }
+    val wantsDistanceFilter = radiusKm != null
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFFF8F9FA))
+            .statusBarsPadding()
+            .navigationBarsPadding()
     ) {
         // Top Bar
         Row(
@@ -109,7 +157,6 @@ fun FilterScreen(
             }
 
             TextButton(onClick = {
-                // Reset all filters
                 selectedFeeRange = "Any"
                 selectedLocation = "Any"
                 selectedPassRate = "Any"
@@ -129,24 +176,71 @@ fun FilterScreen(
 
         Column(
             modifier = Modifier
-                .fillMaxSize()
+                .weight(1f)
                 .verticalScroll(rememberScrollState())
                 .padding(20.dp)
         ) {
-            // ✅ NEW: Distance / Radius
+            // ---------- Distance / Radius ----------
             FilterSection(title = "Distance From You") {
-                val radiusOptions = listOf(
-                    "Any",
-                    "2 km",
-                    "5 km",
-                    "10 km",
-                    "20 km"
-                )
+                val radiusOptions = listOf("Any", "2 km", "5 km", "10 km", "20 km")
                 FilterChipGroup(
                     items = radiusOptions,
                     selectedItem = selectedRadiusLabel,
                     onItemSelected = { selectedRadiusLabel = it }
                 )
+
+                Spacer(Modifier.height(10.dp))
+
+                // ✅ Status messages / guidance
+                when {
+                    !wantsDistanceFilter -> {
+                        InfoPill("ℹ️ Distance filter is OFF (Any).")
+                    }
+
+                    wantsDistanceFilter && !permissionGranted -> {
+                        WarningPill("⚠️ Location permission is not granted. Distance filter may not work.")
+                        Spacer(Modifier.height(8.dp))
+                        OutlinedButton(
+                            onClick = {
+                                permissionLauncher.launch(
+                                    arrayOf(
+                                        Manifest.permission.ACCESS_FINE_LOCATION,
+                                        Manifest.permission.ACCESS_COARSE_LOCATION
+                                    )
+                                )
+                            }
+                        ) {
+                            Text("Grant Location Permission")
+                        }
+                    }
+
+                    wantsDistanceFilter && permissionGranted && (userLat == null || userLng == null) -> {
+                        WarningPill("⚠️ Location not available right now. Turn ON GPS / try again.")
+                        Spacer(Modifier.height(8.dp))
+                        OutlinedButton(
+                            onClick = {
+                                fetchLastLocation(context) { lat, lng ->
+                                    userLat = lat
+                                    userLng = lng
+                                    locationTried = true
+                                }
+                            }
+                        ) {
+                            Text("Retry Location")
+                        }
+                    }
+
+                    wantsDistanceFilter && permissionGranted && userLat != null && userLng != null -> {
+                        SuccessPill("✅ Location ready. Distance filter will apply.")
+                    }
+                }
+
+                Spacer(Modifier.height(8.dp))
+
+                // Extra guidance
+                if (wantsDistanceFilter) {
+                    InfoPill("ℹ️ Note: Schools without lat/lng (0.0) can’t be distance-filtered.")
+                }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -170,7 +264,7 @@ fun FilterScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Location (Area)
+            // Location
             FilterSection(title = "Location") {
                 val locations = listOf(
                     "Any",
@@ -190,7 +284,7 @@ fun FilterScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Pass Rate (Students Success Rate)
+            // Pass Rate (still UI only unless you add field later)
             FilterSection(title = "Student Pass Rate") {
                 val passRates = listOf(
                     "Any",
@@ -204,6 +298,8 @@ fun FilterScreen(
                     selectedItem = selectedPassRate,
                     onItemSelected = { selectedPassRate = it }
                 )
+                Spacer(Modifier.height(8.dp))
+                InfoPill("ℹ️ Pass rate filter needs a field in SchoolForm to work.")
             }
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -266,10 +362,10 @@ fun FilterScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(100.dp))
+            Spacer(modifier = Modifier.height(24.dp))
         }
 
-        // Bottom Action Buttons
+        // Bottom Buttons
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -296,9 +392,6 @@ fun FilterScreen(
 
             Button(
                 onClick = {
-                    val radiusKm = radiusLabelToKm(selectedRadiusLabel)
-
-                    // You can send this result to your listing screen / viewmodel
                     onApply(
                         FilterResult(
                             feeRange = selectedFeeRange,
@@ -328,10 +421,19 @@ fun FilterScreen(
     }
 }
 
-/**
- * Converts UI chip label -> KM value.
- * null means "Any".
- */
+/** Gets last known location (simple + fast). */
+@SuppressLint("MissingPermission")
+private fun fetchLastLocation(
+    context: android.content.Context,
+    onResult: (Double?, Double?) -> Unit
+) {
+    val fused = LocationServices.getFusedLocationProviderClient(context)
+    fused.lastLocation
+        .addOnSuccessListener { loc -> onResult(loc?.latitude, loc?.longitude) }
+        .addOnFailureListener { onResult(null, null) }
+}
+
+/** Converts UI chip label -> KM value. null means "Any". */
 private fun radiusLabelToKm(label: String): Double? {
     return when (label.trim()) {
         "2 km" -> 2.0
@@ -342,34 +444,48 @@ private fun radiusLabelToKm(label: String): Double? {
     }
 }
 
-/**
- * ✅ THIS is the function you call from your listing screen / viewmodel
- * once you have:
- * - userLat/userLng
- * - schools list containing lat/lng
- *
- * It uses your previous utils: filterWithinRadius(...)
- */
-fun <T> applyDistanceFilterIfNeeded(
-    userLat: Double,
-    userLng: Double,
-    radiusKm: Double?,
-    schools: List<T>,
-    latOf: (T) -> Double,
-    lngOf: (T) -> Double
-): List<T> {
-    // if "Any", return original list
-    if (radiusKm == null) return schools
+// --- Pills for messages ---
 
-    return filterWithinRadius(
-        userLat = userLat,
-        userLng = userLng,
-        radiusKm = radiusKm,
-        items = schools,
-        latOf = latOf,
-        lngOf = lngOf
+@Composable
+private fun InfoPill(text: String) {
+    Text(
+        text = text,
+        fontSize = 13.sp,
+        color = Color(0xFF0F172A),
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color(0xFFEFF6FF), RoundedCornerShape(10.dp))
+            .padding(10.dp)
     )
 }
+
+@Composable
+private fun WarningPill(text: String) {
+    Text(
+        text = text,
+        fontSize = 13.sp,
+        color = Color(0xFF7C2D12),
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color(0xFFFFEDD5), RoundedCornerShape(10.dp))
+            .padding(10.dp)
+    )
+}
+
+@Composable
+private fun SuccessPill(text: String) {
+    Text(
+        text = text,
+        fontSize = 13.sp,
+        color = Color(0xFF065F46),
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color(0xFFDCFCE7), RoundedCornerShape(10.dp))
+            .padding(10.dp)
+    )
+}
+
+/* ------------------ YOUR EXISTING UI COMPONENTS BELOW (UNCHANGED) ------------------ */
 
 @Composable
 fun FilterSection(title: String, content: @Composable () -> Unit) {
@@ -446,7 +562,8 @@ fun MultiSelectChipGroup(
                     FilterChip(
                         selected = isSelected,
                         onClick = {
-                            val newSelection = if (isSelected) selectedItems - item else selectedItems + item
+                            val newSelection =
+                                if (isSelected) selectedItems - item else selectedItems + item
                             onItemsSelected(newSelection)
                         },
                         label = {
@@ -474,13 +591,5 @@ fun MultiSelectChipGroup(
                 if (rowItems.size == 1) Spacer(modifier = Modifier.weight(1f))
             }
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun FilterScreenPreview() {
-    UNICKTheme {
-        FilterScreen()
     }
 }

@@ -9,6 +9,8 @@ import com.example.unick.model.SchoolProfileModel
 import com.example.unick.model.SchoolReviewModel
 import com.example.unick.repository.SchoolProfileRepo
 import com.example.unick.repository.SchoolProfileRepoImpl
+import com.google.firebase.database.FirebaseDatabase
+
 
 class SchoolDetailViewModel(
     private val repo: SchoolProfileRepo = SchoolProfileRepoImpl()
@@ -38,6 +40,10 @@ class SchoolDetailViewModel(
 
     private var currentSchoolId: String? = null
 
+    private val db =
+        FirebaseDatabase.getInstance("https://vidyakhoj-927fb-default-rtdb.firebaseio.com/")
+            .reference
+
     // ---- LOAD EVERYTHING ----
     fun loadSchoolDetail(schoolId: String) {
         if (schoolId.isBlank()) {
@@ -48,7 +54,6 @@ class SchoolDetailViewModel(
         loading = true
         error = null
 
-        // Profile
         repo.observeSchoolProfile(
             schoolId = schoolId,
             onData = { profile ->
@@ -61,18 +66,12 @@ class SchoolDetailViewModel(
             }
         )
 
-        // Gallery
         repo.observeGallery(
             schoolId = schoolId,
-            onData = { list ->
-                gallery = list
-            },
-            onError = { msg ->
-                error = msg
-            }
+            onData = { list -> gallery = list },
+            onError = { msg -> error = msg }
         )
 
-        // Reviews
         repo.observeReviews(
             schoolId = schoolId,
             onData = { list ->
@@ -80,13 +79,25 @@ class SchoolDetailViewModel(
                 totalReviews = list.size
                 avgRating = if (list.isEmpty()) 0.0 else list.map { it.rating }.average()
             },
-            onError = { msg ->
-                error = msg
-            }
+            onError = { msg -> error = msg }
         )
     }
 
+    // ✅ helper to fetch fullName from Users node
+    private fun fetchUserFullName(uid: String, onDone: (String) -> Unit) {
+        db.child("Users").child(uid).child("fullName")
+            .get()
+            .addOnSuccessListener { snap ->
+                val name = snap.getValue(String::class.java).orEmpty().trim()
+                onDone(if (name.isNotBlank()) name else "Anonymous")
+            }
+            .addOnFailureListener {
+                onDone("Anonymous")
+            }
+    }
+
     // ---- SUBMIT REVIEW ----
+    // (kept your signature, but now it saves reviewerName too)
     fun submitReview(
         reviewerUid: String,
         rating: Int,
@@ -109,17 +120,21 @@ class SchoolDetailViewModel(
         }
 
         loading = true
-        repo.addReview(
-            schoolId = schoolId,
-            reviewerUid = reviewerUid,
-            rating = rating,
-            comment = cleanComment,
-            onSuccess = { loading = false },
-            onError = { msg ->
-                error = msg
-                loading = false
-            }
-        )
+
+        fetchUserFullName(reviewerUid) { reviewerName ->
+            repo.addReview(
+                schoolId = schoolId,
+                reviewerUid = reviewerUid,
+                reviewerName = reviewerName,
+                rating = rating,
+                comment = cleanComment,
+                onSuccess = { loading = false },
+                onError = { msg ->
+                    error = msg
+                    loading = false
+                }
+            )
+        }
     }
 
     // ---- UPDATE SCHOOL PROFILE (EDIT PROFILE SCREEN USES THIS) ----
@@ -168,6 +183,4 @@ class SchoolDetailViewModel(
     fun clearError() {
         error = null
     }
-
-
 }

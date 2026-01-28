@@ -6,6 +6,11 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+
+
 
     <application
         android:name=".UnickApplication"
@@ -37,7 +42,7 @@
 
         <activity
             android:name=".view.SchoolDashboard"
-            android:exported="false"
+            android:exported="true"
             android:label="@string/title_activity_school_dashbaord"
             android:theme="@style/Theme.UNICK" />
 

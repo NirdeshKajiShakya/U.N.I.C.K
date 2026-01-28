@@ -26,5 +26,9 @@ data class SchoolForm(
     val extracurricular: String = "",
     val description: String = "",
     val verified: Boolean = false,
-    val rejected: Boolean = false
-) : Parcelable
+    val rejected: Boolean = false,
+    val googleMapUrl: String = "",
+    val latitude: Double = 0.0,
+    val longitude: Double = 0.0,
+
+    ) : Parcelable
