@@ -50,8 +50,11 @@ import com.example.unick.ui.theme.UNICKTheme
 import com.example.unick.utils.applyDistanceFilterIfNeeded
 import com.example.unick.viewmodel.SchoolViewModel
 import com.example.unick.viewmodel.UserType
+import com.example.unick.viewmodel.UserProfileViewModel
+import com.example.unick.repo.UserProfileRepoImpl
+import com.example.unick.viewmodel.SchoolDetailViewModel
+import com.example.unick.view.SchoolHomeScreenContent
 import com.google.android.gms.location.LocationServices
-
 import com.google.firebase.auth.FirebaseAuth
 
 // BottomNavItem moved to UnifiedNavBar.kt
@@ -101,8 +104,6 @@ fun MainScreen(viewModel: SchoolViewModel) {
 
 @Composable
 fun BottomNavigationBar(navController: androidx.navigation.NavController, viewModel: SchoolViewModel) {
-    val context = LocalContext.current
-    val userType by viewModel.userType.collectAsState()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
@@ -114,7 +115,13 @@ fun BottomNavigationBar(navController: androidx.navigation.NavController, viewMo
                 launchSingleTop = true
             }
         },
-        onProfileClick = { handleProfileClick(userType, context) },
+        onProfileClick = {
+            // Navigate to Profile route within NavHost instead of launching Activity
+            navController.navigate(BottomNavItem.Profile.route) {
+                popUpTo(navController.graph.startDestinationId)
+                launchSingleTop = true
+            }
+        },
         navItems = listOf(
             BottomNavItem.Home,
             BottomNavItem.Search,
@@ -125,40 +132,37 @@ fun BottomNavigationBar(navController: androidx.navigation.NavController, viewMo
     )
 }
 
-private fun handleProfileClick(userType: UserType, context: Context) {
-    when (userType) {
-        is UserType.Normal -> {
-            val intent = Intent(context, UserProfileActivity::class.java)
-            context.startActivity(intent)
-        }
-        is UserType.School -> {
-            val uid = FirebaseAuth.getInstance().currentUser?.uid
-            if (!uid.isNullOrBlank()) {
-                val intent = Intent(context, SchoolDetailActivity::class.java).apply {
-                    putExtra("uid", uid)
-                }
-                context.startActivity(intent)
-            }
-        }
-
-        is UserType.Unknown -> Unit
-    }
-}
-
 @Composable
 fun NavigationHost(navController: NavHostController, viewModel: SchoolViewModel) {
+    val userType by viewModel.userType.collectAsState()
+    val context = LocalContext.current
+
+    // Show loading spinner while determining user type to avoid flashing wrong dashboard
+    if (userType is UserType.Unknown) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator(color = Color(0xFF2563EB))
+        }
+        return // Exit early
+    }
+
     NavHost(navController = navController, startDestination = BottomNavItem.Home.route) {
 
         composable(BottomNavItem.Home.route) {
             val schools by viewModel.schools.collectAsState()
-            val verifiedSchools = schools.filter { it.verified }
             val isLoading by viewModel.isLoadingSchools.collectAsState()
 
-            DashboardScreen(
-                schools = verifiedSchools,
-                isLoading = isLoading,
-                onRefresh = { viewModel.fetchSchools() }
-            )
+            if (userType is UserType.School) {
+               val uid = FirebaseAuth.getInstance().currentUser?.uid
+               val mySchool = schools.find { it.uid == uid }
+               SchoolHomeScreenContent(mySchool = mySchool)
+            } else {
+               val verifiedSchools = schools.filter { it.verified }
+               DashboardScreen(
+                   schools = verifiedSchools,
+                   isLoading = isLoading,
+                   onRefresh = { viewModel.fetchSchools() }
+               )
+            }
         }
 
         composable(BottomNavItem.Search.route) {
@@ -166,8 +170,53 @@ fun NavigationHost(navController: NavHostController, viewModel: SchoolViewModel)
         }
 
         composable(BottomNavItem.AIChat.route) { AiChatScreen() }
-        composable(BottomNavItem.Notification.route) { NotificationScreen() }
-        composable(BottomNavItem.Profile.route) { UserProfileScreen(viewModel = null) }
+
+        composable(BottomNavItem.Notification.route) {
+            // Reuse NotificationScreen but hide/disable the back interaction if inside tabs
+             NotificationScreen(onBackClick = { /* No-op or navigate home */ })
+        }
+
+        composable(BottomNavItem.Profile.route) {
+             if (userType is UserType.School) {
+                val uid = FirebaseAuth.getInstance().currentUser?.uid ?: ""
+                val schoolDetailVm = androidx.lifecycle.viewmodel.compose.viewModel<SchoolDetailViewModel>()
+                // Trigger load
+                LaunchedEffect(uid) {
+                    if(uid.isNotEmpty()) schoolDetailVm.loadSchoolDetail(uid)
+                }
+
+                SchoolDetailScreen(
+                    schoolId = uid,
+                    vm = schoolDetailVm,
+                    onBack = { navController.navigate(BottomNavItem.Home.route) },
+                    onOpenGallery = {
+                        context.startActivity(Intent(context, SchoolGalleryActivity::class.java).putExtra("schoolId", uid))
+                    },
+                    onSchoolSetting = {
+                        context.startActivity(Intent(context, SchoolSettingsActivity::class.java).putExtra("schoolId", uid))
+                    },
+                    onApplyNow = { /* Owner doesn't apply */ },
+                    onViewApplications = {
+                        context.startActivity(Intent(context, ViewApplicationActivity::class.java).putExtra("schoolId", uid))
+                    }
+                )
+             } else {
+                // Student Profile
+                val repo = remember { UserProfileRepoImpl() }
+                val factory = remember { UserProfileViewModel.Factory(repo) }
+                val userProfileVm = androidx.lifecycle.viewmodel.compose.viewModel(
+                    modelClass = UserProfileViewModel::class.java,
+                    factory = factory
+                )
+
+                val currentUserUid = FirebaseAuth.getInstance().currentUser?.uid
+                LaunchedEffect(currentUserUid) {
+                    if (currentUserUid != null) userProfileVm.loadUserData(currentUserUid)
+                }
+
+                UserProfileScreen(viewModel = userProfileVm)
+             }
+        }
     }
 }
 
@@ -769,66 +818,7 @@ private fun requestOneTimeLocation(
     }
 }
 
-/* ----------------------------- PLACEHOLDER ----------------------------- */
-
-@Composable
-fun NotificationScreenWithinDashboard() {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFFF8F9FA))
-            .padding(20.dp)
-    ) {
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Header
-        Text(
-            text = "Notifications",
-            fontSize = 28.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color(0xFF0F172A)
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text(
-            text = "Stay updated with the latest news",
-            fontSize = 15.sp,
-            color = Color(0xFF64748B)
-        )
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // Empty state
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f),
-            contentAlignment = Alignment.Center
-        ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Text("🔔", fontSize = 72.sp)
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(
-                    "No notifications yet",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF0F172A)
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    "We'll notify you when something new arrives",
-                    fontSize = 14.sp,
-                    color = Color(0xFF64748B),
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                )
-            }
-        }
-    }
-}
+/* ----------------------------- PREVIEWS ----------------------------- */
 
 @Preview(showBackground = true)
 @Composable

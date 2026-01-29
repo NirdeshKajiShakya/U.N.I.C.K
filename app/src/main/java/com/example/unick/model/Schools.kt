@@ -1,6 +1,5 @@
 package com.example.unick.model
 
-import android.R
 import android.location.Location
 import androidx.compose.foundation.pager.PagerSnapDistance
 

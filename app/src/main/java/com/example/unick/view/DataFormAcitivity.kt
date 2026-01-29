@@ -18,9 +18,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CameraAlt
-import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -116,7 +115,7 @@ fun SchoolDataForm(viewModel: SchoolViewModel) {
             },
             navigationIcon = {
                 IconButton(onClick = { (context as ComponentActivity).finish() }) {
-                    Icon(Icons.Default.ArrowBack, null)
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, null)
                 }
             }
         )
@@ -291,7 +290,7 @@ fun SchoolDataForm(viewModel: SchoolViewModel) {
                         if (isEditMode) "School updated successfully" else "School added successfully",
                         Toast.LENGTH_SHORT
                     ).show()
-                    context.startActivity(Intent(context, SchoolDashboard::class.java))
+                    context.startActivity(Intent(context, DashboardActivity::class.java))
                     (context as ComponentActivity).finish()
                 },
                 modifier = Modifier

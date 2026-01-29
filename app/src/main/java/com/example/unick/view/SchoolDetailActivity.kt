@@ -183,10 +183,43 @@ fun SchoolDetailScreen(
                         fontWeight = FontWeight.Bold
                     )
                     Spacer(Modifier.height(4.dp))
-                    Text(
-                        text = profile?.location ?: "",
-                        color = Color.DarkGray
-                    )
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = profile?.location ?: "",
+                            color = Color.DarkGray,
+                            modifier = Modifier.weight(1f)
+                        )
+
+                        if (!profile?.location.isNullOrBlank()) {
+                            IconButton(onClick = {
+                                val query = Uri.encode(profile.location)
+                                val uri = Uri.parse("geo:0,0?q=$query")
+                                val intent = Intent(Intent.ACTION_VIEW, uri)
+                                intent.setPackage("com.google.android.apps.maps")
+                                try {
+                                    context.startActivity(intent)
+                                } catch (_: Exception) {
+                                    // Try without specific package if Google Maps is not installed
+                                    try {
+                                        intent.setPackage(null)
+                                        context.startActivity(intent)
+                                    } catch (_: Exception) {
+                                        android.widget.Toast.makeText(context, "No map app found", android.widget.Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                            }) {
+                                Icon(
+                                    imageVector = Icons.Default.LocationOn,
+                                    contentDescription = "View on Map",
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+                    }
 
                     Spacer(Modifier.height(12.dp))
 

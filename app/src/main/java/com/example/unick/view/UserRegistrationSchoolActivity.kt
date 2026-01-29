@@ -104,9 +104,10 @@ fun UserRegistrationSchoolScreen() {
                                                 .addOnSuccessListener {
                                                     Log.d("UserRegistrationSchool", "School data saved successfully.")
                                                     Toast.makeText(context, "Registration successful!", Toast.LENGTH_SHORT).show()
-                                                    val intent = Intent(context, SchoolDashboard::class.java)
+                                                    val intent = Intent(context, DashboardActivity::class.java)
                                                     intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                                                     context.startActivity(intent)
+                                                    (context as? ComponentActivity)?.finish()
                                                 }
                                                 .addOnFailureListener { e ->
                                                     Log.w("UserRegistrationSchool", "Error saving school data", e)

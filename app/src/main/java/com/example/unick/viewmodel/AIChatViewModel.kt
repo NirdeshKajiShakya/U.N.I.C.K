@@ -154,16 +154,7 @@ If you don't have specific school data in context, acknowledge that and ask the 
     private fun buildContextualizedMessages(userMessage: String): List<GroqMessage> {
         val messages = conversationHistory.toMutableList()
 
-        // Check if user is asking about schools
-        val isSchoolQuery = userMessage.lowercase().let { msg ->
-            msg.contains("school") || msg.contains("grade") ||
-            msg.contains("tuition") || msg.contains("fee") ||
-            msg.contains("location") || msg.contains("curriculum") ||
-            msg.contains("find") || msg.contains("search") ||
-            msg.contains("recommend") || msg.contains("best")
-        }
-
-        if (isSchoolQuery && schools.isNotEmpty()) {
+        if (isSchoolSearchQuery(userMessage) && schools.isNotEmpty()) {
             // Filter schools based on query keywords
             val relevantSchools = filterRelevantSchools(userMessage)
 
@@ -182,6 +173,25 @@ If you don't have specific school data in context, acknowledge that and ask the 
         }
 
         return messages
+    }
+
+    private fun isSchoolSearchQuery(query: String): Boolean {
+        // Robust detection using regex patterns
+        val keywords = listOf(
+            "\\bschool\\b", "\\bschools\\b", "\\beducation\\b", "\\bacademy\\b",
+            "\\bacademies\\b", "\\bcollege\\b", "\\bcolleges\\b",
+            "\\buniversity\\b", "\\buniversities\\b", "\\binstitute\\b", "\\binstitutes\\b",
+            "\\blearning\\s+center\\b", "\\blearning\\s+centers\\b",
+            "grade", "tuition", "fee", "location", "curriculum", "scholarship", "admission"
+        )
+        // Also check for general intent words combined with context
+        val intentWords = listOf("find", "search", "recommend", "best", "good", "near")
+
+        val lowerQuery = query.lowercase()
+        val hasKeyword = keywords.any { Regex(it).containsMatchIn(lowerQuery) || lowerQuery.contains(it) }
+        val hasIntent = intentWords.any { lowerQuery.contains(it) }
+
+        return hasKeyword || (hasIntent && conversationHistory.any { it.role == "assistant" })
     }
 
     private fun filterRelevantSchools(query: String): List<SchoolForm> {

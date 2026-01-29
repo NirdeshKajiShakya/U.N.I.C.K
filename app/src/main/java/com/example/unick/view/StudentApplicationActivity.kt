@@ -673,7 +673,7 @@ fun DatePickerField(
             val day = calendar.get(Calendar.DAY_OF_MONTH)
 
             DatePickerDialog(context, { _, y, m, d ->
-                val formatted = String.format("%02d/%02d/%04d", m + 1, d, y)
+                val formatted = String.format(java.util.Locale.ROOT, "%02d/%02d/%04d", m + 1, d, y)
                 onValueChange(formatted)
                 openDialog = false
             }, year, month, day).apply {

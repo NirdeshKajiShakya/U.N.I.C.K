@@ -76,7 +76,8 @@ fun UserLoginSchoolScreen() {
                                 .addOnCompleteListener { task ->
                                     if (task.isSuccessful) {
                                         Toast.makeText(context, "Login Successful", Toast.LENGTH_SHORT).show()
-                                        val intent = Intent(context, SchoolDashboard::class.java)
+                                        // Navigate to standardized DashboardActivity which now handles School View
+                                        val intent = Intent(context, DashboardActivity::class.java)
                                         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                                         context.startActivity(intent)
                                         (context as? ComponentActivity)?.finish()
