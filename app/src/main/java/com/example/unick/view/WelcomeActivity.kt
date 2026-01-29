@@ -1,5 +1,6 @@
 package com.example.unick.view
 
+import com.example.unick.R
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -8,6 +9,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -19,6 +21,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.unick.ui.theme.UNICKTheme
@@ -114,21 +117,36 @@ fun WelcomeScreen(
                         // App Logo/Icon placeholder
                         Box(
                             modifier = Modifier
-                                .size(120.dp)
+                                .size(130.dp)
                                 .background(
                                     Brush.linearGradient(
-                                        colors = listOf(Color(0xFF667EEA), Color(0xFF764BA2))
+                                        colors = listOf(
+                                            Color(0xFF667EEA),
+                                            Color(0xFF764BA2),
+                                            Color(0xFFE91E63),
+                                            Color(0xFFF59E0B)
+                                        )
                                     ),
-                                    shape = RoundedCornerShape(30.dp)
-                                ),
+                                    shape = androidx.compose.foundation.shape.CircleShape
+                                )
+                                .padding(4.dp),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text(
-                                text = "U.N.I.C.K",
-                                fontSize = 24.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White
-                            )
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(
+                                        Color.White,
+                                        shape = androidx.compose.foundation.shape.CircleShape
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Image(
+                                    painter = androidx.compose.ui.res.painterResource(id = R.drawable.unick_logo),
+                                    contentDescription = "U.N.I.C.K Logo",
+                                    modifier = Modifier.size(86.dp)
+                                )
+                            }
                         }
 
                         Spacer(modifier = Modifier.height(24.dp))
@@ -272,5 +290,13 @@ fun WelcomeScreen(
                 Spacer(modifier = Modifier.height(20.dp))
             }
         }
+    }
+}
+
+@Preview
+@Composable
+fun PreviewWelcomePage() {
+    UNICKTheme {
+        WelcomeScreen()
     }
 }
