@@ -213,7 +213,7 @@
         <!-- School Settings -->
         <activity
             android:name=".view.SchoolSettingsActivity"
-            android:exported="false"
+            android:exported="true"
             android:label="@string/title_activity_school_settings"
             android:theme="@style/Theme.UNICK" />
 

@@ -21,6 +21,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.OpenInNew
+import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -36,6 +37,11 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.unick.ui.theme.UNICKTheme
 import com.example.unick.viewmodel.SchoolViewModel
+
+private val PrimaryBlue = Color(0xFF4A90E2)
+private val AccentRed = Color(0xFFEF4444)
+private val BorderGray = Color(0xFFE5E7EB)
+private val TextPrimary = Color(0xFF1A1A2E)
 
 class DataFormAcitivity : ComponentActivity() {
     private val viewModel: SchoolViewModel by viewModels()
@@ -67,6 +73,7 @@ fun SchoolDataForm(viewModel: SchoolViewModel) {
     val isLoading by viewModel.isLoading.collectAsState()
     val currentSchool by viewModel.currentSchool.collectAsState()
     val isEditMode = currentSchool != null
+    val showDeleteDialog = remember { mutableStateOf(false) }
 
     // ---------- CHIP STATES ----------
     var selectedCurriculum by remember { mutableStateOf<List<String>>(emptyList()) }
@@ -98,6 +105,37 @@ fun SchoolDataForm(viewModel: SchoolViewModel) {
     }
     LaunchedEffect(selectedFacilities) {
         viewModel.facilities = selectedFacilities.joinToString(", ")
+    }
+
+    // Delete confirmation dialog
+    if (showDeleteDialog.value) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog.value = false },
+            title = { Text("Delete School?") },
+            text = { Text("This action cannot be undone. All school data including gallery and reviews will be permanently deleted.") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.deleteSchool(context)
+                        showDeleteDialog.value = false
+                        Toast.makeText(context, "School deleted successfully", Toast.LENGTH_SHORT).show()
+                        context.startActivity(Intent(context, SchoolDashboard::class.java))
+                        (context as ComponentActivity).finish()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = AccentRed)
+                ) {
+                    Text("Delete")
+                }
+            },
+            dismissButton = {
+                Button(
+                    onClick = { showDeleteDialog.value = false },
+                    colors = ButtonDefaults.buttonColors(containerColor = BorderGray)
+                ) {
+                    Text("Cancel", color = TextPrimary)
+                }
+            }
+        )
     }
 
     Column(
@@ -283,24 +321,51 @@ fun SchoolDataForm(viewModel: SchoolViewModel) {
 
             Spacer(Modifier.height(32.dp))
 
-            Button(
-                onClick = {
-                    viewModel.saveOrUpdateSchool(context)
-                    Toast.makeText(
-                        context,
-                        if (isEditMode) "School updated successfully" else "School added successfully",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                    context.startActivity(Intent(context, SchoolDashboard::class.java))
-                    (context as ComponentActivity).finish()
-                },
+            // Action Buttons Row
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(56.dp)
-                    .shadow(8.dp, RoundedCornerShape(14.dp)),
-                shape = RoundedCornerShape(14.dp)
+                    .padding(bottom = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Text(if (isEditMode) "Update School Information" else "Submit School Information")
+                // Delete Button (only show in edit mode)
+                if (isEditMode) {
+                    Button(
+                        onClick = { showDeleteDialog.value = true },
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(56.dp)
+                            .shadow(8.dp, RoundedCornerShape(14.dp)),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = AccentRed)
+                    ) {
+                        Icon(Icons.Outlined.DeleteOutline, contentDescription = null, modifier = Modifier.size(20.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("Delete", fontWeight = FontWeight.SemiBold)
+                    }
+                }
+
+                // Save Button
+                Button(
+                    onClick = {
+                        viewModel.saveOrUpdateSchool(context)
+                        Toast.makeText(
+                            context,
+                            if (isEditMode) "School updated successfully" else "School added successfully",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        context.startActivity(Intent(context, SchoolDashboard::class.java))
+                        (context as ComponentActivity).finish()
+                    },
+                    modifier = Modifier
+                        .weight(if (isEditMode) 1f else 1f)
+                        .height(56.dp)
+                        .shadow(8.dp, RoundedCornerShape(14.dp)),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
+                ) {
+                    Text(if (isEditMode) "Update School Information" else "Submit School Information", fontWeight = FontWeight.SemiBold)
+                }
             }
         }
     }
@@ -380,4 +445,3 @@ private fun extractLatLngFromGoogleMapsUrl(url: String): Pair<Double, Double>? {
     val lng = match.groupValues[2].toDoubleOrNull()
     return if (lat != null && lng != null) lat to lng else null
 }
-
