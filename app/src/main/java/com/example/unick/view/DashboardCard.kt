@@ -267,7 +267,7 @@ fun SchoolDetailsScreen(
                                     onClick = {
                                         val intent =
                                             Intent(context, StudentApplicationActivity::class.java)
-                                        intent.putExtra("school_details", school)
+                                        intent.putExtra("schoolId", school.uid)
                                         context.startActivity(intent)
                                     },
                                     modifier = Modifier.weight(1f),

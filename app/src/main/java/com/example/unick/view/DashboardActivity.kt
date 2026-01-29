@@ -469,24 +469,6 @@ fun DashboardScreen(
 
         Spacer(modifier = Modifier.height(14.dp))
 
-        // Add School Button
-        Button(
-            onClick = {
-                val intent = Intent(context, DataFormAcitivity::class.java)
-                context.startActivity(intent)
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(58.dp)
-                .shadow(8.dp, RoundedCornerShape(14.dp)),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981)),
-            shape = RoundedCornerShape(14.dp)
-        ) {
-            Icon(Icons.Default.Add, "Add School", modifier = Modifier.size(22.dp), tint = Color.White)
-            Spacer(modifier = Modifier.width(10.dp))
-            Text("Add Your School", fontSize = 16.sp, fontWeight = FontWeight.Bold)
-        }
-
         Spacer(modifier = Modifier.height(32.dp))
 
         // Schools Section
