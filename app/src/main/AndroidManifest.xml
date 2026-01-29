@@ -206,7 +206,7 @@
         <!-- School Edit Profile -->
         <activity
             android:name=".view.SchoolEditProfileActivity"
-            android:exported="false"
+            android:exported="true"
             android:label="@string/title_activity_school_edit_profile"
             android:theme="@style/Theme.UNICK" />
 

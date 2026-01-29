@@ -64,7 +64,8 @@ class EditUserProfileActivity : ComponentActivity() {
         setContent {
             EditUserProfileScreen(
                 viewModel = viewModel,
-                onBackClick = { finish() }
+                onBackClick = { finish() },
+                onDeleteSuccess = { finish() }
             )
         }
     }
@@ -73,7 +74,8 @@ class EditUserProfileActivity : ComponentActivity() {
 @Composable
 fun EditUserProfileScreen(
     viewModel: EditUserProfileViewModel,
-    onBackClick: () -> Unit = {}
+    onBackClick: () -> Unit = {},
+    onDeleteSuccess: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -86,7 +88,8 @@ fun EditUserProfileScreen(
         }
         uiState.deleteSuccess?.let { success ->
             if (success) {
-                Toast.makeText(context, "Account deleted", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Account deleted successfully", Toast.LENGTH_SHORT).show()
+                onDeleteSuccess()
             } else {
                 Toast.makeText(context, uiState.errorMessage ?: "Failed to delete", Toast.LENGTH_SHORT).show()
             }
@@ -416,6 +419,35 @@ fun PreferenceChip(text: String, modifier: Modifier = Modifier) {
 
 @Composable
 fun ActionButtons(onDelete: () -> Unit, onSave: () -> Unit) {
+    var showDeleteDialog by remember { mutableStateOf(false) }
+
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text("Delete Account?") },
+            text = { Text("This action cannot be undone. All your data will be permanently deleted.") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        onDelete()
+                        showDeleteDialog = false
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = AccentRed)
+                ) {
+                    Text("Delete")
+                }
+            },
+            dismissButton = {
+                Button(
+                    onClick = { showDeleteDialog = false },
+                    colors = ButtonDefaults.buttonColors(containerColor = BorderGray)
+                ) {
+                    Text("Cancel", color = TextPrimary)
+                }
+            }
+        )
+    }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -423,7 +455,7 @@ fun ActionButtons(onDelete: () -> Unit, onSave: () -> Unit) {
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Button(
-            onClick = onDelete,
+            onClick = { showDeleteDialog = true },
             modifier = Modifier
                 .weight(1f)
                 .height(52.dp),
