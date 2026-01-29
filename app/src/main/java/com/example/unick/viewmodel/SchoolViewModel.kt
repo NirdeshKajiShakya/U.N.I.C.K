@@ -249,4 +249,41 @@ class SchoolViewModel : ViewModel() {
             }
         }
     }
+
+    /* ---------------- DELETE SCHOOL ---------------- */
+
+    fun deleteSchool(context: Context) {
+        val uid = auth.currentUser?.uid ?: return
+
+        viewModelScope.launch {
+            _isLoading.value = true
+
+            try {
+                // Step 1: Delete school profile from SchoolForm/{uid}
+                database.getReference("SchoolForm").child(uid).removeValue().addOnSuccessListener {
+                    // Step 2: Delete gallery from school_gallery/{uid}
+                    database.getReference("school_gallery").child(uid).removeValue().addOnSuccessListener {
+                        // Step 3: Delete reviews from school_reviews/{uid}
+                        database.getReference("school_reviews").child(uid).removeValue().addOnSuccessListener {
+                            _isLoading.value = false
+                            _currentSchool.value = null
+                            fetchSchools()
+                        }.addOnFailureListener {
+                            _isLoading.value = false
+                            Toast.makeText(context, "Failed to delete reviews", Toast.LENGTH_SHORT).show()
+                        }
+                    }.addOnFailureListener {
+                        _isLoading.value = false
+                        Toast.makeText(context, "Failed to delete gallery", Toast.LENGTH_SHORT).show()
+                    }
+                }.addOnFailureListener {
+                    _isLoading.value = false
+                    Toast.makeText(context, "Failed to delete school", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                _isLoading.value = false
+                Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
 }

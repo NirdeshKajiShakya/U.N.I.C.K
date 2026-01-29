@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 
 // -------------------- UI STATE --------------------
 data class EditUserProfileUiState(
@@ -106,8 +107,15 @@ class EditUserProfileViewModel(
                 repository.deleteUserProfile(uid)
                     .onSuccess {
                         // Also delete Firebase Auth user
-                        auth.currentUser?.delete()
-                        _uiState.value = _uiState.value.copy(deleteSuccess = true)
+                        try {
+                            auth.currentUser?.delete()?.await()
+                            _uiState.value = _uiState.value.copy(deleteSuccess = true)
+                        } catch (e: Exception) {
+                            _uiState.value = _uiState.value.copy(
+                                deleteSuccess = false,
+                                errorMessage = "Account deleted but auth deletion failed: ${e.message}"
+                            )
+                        }
                     }
                     .onFailure { e ->
                         _uiState.value = _uiState.value.copy(
@@ -139,4 +147,3 @@ class EditUserProfileViewModel(
             }
     }
 }
-

@@ -540,7 +540,7 @@ fun Step3ParentsDetails(formData: FormData, errors: FormErrors, onDataChange: (F
         TextInputField("Father's Profession*", formData.fatherProfession, { onDataChange(formData.copy(fatherProfession = it)) })
         TextInputField("Father's Annual Income*", formData.fatherIncome, { onDataChange(formData.copy(fatherIncome = it)) })
         TextInputField("Father's Phone No*", formData.fatherPhone, { onDataChange(formData.copy(fatherPhone = it)) })
-        TextInputField("Father's Aadhar No*", formData.fatherAadhar, { onDataChange(formData.copy(fatherAadhar = it)) })
+        TextInputField("Father's CitizenShip No*", formData.fatherAadhar, { onDataChange(formData.copy(fatherAadhar = it)) })
         TextInputField("Father's Email*", formData.fatherEmail, { onDataChange(formData.copy(fatherEmail = it)) })
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -551,7 +551,7 @@ fun Step3ParentsDetails(formData: FormData, errors: FormErrors, onDataChange: (F
         TextInputField("Mother's Profession*", formData.motherProfession, { onDataChange(formData.copy(motherProfession = it)) })
         TextInputField("Mother's Annual Income*", formData.motherIncome, { onDataChange(formData.copy(motherIncome = it)) })
         TextInputField("Mother's Phone No*", formData.motherPhone, { onDataChange(formData.copy(motherPhone = it)) })
-        TextInputField("Mother's Aadhar No*", formData.motherAadhar, { onDataChange(formData.copy(motherAadhar = it)) })
+        TextInputField("Mother's CitizenShip No*", formData.motherAadhar, { onDataChange(formData.copy(motherAadhar = it)) })
         TextInputField("Mother's Email*", formData.motherEmail, { onDataChange(formData.copy(motherEmail = it)) })
 
         Spacer(modifier = Modifier.height(16.dp))

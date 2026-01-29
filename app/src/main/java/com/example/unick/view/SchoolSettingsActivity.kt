@@ -3,6 +3,7 @@ package com.example.unick.view
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -16,9 +17,17 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.FirebaseDatabase
+import kotlinx.coroutines.tasks.await
+
+private val PrimaryBlue = Color(0xFF4A90E2)
+private val AccentRed = Color(0xFFEF4444)
+private val BorderGray = Color(0xFFE5E7EB)
+private val TextPrimary = Color(0xFF1A1A2E)
 
 class SchoolSettingsActivity : ComponentActivity() {
 
@@ -36,10 +45,23 @@ class SchoolSettingsActivity : ComponentActivity() {
             val context = LocalContext.current
 
             SchoolSettingsScreen(
+                schoolId = schoolId,
                 onBack = { finish() },
 
+                // ✅ FIX: Navigate to SchoolEditProfileActivity with schoolId
                 onEditProfile = {
-                    startActivity(Intent(this, DataFormAcitivity::class.java))
+                    if (schoolId.isBlank()) {
+                        android.widget.Toast.makeText(
+                            this,
+                            "School ID missing!",
+                            android.widget.Toast.LENGTH_SHORT
+                        ).show()
+                    } else {
+                        startActivity(
+                            Intent(this, SchoolEditProfileActivity::class.java)
+                                .putExtra("schoolId", schoolId)
+                        )
+                    }
                 },
 
                 // ✅ FIX: pass schoolId to gallery
@@ -80,6 +102,7 @@ class SchoolSettingsActivity : ComponentActivity() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SchoolSettingsScreen(
+    schoolId: String,
     onBack: () -> Unit,
     onEditProfile: () -> Unit,
     onGallery: () -> Unit,
@@ -88,6 +111,36 @@ fun SchoolSettingsScreen(
 ) {
     var isVisible by remember { mutableStateOf(true) }
     var acceptingApplications by remember { mutableStateOf(true) }
+    var showDeleteAccountDialog by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+
+    // Delete Account Confirmation Dialog
+    if (showDeleteAccountDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteAccountDialog = false },
+            title = { Text("Delete School Account?") },
+            text = { Text("This action cannot be undone. Your entire school account, profile, gallery, and all reviews will be permanently deleted. You will not be able to login again.") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        deleteSchoolAccount(context)
+                        showDeleteAccountDialog = false
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = AccentRed)
+                ) {
+                    Text("Delete Account")
+                }
+            },
+            dismissButton = {
+                Button(
+                    onClick = { showDeleteAccountDialog = false },
+                    colors = ButtonDefaults.buttonColors(containerColor = BorderGray)
+                ) {
+                    Text("Cancel", color = TextPrimary)
+                }
+            }
+        )
+    }
 
     Scaffold(
         modifier = Modifier.windowInsetsPadding(WindowInsets.systemBars),
@@ -107,7 +160,7 @@ fun SchoolSettingsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .verticalScroll(rememberScrollState())   // ✅ ADD THIS
+                .verticalScroll(rememberScrollState())
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
@@ -165,7 +218,9 @@ fun SchoolSettingsScreen(
 
             Divider()
 
-            // ---------- LOGOUT ----------
+            // ---------- DANGER ZONE ----------
+            SectionTitle("Danger Zone")
+
             SettingsItem(
                 text = "Logout",
                 icon = Icons.Default.Logout,
@@ -173,9 +228,100 @@ fun SchoolSettingsScreen(
                 onClick = onLogout
             )
 
-            Spacer(Modifier.height(30.dp)) // ✅ extra space at bottom
+            SettingsItem(
+                text = "Delete School Account",
+                icon = Icons.Default.DeleteForever,
+                isDanger = true,
+                onClick = { showDeleteAccountDialog = true }
+            )
+
+            Spacer(Modifier.height(30.dp))
         }
     }
+}
+
+// ✅ DELETE SCHOOL ACCOUNT FUNCTION
+private suspend fun deleteSchoolAccountAsync(schoolId: String) {
+    val auth = FirebaseAuth.getInstance()
+    val database = FirebaseDatabase.getInstance("https://vidyakhoj-927fb-default-rtdb.firebaseio.com/").reference
+
+    try {
+        // Step 1: Delete school profile from SchoolForm/{schoolId}
+        database.child("SchoolForm").child(schoolId).removeValue().await()
+
+        // Step 2: Delete gallery from school_gallery/{schoolId}
+        database.child("school_gallery").child(schoolId).removeValue().await()
+
+        // Step 3: Delete reviews from school_reviews/{schoolId}
+        database.child("school_reviews").child(schoolId).removeValue().await()
+
+        // Step 4: Delete Firebase Auth account
+        auth.currentUser?.delete()?.await()
+
+    } catch (e: Exception) {
+        throw e
+    }
+}
+
+private fun deleteSchoolAccount(context: android.content.Context) {
+    val auth = FirebaseAuth.getInstance()
+    val schoolId = auth.currentUser?.uid ?: return
+
+    val activity = context as? ComponentActivity ?: return
+
+    // Show loading
+    Toast.makeText(context, "Deleting account...", Toast.LENGTH_SHORT).show()
+
+    // Delete in background
+    val thread = Thread {
+        try {
+            // Delete all data from database
+            val database = FirebaseDatabase.getInstance("https://vidyakhoj-927fb-default-rtdb.firebaseio.com/").reference
+
+            // Delete school profile
+            database.child("SchoolForm").child(schoolId).removeValue().addOnSuccessListener {
+                // Delete gallery
+                database.child("school_gallery").child(schoolId).removeValue().addOnSuccessListener {
+                    // Delete reviews
+                    database.child("school_reviews").child(schoolId).removeValue().addOnSuccessListener {
+                        // Delete auth account
+                        auth.currentUser?.delete()?.addOnSuccessListener {
+                            // Success
+                            activity.runOnUiThread {
+                                Toast.makeText(context, "Account deleted successfully", Toast.LENGTH_SHORT).show()
+                                val intent = Intent(context, UserLoginSchoolActivity::class.java).apply {
+                                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                                }
+                                context.startActivity(intent)
+                                activity.finish()
+                            }
+                        }?.addOnFailureListener { e ->
+                            activity.runOnUiThread {
+                                Toast.makeText(context, "Error deleting auth: ${e.message}", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    }?.addOnFailureListener { e ->
+                        activity.runOnUiThread {
+                            Toast.makeText(context, "Error deleting reviews: ${e.message}", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }?.addOnFailureListener { e ->
+                    activity.runOnUiThread {
+                        Toast.makeText(context, "Error deleting gallery: ${e.message}", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }?.addOnFailureListener { e ->
+                activity.runOnUiThread {
+                    Toast.makeText(context, "Error deleting school: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
+        } catch (e: Exception) {
+            activity.runOnUiThread {
+                Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+    thread.start()
 }
 
 
@@ -226,7 +372,7 @@ private fun ToggleItem(
     onCheckedChange: (Boolean) -> Unit
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxSize(),
         shape = RoundedCornerShape(14.dp)
     ) {
         Row(
