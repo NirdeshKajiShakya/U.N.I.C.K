@@ -14,9 +14,8 @@ class UserLoginViewModelTest {
     }
 
     @Test
-    fun emptyFields_showsErrorMessage() {
+    fun emptyFields_showsError() {
         viewModel.login()
-
         assertEquals(
             "Email and password cannot be empty",
             viewModel.errorMessage.value
@@ -24,15 +23,22 @@ class UserLoginViewModelTest {
     }
 
     @Test
-    fun invalidEmail_showsErrorMessage() {
-        viewModel.onEmailChange("wrongemail")
+    fun invalidEmail_showsError() {
+        viewModel.onEmailChange("invalidemail")
         viewModel.onPasswordChange("123456")
-
         viewModel.login()
-
         assertEquals(
             "Please enter a valid email",
             viewModel.errorMessage.value
         )
+    }
+
+    @Test
+    fun validEmail_noError() {
+        viewModel.onEmailChange("user@test.com")
+        viewModel.onPasswordChange("user123")
+        viewModel.login()
+
+        assertEquals(null, viewModel.errorMessage.value)
     }
 }
