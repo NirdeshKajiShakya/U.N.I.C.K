@@ -11,6 +11,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -20,6 +23,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -138,17 +142,27 @@ fun SchoolHeadingText() {
 }
 
 @Composable
-fun SchoolPasswordField(value: String, onValueChange: (String) -> Unit) {
+fun SchoolPasswordField(value: String, label: String = "Password", placeholder: String = "Enter password", onValueChange: (String) -> Unit) {
+    var passwordVisible by remember { mutableStateOf(false) }
+
     Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)) {
-        Text(text = "Password", fontSize = 14.sp, color = Color.Black, modifier = Modifier.padding(bottom = 8.dp))
+        Text(text = label, fontSize = 14.sp, color = Color.Black, modifier = Modifier.padding(bottom = 8.dp))
         OutlinedTextField(
             value = value,
             onValueChange = onValueChange,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(52.dp),
-            placeholder = { Text("Create school account password", color = Color.Gray) },
-            visualTransformation = PasswordVisualTransformation(),
+            placeholder = { Text(placeholder, color = Color.Gray) },
+            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+            trailingIcon = {
+                IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                    Icon(
+                        imageVector = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
+                        contentDescription = if (passwordVisible) "Hide password" else "Show password"
+                    )
+                }
+            },
             singleLine = true
         )
     }
