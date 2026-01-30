@@ -64,33 +64,91 @@ class UserLoginViewModel : ViewModel() {
                 if (task.isSuccessful) {
                     val firebaseUser = auth.currentUser
                     if (firebaseUser != null) {
-                        // Update last login time in Realtime Database
-                        val loginData = hashMapOf(
-                            "lastLogin" to System.currentTimeMillis()
-                        )
+                        val uid = firebaseUser.uid
+                        val userRef = db.getReference("Users").child(uid)
 
-                        db.getReference("Users").child(firebaseUser.uid)
-                            .updateChildren(loginData as Map<String, Any>)
-                            .addOnSuccessListener {
-                                _isLoading.value = false
-                                _loginSuccess.value = true
-                                android.util.Log.d("LoginDebug", "Login successful and database updated")
+                        // CHECK 1: Verify user exists in "Users" node
+                        userRef.addListenerForSingleValueEvent(object : com.google.firebase.database.ValueEventListener {
+                            override fun onDataChange(snapshot: com.google.firebase.database.DataSnapshot) {
+                                if (snapshot.exists()) {
+                                    // CORRECT ROLE: User is a Student
+                                    val loginData = hashMapOf(
+                                        "lastLogin" to System.currentTimeMillis()
+                                    )
+                                    userRef.updateChildren(loginData as Map<String, Any>)
+                                        .addOnCompleteListener {
+                                            _isLoading.value = false
+                                            _loginSuccess.value = true
+                                        }
+                                } else {
+                                    // WRONG ROLE or NO ACCOUNT
+                                    // Check if they are a School or Admin to give better errors
+                                    checkOtherRolesAndSignOut(uid)
+                                }
                             }
-                            .addOnFailureListener { e ->
+
+                            override fun onCancelled(error: com.google.firebase.database.DatabaseError) {
                                 _isLoading.value = false
-                                _loginSuccess.value = true // Still allow login even if update fails
-                                android.util.Log.e("LoginDebug", "Database update failed: ${e.message}")
+                                _errorMessage.value = "Database error: ${error.message}"
+                                auth.signOut()
                             }
+                        })
                     } else {
                         _isLoading.value = false
                         _errorMessage.value = "Login failed: user is null"
                     }
                 } else {
                     _isLoading.value = false
-                    _errorMessage.value = task.exception?.message ?: "Login failed"
-                    android.util.Log.e("LoginError", "Login error: ${task.exception?.message}")
+                    val exception = task.exception
+                    _errorMessage.value = when {
+                        exception?.message?.contains("user-not-found", ignoreCase = true) == true ->
+                            "Account not found. This email is not registered."
+                        exception?.message?.contains("wrong-password", ignoreCase = true) == true ->
+                            "Incorrect password. Please try again."
+                        exception?.message?.contains("invalid-credential", ignoreCase = true) == true ->
+                            "Invalid credentials. Please check your email and password."
+                        exception?.message?.contains("too-many-requests", ignoreCase = true) == true ->
+                            "Too many login attempts. Please try again later."
+                        else -> "Login failed. ${exception?.message}"
+                    }
                 }
             }
+    }
+
+    private fun checkOtherRolesAndSignOut(uid: String) {
+        val schoolsRef = db.getReference("schools").child(uid)
+        schoolsRef.addListenerForSingleValueEvent(object : com.google.firebase.database.ValueEventListener {
+            override fun onDataChange(schoolSnap: com.google.firebase.database.DataSnapshot) {
+                if (schoolSnap.exists()) {
+                    _isLoading.value = false
+                    _errorMessage.value = "This email is registered as a School account. Please use the School login portal."
+                    auth.signOut()
+                } else {
+                    // Check Admin
+                    db.getReference("Admins").child(uid).addListenerForSingleValueEvent(object : com.google.firebase.database.ValueEventListener {
+                        override fun onDataChange(adminSnap: com.google.firebase.database.DataSnapshot) {
+                            _isLoading.value = false
+                            if (adminSnap.exists()) {
+                                _errorMessage.value = "This email is registered as an Admin account. Please use the Admin login portal."
+                            } else {
+                                _errorMessage.value = "Account not found. This email is not registered as a Student."
+                            }
+                            auth.signOut()
+                        }
+                        override fun onCancelled(error: com.google.firebase.database.DatabaseError) {
+                            _isLoading.value = false
+                            _errorMessage.value = "Verification failed."
+                            auth.signOut()
+                        }
+                    })
+                }
+            }
+            override fun onCancelled(error: com.google.firebase.database.DatabaseError) {
+                _isLoading.value = false
+                _errorMessage.value = "Verification failed."
+                auth.signOut()
+            }
+        })
     }
 
     fun resetLoginSuccess() {

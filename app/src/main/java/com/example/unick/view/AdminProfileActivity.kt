@@ -63,7 +63,18 @@ fun AdminProfileScreen() {
     val email = currentUser?.email ?: "admin@unick.com"
 
     Scaffold(
-        // bottomBar removed
+        bottomBar = {
+            AdminBottomNavigationBar(
+                currentRoute = "profile",
+                onNavigate = { route ->
+                    if (route == "home") {
+                        val intent = Intent(context, AdminDashboardActivity::class.java)
+                        intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                        context.startActivity(intent)
+                    }
+                }
+            )
+        }
     ) { innerPadding ->
         Box(
             modifier = Modifier

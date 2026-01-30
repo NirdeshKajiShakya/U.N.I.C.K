@@ -254,6 +254,13 @@
             android:label="@string/title_activity_compare"
             android:theme="@style/Theme.UNICK" />
 
+        <!-- All Schools List -->
+        <activity
+            android:name=".view.AllSchoolsActivity"
+            android:exported="false"
+            android:label="All Schools"
+            android:theme="@style/Theme.UNICK" />
+
         <!-- Student Application Form -->
         <activity
             android:name=".view.StudentApplicationActivity"

@@ -42,7 +42,17 @@ class RegisterViewModel : ViewModel() {
                         onError("Registration failed: user is null after creation.")
                     }
                 } else {
-                    onError(task.exception?.message ?: "An unknown authentication error occurred.")
+                    val exception = task.exception
+                    val errorMessage = when {
+                        exception?.message?.contains("email-already-in-use", ignoreCase = true) == true ->
+                            "This email is already registered. Please log in instead."
+                        exception?.message?.contains("weak-password", ignoreCase = true) == true ->
+                            "Password should be at least 6 characters."
+                        exception?.message?.contains("invalid-email", ignoreCase = true) == true ->
+                            "Please enter a valid email address."
+                        else -> exception?.message ?: "Registration failed."
+                    }
+                    onError(errorMessage)
                 }
             }
     }
