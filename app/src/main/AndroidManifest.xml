@@ -227,6 +227,13 @@
             android:label="@string/title_activity_school_gallery"
             android:theme="@style/Theme.UNICK" />
 
+        <!-- School Reviews -->
+        <activity
+            android:name=".view.SchoolReviewsActivity"
+            android:exported="false"
+            android:label="@string/title_activity_school_reviews"
+            android:theme="@style/Theme.UNICK" />
+
         <!-- ============================================ -->
         <!-- Search & Filter Activities -->
         <!-- ============================================ -->

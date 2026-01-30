@@ -39,6 +39,7 @@ import com.example.unick.model.SchoolReviewModel
 import com.example.unick.view.ui.theme.UNICKTheme
 import com.example.unick.viewmodel.SchoolDetailViewModel
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.FirebaseDatabase
 import java.util.Locale
 
 class DashboardCard : ComponentActivity() {
@@ -260,6 +261,26 @@ fun ReviewComposerCard(
 
 @Composable
 fun ReviewCardSimple(review: SchoolReviewModel) {
+    var expanded by remember { mutableStateOf(false) }
+    var reviewerName by remember { mutableStateOf("Loading...") }
+
+    // Load reviewer name from Firebase
+    LaunchedEffect(review.reviewerUid) {
+        val db = com.google.firebase.database.FirebaseDatabase
+            .getInstance("https://vidyakhoj-927fb-default-rtdb.firebaseio.com/")
+            .reference
+
+        db.child("Users").child(review.reviewerUid).child("fullName")
+            .get()
+            .addOnSuccessListener { snap ->
+                val name = snap.getValue(String::class.java)?.trim() ?: ""
+                reviewerName = if (name.isNotBlank()) name else "Anonymous User"
+            }
+            .addOnFailureListener {
+                reviewerName = "Anonymous User"
+            }
+    }
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -268,7 +289,7 @@ fun ReviewCardSimple(review: SchoolReviewModel) {
     ) {
         Column(Modifier.padding(16.dp)) {
             Text(
-                text = "User: ${review.reviewerUid}",
+                text = reviewerName,
                 fontWeight = FontWeight.Bold,
                 color = Color(0xFF1E293B)
             )
@@ -282,13 +303,24 @@ fun ReviewCardSimple(review: SchoolReviewModel) {
                 Text("${review.rating}/5", color = Color(0xFF64748B))
             }
 
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(8.dp))
 
+            val text = review.comment
             Text(
-                text = review.comment,
+                text = if (expanded || text.length < 120) text else text.take(120) + "...",
                 color = Color(0xFF475569),
                 lineHeight = 22.sp
             )
+
+            if (text.length >= 120) {
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = if (expanded) "Show less" else "Read more",
+                    color = Color(0xFF3B82F6),
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.clickable { expanded = !expanded }
+                )
+            }
         }
     }
 }
@@ -642,7 +674,12 @@ fun SchoolDetailsScreen(
                             }
 
                             OutlinedButton(
-                                onClick = {},
+                                onClick = {
+                                    val intent = Intent(context, SchoolReviewsActivity::class.java)
+                                        .putExtra("schoolId", school.uid)
+                                        .putExtra("schoolName", school.schoolName)
+                                    context.startActivity(intent)
+                                },
                                 modifier = Modifier.weight(1f).height(48.dp),
                                 shape = RoundedCornerShape(14.dp),
                                 border = androidx.compose.foundation.BorderStroke(

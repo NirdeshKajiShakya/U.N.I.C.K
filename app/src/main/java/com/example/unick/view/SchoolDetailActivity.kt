@@ -55,6 +55,9 @@ class SchoolDetailActivity : ComponentActivity() {
             ?: intent.getParcelableExtra<com.example.unick.model.SchoolForm>("school_details")?.uid
             ?: ""
 
+        // Get selected tab from intent (default to "Overview")
+        val selectedTabFromIntent = intent.getStringExtra("selectedTab") ?: "Overview"
+
         if (schoolId.isBlank()) {
             android.widget.Toast.makeText(this, "School ID missing!", android.widget.Toast.LENGTH_SHORT).show()
             finish()
@@ -73,6 +76,7 @@ class SchoolDetailActivity : ComponentActivity() {
             SchoolDetailScreen(
                 vm = vm,
                 schoolId = schoolId,
+                initialTab = selectedTabFromIntent,
                 onBack = { finish() },
                 onOpenGallery = {
                     startActivity(
@@ -105,6 +109,7 @@ class SchoolDetailActivity : ComponentActivity() {
 fun SchoolDetailScreen(
     schoolId: String,
     vm: SchoolDetailViewModel = SchoolDetailViewModel(),
+    initialTab: String = "Overview",
     onBack: () -> Unit = {},
     @Suppress("UNUSED_PARAMETER") onOpenGallery: () -> Unit = {},
     onSchoolSetting: () -> Unit = {},
@@ -112,7 +117,7 @@ fun SchoolDetailScreen(
     onViewApplications: () -> Unit = {}
 ) {
     val context = LocalContext.current
-    var selectedTab by remember { mutableStateOf("Overview") }
+    var selectedTab by remember { mutableStateOf(initialTab) }
 
     val profile = vm.schoolProfile
     @Suppress("UNUSED")
@@ -517,12 +522,20 @@ fun SchoolDetailScreen(
                     item {
                         ReviewComposer(
                             onSubmit = { rating, comment ->
-                                val demoUserUid = "demo_reviewer_uid"
-                                vm.submitReview(
-                                    reviewerUid = demoUserUid,
-                                    rating = rating,
-                                    comment = comment
-                                )
+                                val currentUser = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
+                                if (currentUser != null) {
+                                    vm.submitReview(
+                                        reviewerUid = currentUser.uid,
+                                        rating = rating,
+                                        comment = comment
+                                    )
+                                } else {
+                                    android.widget.Toast.makeText(
+                                        context,
+                                        "Please login to submit a review",
+                                        android.widget.Toast.LENGTH_SHORT
+                                    ).show()
+                                }
                             }
                         )
                     }
@@ -707,6 +720,7 @@ private fun StarsRow(rating: Double) {
 private fun ReviewComposer(onSubmit: (rating: Int, comment: String) -> Unit) {
     var rating by remember { mutableStateOf(5) }
     var comment by remember { mutableStateOf("") }
+    var isSubmitting by remember { mutableStateOf(false) }
 
     Card(
         modifier = Modifier
@@ -725,7 +739,7 @@ private fun ReviewComposer(onSubmit: (rating: Int, comment: String) -> Unit) {
                         contentDescription = null,
                         modifier = Modifier
                             .size(30.dp)
-                            .clickable { rating = star }
+                            .clickable { if (!isSubmitting) rating = star }
                     )
                     Spacer(Modifier.width(4.dp))
                 }
@@ -734,18 +748,35 @@ private fun ReviewComposer(onSubmit: (rating: Int, comment: String) -> Unit) {
             Spacer(Modifier.height(12.dp))
             OutlinedTextField(
                 value = comment,
-                onValueChange = { comment = it },
+                onValueChange = { if (!isSubmitting) comment = it },
                 label = { Text("Write your review") },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !isSubmitting
             )
 
             Spacer(Modifier.height(12.dp))
             Button(
-                onClick = { onSubmit(rating, comment) },
+                onClick = {
+                    if (comment.isNotBlank()) {
+                        isSubmitting = true
+                        onSubmit(rating, comment)
+                        // Reset form after submission
+                        comment = ""
+                        rating = 5
+                        isSubmitting = false
+                    }
+                },
                 shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !isSubmitting && comment.isNotBlank()
             ) {
-                Text("Submit Review")
+                if (isSubmitting) {
+                    CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Submitting...")
+                } else {
+                    Text("Submit Review")
+                }
             }
         }
     }
