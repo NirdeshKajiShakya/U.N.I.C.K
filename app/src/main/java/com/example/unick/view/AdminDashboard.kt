@@ -84,7 +84,18 @@ fun AdminDashboardScreen(schoolSubmissions: List<SchoolForm>) {
     val navController = androidx.navigation.compose.rememberNavController()
 
     androidx.compose.material3.Scaffold(
-        // bottomBar removed
+        bottomBar = {
+            AdminBottomNavigationBar(
+                currentRoute = "home",
+                onNavigate = { route ->
+                    if (route == "profile") {
+                        val intent = Intent(context, AdminProfileActivity::class.java)
+                        // intent.flags = Intent.FLAG_ACTIVITY_REORDER_TO_FRONT // Optional: prevents stacking
+                        context.startActivity(intent)
+                    }
+                }
+            )
+        }
     ) { innerPadding ->
         Box(
             modifier = Modifier
