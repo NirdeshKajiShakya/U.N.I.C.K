@@ -13,13 +13,19 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.Star
+import androidx.compose.material.icons.outlined.Description
+import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.PhotoLibrary
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -100,7 +106,7 @@ fun SchoolDetailScreen(
     schoolId: String,
     vm: SchoolDetailViewModel = SchoolDetailViewModel(),
     onBack: () -> Unit = {},
-    onOpenGallery: () -> Unit = {},
+    @Suppress("UNUSED_PARAMETER") onOpenGallery: () -> Unit = {},
     onSchoolSetting: () -> Unit = {},
     onApplyNow: () -> Unit = {},
     onViewApplications: () -> Unit = {}
@@ -109,7 +115,7 @@ fun SchoolDetailScreen(
     var selectedTab by remember { mutableStateOf("Overview") }
 
     val profile = vm.schoolProfile
-    @Suppress("UNUSED_VARIABLE")
+    @Suppress("UNUSED")
     val gallery = vm.gallery
     val reviews = vm.reviews
 
@@ -134,8 +140,21 @@ fun SchoolDetailScreen(
                     }
                 },
                 actions = {
-                    TextButton(onClick = onSchoolSetting) {
-                        Text("Settings", fontWeight = FontWeight.Bold)
+                    // Show heart icon only for students (non-school owners)
+                    if (!isSchoolOwner) {
+                        IconButton(onClick = { vm.toggleShortlist() }) {
+                            Icon(
+                                imageVector = if (vm.isShortlisted) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                                contentDescription = if (vm.isShortlisted) "Remove from shortlist" else "Add to shortlist",
+                                tint = if (vm.isShortlisted) Color.Red else Color.Gray
+                            )
+                        }
+                    }
+                    // Show Settings button only for school owners
+                    if (isSchoolOwner) {
+                        TextButton(onClick = onSchoolSetting) {
+                            Text("Settings", fontWeight = FontWeight.Bold)
+                        }
                     }
                 }
             )
@@ -147,106 +166,177 @@ fun SchoolDetailScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .background(Color.White)
+                .background(Color(0xFFF8FAFC))
         ) {
 
-            // ---- Banner + Gallery Button ----
+            // ---- Banner with Gradient Overlay + Gallery Button ----
             item {
                 Box(modifier = Modifier.fillMaxWidth()) {
                     AsyncImage(
                         model = profile?.imageUrl,
-                        contentDescription = "Banner",
+                        contentDescription = "School Banner",
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(180.dp),
+                            .height(240.dp),
                         contentScale = ContentScale.Crop
+                    )
+
+                    // Gradient overlay
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(240.dp)
+                            .background(
+                                androidx.compose.ui.graphics.Brush.verticalGradient(
+                                    colors = listOf(
+                                        Color.Transparent,
+                                        Color.Black.copy(alpha = 0.3f)
+                                    )
+                                )
+                            )
                     )
 
                     Button(
                         onClick = onOpenGallery,
                         modifier = Modifier
                             .align(Alignment.BottomEnd)
-                            .padding(12.dp),
-                        shape = RoundedCornerShape(12.dp)
+                            .padding(16.dp),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color.White
+                        ),
+                        elevation = ButtonDefaults.buttonElevation(
+                            defaultElevation = 4.dp
+                        )
                     ) {
-                        Text("Gallery")
+                        Icon(
+                            Icons.Outlined.PhotoLibrary,
+                            contentDescription = "Gallery",
+                            tint = Color(0xFF8B5CF6),
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Text("Gallery", color = Color(0xFF8B5CF6), fontWeight = FontWeight.SemiBold)
                     }
                 }
             }
 
-            // ---- Header ----
+            // ---- Header Card ----
             item {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        text = profile?.schoolName ?: "Loading...",
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(Modifier.height(4.dp))
-
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    Column(modifier = Modifier.padding(20.dp)) {
                         Text(
-                            text = profile?.location ?: "",
-                            color = Color.DarkGray,
-                            modifier = Modifier.weight(1f)
+                            text = profile?.schoolName ?: "Loading...",
+                            fontSize = 26.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF1E293B)
                         )
+                        Spacer(Modifier.height(10.dp))
 
-                        if (!profile?.location.isNullOrBlank()) {
-                            IconButton(onClick = {
-                                val query = Uri.encode(profile.location)
-                                val uri = Uri.parse("geo:0,0?q=$query")
-                                val intent = Intent(Intent.ACTION_VIEW, uri)
-                                intent.setPackage("com.google.android.apps.maps")
-                                try {
-                                    context.startActivity(intent)
-                                } catch (_: Exception) {
-                                    // Try without specific package if Google Maps is not installed
-                                    try {
-                                        intent.setPackage(null)
-                                        context.startActivity(intent)
-                                    } catch (_: Exception) {
-                                        android.widget.Toast.makeText(context, "No map app found", android.widget.Toast.LENGTH_SHORT).show()
-                                    }
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(
+                                Icons.Default.LocationOn,
+                                contentDescription = "Location",
+                                tint = Color(0xFF3B82F6),
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(Modifier.width(6.dp))
+                            Text(
+                                text = profile?.location ?: "",
+                                color = Color(0xFF64748B),
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Medium,
+                                modifier = Modifier.weight(1f)
+                            )
+
+                            if (!profile?.location.isNullOrBlank()) {
+                                IconButton(
+                                    onClick = {
+                                        val query = Uri.encode(profile.location)
+                                        val uri = "geo:0,0?q=$query".toUri()
+                                        val intent = Intent(Intent.ACTION_VIEW, uri)
+                                        intent.setPackage("com.google.android.apps.maps")
+                                        try {
+                                            context.startActivity(intent)
+                                        } catch (_: Exception) {
+                                            try {
+                                                intent.setPackage(null)
+                                                context.startActivity(intent)
+                                            } catch (_: Exception) {
+                                                android.widget.Toast.makeText(context, "No map app found", android.widget.Toast.LENGTH_SHORT).show()
+                                            }
+                                        }
+                                    },
+                                    colors = IconButtonDefaults.iconButtonColors(
+                                        containerColor = Color(0xFF3B82F6).copy(alpha = 0.1f),
+                                        contentColor = Color(0xFF3B82F6)
+                                    ),
+                                    modifier = Modifier.size(36.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.LocationOn,
+                                        contentDescription = "View on Map",
+                                        modifier = Modifier.size(18.dp)
+                                    )
                                 }
-                            }) {
-                                Icon(
-                                    imageVector = Icons.Default.LocationOn,
-                                    contentDescription = "View on Map",
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
                             }
                         }
-                    }
 
-                    Spacer(Modifier.height(12.dp))
+                        Spacer(Modifier.height(16.dp))
 
-                    // Action Buttons - Show based on user role
-                    if (isSchoolOwner) {
-                        // School Owner: Show "View Applications" button
-                        Button(
-                            onClick = onViewApplications,
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFF3B82F6)
-                            ),
-                            shape = RoundedCornerShape(8.dp)
-                        ) {
-                            Text("View Applications", fontWeight = FontWeight.SemiBold)
-                        }
-                    } else {
-                        // Student/Visitor: Show "Apply Now" button
-                        Button(
-                            onClick = onApplyNow,
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFF10B981)
-                            ),
-                            shape = RoundedCornerShape(8.dp)
-                        ) {
-                            Text("Apply Now", fontWeight = FontWeight.SemiBold)
+                        // Action Buttons - Show based on user role
+                        if (isSchoolOwner) {
+                            Button(
+                                onClick = onViewApplications,
+                                modifier = Modifier.fillMaxWidth().height(52.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFF3B82F6)
+                                ),
+                                shape = RoundedCornerShape(14.dp),
+                                elevation = ButtonDefaults.buttonElevation(
+                                    defaultElevation = 2.dp,
+                                    pressedElevation = 6.dp
+                                )
+                            ) {
+                                Icon(
+                                    Icons.Outlined.Description,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(Modifier.width(8.dp))
+                                Text("View Applications", fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
+                            }
+                        } else {
+                            Button(
+                                onClick = onApplyNow,
+                                modifier = Modifier.fillMaxWidth().height(52.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFF10B981)
+                                ),
+                                shape = RoundedCornerShape(14.dp),
+                                elevation = ButtonDefaults.buttonElevation(
+                                    defaultElevation = 2.dp,
+                                    pressedElevation = 6.dp
+                                )
+                            ) {
+                                Icon(
+                                    Icons.Outlined.Edit,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(Modifier.width(8.dp))
+                                Text("Apply Now", fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
+                            }
                         }
                     }
                 }
@@ -254,18 +344,26 @@ fun SchoolDetailScreen(
 
             // ---- Tab Row ----
             item {
-                Row(
+                Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 8.dp),
-                    horizontalArrangement = Arrangement.SpaceEvenly
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    shape = RoundedCornerShape(bottomStart = 20.dp, bottomEnd = 20.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                 ) {
-                    SchoolTabItem("Overview", selectedTab == "Overview") { selectedTab = "Overview" }
-                    SchoolTabItem("Academics", selectedTab == "Academics") { selectedTab = "Academics" }
-                    SchoolTabItem("Connect", selectedTab == "Connect") { selectedTab = "Connect" }
-                    SchoolTabItem("Reviews", selectedTab == "Reviews") { selectedTab = "Reviews" }
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        SchoolTabItem("Overview", selectedTab == "Overview") { selectedTab = "Overview" }
+                        SchoolTabItem("Academics", selectedTab == "Academics") { selectedTab = "Academics" }
+                        SchoolTabItem("Connect", selectedTab == "Connect") { selectedTab = "Connect" }
+                        SchoolTabItem("Reviews", selectedTab == "Reviews") { selectedTab = "Reviews" }
+                    }
                 }
-                HorizontalDivider()
             }
 
             // ---- Tab Content ----
@@ -464,17 +562,24 @@ fun SchoolDetailScreen(
 private fun SchoolTabItem(text: String, selected: Boolean, onClick: () -> Unit) {
     Column(
         modifier = Modifier
-            .padding(10.dp)
+            .padding(horizontal = 12.dp, vertical = 10.dp)
             .clickable { onClick() },
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(text, fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal)
+        Text(
+            text,
+            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+            fontSize = 14.sp,
+            color = if (selected) Color(0xFF3B82F6) else Color(0xFF64748B)
+        )
+        Spacer(Modifier.height(6.dp))
         if (selected) {
             Box(
                 Modifier
-                    .width(44.dp)
+                    .width(40.dp)
                     .height(3.dp)
-                    .background(Color.Black)
+                    .clip(RoundedCornerShape(2.dp))
+                    .background(Color(0xFF3B82F6))
             )
         }
     }

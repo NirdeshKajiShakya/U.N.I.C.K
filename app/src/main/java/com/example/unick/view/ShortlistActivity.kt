@@ -1,5 +1,6 @@
 package com.example.unick.view
 
+import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -45,11 +46,10 @@ class ShortlistActivity : ComponentActivity() {
                     ShortlistScreen(
                         onBackPressed = { finish() },
                         onSchoolClick = { schoolId ->
-                            Toast.makeText(
-                                this@ShortlistActivity,
-                                "Opening $schoolId",
-                                Toast.LENGTH_SHORT
-                            ).show()
+                            val intent =
+                                Intent(this@ShortlistActivity, SchoolDetailActivity::class.java)
+                            intent.putExtra("uid", schoolId)
+                            startActivity(intent)
                         }
                     )
                 }

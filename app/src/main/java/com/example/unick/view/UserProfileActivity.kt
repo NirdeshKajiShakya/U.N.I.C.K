@@ -201,8 +201,17 @@ fun UserProfileScreen(viewModel: UserProfileViewModel?) {
                             val schools = (shortlistedSchoolsState as UserProfileState.Success<List<ShortlistedSchoolForUserProfile>>).data
                             ShortlistedSchoolsSectionForUserProfile(
                                 schools = schools,
-                                onSchoolClick = {},
-                                onViewAllClick = {}
+                                onSchoolClick = { school ->
+                                    // Navigate to SchoolDetailActivity
+                                    val intent = Intent(context, SchoolDetailActivity::class.java)
+                                    intent.putExtra("uid", school.id)
+                                    context.startActivity(intent)
+                                },
+                                onViewAllClick = {
+                                    // Navigate to ShortlistActivity
+                                    val intent = Intent(context, ShortlistActivity::class.java)
+                                    context.startActivity(intent)
+                                }
                             )
                         }
                         else -> {}

@@ -44,10 +44,47 @@ class UserProfileRepoImpl(
 
     override suspend fun getShortlistedSchools(userId: String): Result<List<ShortlistedSchoolForUserProfile>> {
         return try {
-            val snapshot = withTimeout(TIMEOUT_MS) {
-                database.getReference("Users").child(userId).child("shortlistedSchools").get().await()
+            Log.d(TAG, "🔍 Fetching shortlisted schools for userId: $userId")
+
+            // Fetch school IDs from Shortlists node
+            val shortlistSnapshot = withTimeout(TIMEOUT_MS) {
+                database.getReference("Shortlists").child(userId).get().await()
             }
-            val list = snapshot.children.mapNotNull { it.getValue(ShortlistedSchoolForUserProfile::class.java) }
+
+            val schoolIds = mutableListOf<String>()
+            for (child in shortlistSnapshot.children) {
+                child.getValue(String::class.java)?.let { schoolIds.add(it) }
+            }
+
+            Log.d(TAG, "📋 Found ${schoolIds.size} shortlisted school IDs")
+
+            if (schoolIds.isEmpty()) {
+                return Result.success(emptyList())
+            }
+
+            // Fetch school details from SchoolForm
+            val list = mutableListOf<ShortlistedSchoolForUserProfile>()
+            for (schoolId in schoolIds) {
+                try {
+                    val schoolSnapshot = withTimeout(TIMEOUT_MS) {
+                        database.getReference("SchoolForm").child(schoolId).get().await()
+                    }
+
+                    val schoolName = schoolSnapshot.child("schoolName").getValue(String::class.java) ?: "Unknown School"
+                    val location = schoolSnapshot.child("location").getValue(String::class.java) ?: "Unknown Location"
+
+                    list.add(ShortlistedSchoolForUserProfile(
+                        id = schoolId,
+                        name = schoolName,
+                        location = location
+                    ))
+
+                    Log.d(TAG, "✅ Fetched school: $schoolName")
+                } catch (e: Exception) {
+                    Log.e(TAG, "❌ Error fetching school $schoolId", e)
+                }
+            }
+
             Log.d(TAG, "✅ Fetched ${list.size} shortlisted schools")
             Result.success(list)
         } catch (e: Exception) {

@@ -2,7 +2,6 @@ package com.example.unick.view
 
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -11,16 +10,19 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.CompareArrows
+import androidx.compose.material.icons.automirrored.outlined.OpenInNew
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -65,408 +67,7 @@ class DashboardCard : ComponentActivity() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun SchoolDetailsScreen(
-    school: SchoolForm,
-    isSchoolView: Boolean,
-    onBack: () -> Unit
-) {
-    val context = LocalContext.current
-
-    // ✅ Reuse your existing VM (same one used in SchoolDetailActivity)
-    val reviewVm = remember { SchoolDetailViewModel() }
-
-    // Load reviews (and any other data VM loads) by this school's UID
-    LaunchedEffect(school.uid) {
-        if (school.uid.isNotBlank()) reviewVm.loadSchoolDetail(school.uid)
-    }
-
-    val reviews = reviewVm.reviews
-    val avgRating = reviewVm.avgRating
-    val totalReviews = reviewVm.totalReviews
-
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { },
-                navigationIcon = {
-                    IconButton(
-                        onClick = onBack,
-                        colors = IconButtonDefaults.iconButtonColors(
-                            containerColor = Color.White.copy(alpha = 0.7f)
-                        )
-                    ) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
-            )
-        },
-        bottomBar = {
-            UnifiedBottomNavigationBar(
-                currentRoute = "",
-                onNavigate = { route ->
-                    when (route) {
-                        BottomNavItem.Home.route -> {
-                            val intent = Intent(context, DashboardActivity::class.java)
-                            intent.flags =
-                                Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
-                            context.startActivity(intent)
-                            (context as? ComponentActivity)?.finish()
-                        }
-
-                        BottomNavItem.AIChat.route -> {
-                            val intent = Intent(context, DashboardActivity::class.java)
-                            intent.flags =
-                                Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
-                            intent.putExtra("start_destination", BottomNavItem.AIChat.route)
-                            context.startActivity(intent)
-                            (context as? ComponentActivity)?.finish()
-                        }
-
-                        BottomNavItem.Profile.route -> {
-                            context.startActivity(Intent(context, UserProfileActivity::class.java))
-                        }
-
-                        else -> {
-                            val intent = Intent(context, DashboardActivity::class.java)
-                            intent.flags =
-                                Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
-                            intent.putExtra("start_destination", route)
-                            context.startActivity(intent)
-                            (context as? ComponentActivity)?.finish()
-                        }
-                    }
-                },
-                onProfileClick = {
-                    context.startActivity(Intent(context, UserProfileActivity::class.java))
-                },
-                navItems = listOf(
-                    BottomNavItem.Home,
-                    BottomNavItem.Search,
-                    BottomNavItem.AIChat,
-                    BottomNavItem.Notification,
-                    BottomNavItem.Profile
-                )
-            )
-        }
-    ) { innerPadding ->
-
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(bottom = innerPadding.calculateBottomPadding())
-        ) {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color(0xFFF8FAFC))
-            ) {
-
-                // ---- Header Image ----
-                item {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(280.dp)
-                    ) {
-                        AsyncImage(
-                            model = school.imageUrl,
-                            contentDescription = "School Banner",
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop
-                        )
-                    }
-                }
-
-                // ---- Title & Basic Info ----
-                item {
-                    Column(
-                        modifier = Modifier
-                            .offset(y = (-30).dp)
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp))
-                            .background(Color.White)
-                            .padding(24.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.Top
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = school.schoolName,
-                                    fontSize = 24.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF1E293B),
-                                    lineHeight = 32.sp
-                                )
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(
-                                        Icons.Outlined.LocationOn,
-                                        null,
-                                        tint = Color(0xFF64748B),
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    Text(
-                                        text = school.location,
-                                        fontSize = 14.sp,
-                                        color = Color(0xFF64748B)
-                                    )
-                                }
-                            }
-
-                            if (school.verified) {
-                                Icon(
-                                    Icons.Outlined.Verified,
-                                    contentDescription = "Verified",
-                                    tint = Color(0xFF2563EB),
-                                    modifier = Modifier.size(28.dp)
-                                )
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        // ✅ Action buttons row (kept consistent) + NEW: Gallery + Reviews jump
-                        if (!isSchoolView) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
-                                OutlinedButton(
-                                    onClick = {
-                                        val intent = Intent(context, CompareActivity::class.java)
-                                        intent.putExtra("school_details", school)
-                                        context.startActivity(intent)
-                                    },
-                                    modifier = Modifier.weight(1f),
-                                    shape = RoundedCornerShape(12.dp),
-                                    border = androidx.compose.foundation.BorderStroke(
-                                        1.dp,
-                                        Color(0xFF2563EB)
-                                    ),
-                                    colors = ButtonDefaults.outlinedButtonColors(
-                                        contentColor = Color(0xFF2563EB)
-                                    )
-                                ) {
-                                    Icon(
-                                        Icons.AutoMirrored.Outlined.CompareArrows,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text("Compare", maxLines = 1)
-                                }
-
-                                Button(
-                                    onClick = {
-                                        val intent =
-                                            Intent(context, StudentApplicationActivity::class.java)
-                                        intent.putExtra("schoolId", school.uid)
-                                        context.startActivity(intent)
-                                    },
-                                    modifier = Modifier.weight(1f),
-                                    shape = RoundedCornerShape(12.dp),
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = Color(0xFF2563EB)
-                                    )
-                                ) {
-                                    Icon(
-                                        Icons.Outlined.Edit,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text("Apply Now", maxLines = 1)
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.height(12.dp))
-                        }
-
-                        // ✅ NEW: Gallery + Reviews buttons (always useful for students)
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            OutlinedButton(
-                                onClick = {
-                                    val intent =
-                                        Intent(context, SchoolGalleryActivity::class.java)
-                                            .putExtra("schoolId", school.uid)
-                                    context.startActivity(intent)
-                                },
-                                modifier = Modifier.weight(1f),
-                                shape = RoundedCornerShape(12.dp),
-                                border = androidx.compose.foundation.BorderStroke(
-                                    1.dp,
-                                    Color(0xFF2563EB)
-                                ),
-                                colors = ButtonDefaults.outlinedButtonColors(
-                                    contentColor = Color(0xFF2563EB)
-                                )
-                            ) {
-                                Icon(Icons.Outlined.PhotoLibrary, null, Modifier.size(18.dp))
-                                Spacer(Modifier.width(8.dp))
-                                Text("Gallery", maxLines = 1)
-                            }
-
-                            OutlinedButton(
-                                onClick = {
-                                    // simple jump to reviews section: no scroll state here,
-                                    // so we just show composer immediately (below)
-                                    // (if you want auto-scroll, tell me; I’ll wire it)
-                                },
-                                modifier = Modifier.weight(1f),
-                                shape = RoundedCornerShape(12.dp),
-                                border = androidx.compose.foundation.BorderStroke(
-                                    1.dp,
-                                    Color(0xFF2563EB)
-                                ),
-                                colors = ButtonDefaults.outlinedButtonColors(
-                                    contentColor = Color(0xFF2563EB)
-                                )
-                            ) {
-                                Icon(Icons.Outlined.StarOutline, null, Modifier.size(18.dp))
-                                Spacer(Modifier.width(8.dp))
-                                Text("Reviews", maxLines = 1)
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        // Quick Stats Row
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            QuickStat(
-                                icon = Icons.Outlined.School,
-                                label = "Curriculum",
-                                value = school.curriculum,
-                                modifier = Modifier.weight(1f)
-                            )
-                            QuickStat(
-                                icon = Icons.Outlined.Groups,
-                                label = "Students",
-                                value = school.totalStudents,
-                                modifier = Modifier.weight(1f)
-                            )
-                            QuickStat(
-                                icon = Icons.Outlined.CalendarToday,
-                                label = "Est.",
-                                value = school.establishedYear,
-                                modifier = Modifier.weight(1f)
-                            )
-                        }
-                    }
-                }
-
-                // ---- About Section ----
-                item {
-                    DetailSectionHeader("About School")
-                    Text(
-                        text = school.description.ifBlank { "No description available." },
-                        modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
-                        color = Color(0xFF475569),
-                        fontSize = 15.sp,
-                        lineHeight = 24.sp
-                    )
-                }
-
-                // ---- Details Cards ----
-                item {
-                    Spacer(modifier = Modifier.height(16.dp))
-                    DetailSectionHeader("Academic Info")
-                    Column(modifier = Modifier.padding(horizontal = 24.dp)) {
-                        DetailRow(Icons.Outlined.Book, "Programs", school.programsOffered)
-                        DetailRow(Icons.Outlined.SportsSoccer, "Facilities", school.facilities)
-                        DetailRow(Icons.Outlined.LocalActivity, "Activities", school.extracurricular)
-                        DetailRow(Icons.Outlined.Payments, "Tuition Fee", school.tuitionFee)
-                    }
-                }
-
-                item {
-                    Spacer(modifier = Modifier.height(16.dp))
-                    DetailSectionHeader("Contact & Access")
-                    Column(modifier = Modifier.padding(horizontal = 24.dp)) {
-                        DetailRow(Icons.Outlined.Person, "Principal", school.principalName)
-                        DetailRow(Icons.Outlined.Email, "Email", school.email, isLink = true, context = context)
-                        DetailRow(Icons.Outlined.Phone, "Phone", school.contactNumber, isLink = true, context = context)
-                        DetailRow(Icons.Outlined.Language, "Website", school.website, isLink = true, context = context)
-                    }
-                }
-
-                // ✅ NEW: Reviews section (consistent card UI)
-                item {
-                    Spacer(modifier = Modifier.height(18.dp))
-                    DetailSectionHeader("Reviews")
-
-                    Column(modifier = Modifier.padding(horizontal = 24.dp)) {
-                        ReviewsSummaryCard(
-                            avg = avgRating,
-                            total = totalReviews
-                        )
-
-                        Spacer(Modifier.height(12.dp))
-
-                        ReviewComposerCard(
-                            onSubmit = { rating, comment ->
-                                val uid = FirebaseAuth.getInstance().currentUser?.uid
-                                if (uid.isNullOrBlank()) return@ReviewComposerCard
-
-                                reviewVm.submitReview(
-                                    reviewerUid = uid,
-                                    rating = rating,
-                                    comment = comment
-                                )
-                            }
-                        )
-
-                        Spacer(Modifier.height(12.dp))
-
-                        if (reviewVm.loading) {
-                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-                                CircularProgressIndicator()
-                            }
-                        } else {
-                            if (reviews.isEmpty()) {
-                                Text(
-                                    "No reviews yet. Be the first to review!",
-                                    color = Color(0xFF64748B),
-                                    modifier = Modifier.padding(vertical = 10.dp)
-                                )
-                            } else {
-                                reviews.forEach { r ->
-                                    ReviewCardSimple(review = r)
-                                    Spacer(Modifier.height(10.dp))
-                                }
-                            }
-                        }
-
-                        reviewVm.error?.let {
-                            Text(
-                                text = it,
-                                color = Color.Red,
-                                modifier = Modifier.padding(top = 10.dp)
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(30.dp))
-                }
-
-                item { Spacer(modifier = Modifier.height(30.dp)) }
-            }
-        }
-    }
-}
-
+// Helper Composable Functions
 @Composable
 fun QuickStat(icon: ImageVector, label: String, value: String, modifier: Modifier = Modifier) {
     Column(
@@ -567,10 +168,8 @@ fun DetailRow(
     }
 }
 
-/* ---------------- Reviews UI (matches your card style) ---------------- */
-
 @Composable
-private fun ReviewsSummaryCard(avg: Double, total: Int) {
+fun ReviewsSummaryCard(avg: Double, total: Int) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -599,7 +198,7 @@ private fun ReviewsSummaryCard(avg: Double, total: Int) {
 }
 
 @Composable
-private fun ReviewComposerCard(
+fun ReviewComposerCard(
     onSubmit: (rating: Int, comment: String) -> Unit
 ) {
     var rating by remember { mutableStateOf(5) }
@@ -660,7 +259,7 @@ private fun ReviewComposerCard(
 }
 
 @Composable
-private fun ReviewCardSimple(review: SchoolReviewModel) {
+fun ReviewCardSimple(review: SchoolReviewModel) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -693,3 +292,498 @@ private fun ReviewCardSimple(review: SchoolReviewModel) {
         }
     }
 }
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SchoolDetailsScreen(
+    school: SchoolForm,
+    isSchoolView: Boolean,
+    onBack: () -> Unit
+) {
+    val context = LocalContext.current
+
+    // ✅ Reuse your existing VM (same one used in SchoolDetailActivity)
+    val reviewVm = remember { SchoolDetailViewModel() }
+
+    // Load reviews (and any other data VM loads) by this school's UID
+    LaunchedEffect(school.uid) {
+        if (school.uid.isNotBlank()) reviewVm.loadSchoolDetail(school.uid)
+    }
+
+    val reviews = reviewVm.reviews
+    val avgRating = reviewVm.avgRating
+    val totalReviews = reviewVm.totalReviews
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { },
+                navigationIcon = {
+                    IconButton(
+                        onClick = onBack,
+                        colors = IconButtonDefaults.iconButtonColors(
+                            containerColor = Color.White,
+                            contentColor = Color(0xFF1E293B)
+                        ),
+                        modifier = Modifier
+                            .padding(8.dp)
+                            .shadow(4.dp, CircleShape)
+                    ) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back",
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                },
+                actions = {
+                    // Heart button for shortlisting (only for students, not school owners)
+                    if (!isSchoolView) {
+                        IconButton(
+                            onClick = { reviewVm.toggleShortlist() },
+                            colors = IconButtonDefaults.iconButtonColors(
+                                containerColor = Color.White,
+                                contentColor = if (reviewVm.isShortlisted) Color(0xFFEF4444) else Color(0xFF64748B)
+                            ),
+                            modifier = Modifier
+                                .padding(8.dp)
+                                .shadow(4.dp, CircleShape)
+                        ) {
+                            Icon(
+                                imageVector = if (reviewVm.isShortlisted) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+                                contentDescription = if (reviewVm.isShortlisted) "Remove from shortlist" else "Add to shortlist",
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+            )
+        },
+        bottomBar = {
+            UnifiedBottomNavigationBar(
+                currentRoute = "",
+                onNavigate = { route ->
+                    when (route) {
+                        BottomNavItem.Home.route -> {
+                            val intent = Intent(context, DashboardActivity::class.java)
+                            intent.flags =
+                                Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                            context.startActivity(intent)
+                            (context as? ComponentActivity)?.finish()
+                        }
+
+                        BottomNavItem.AIChat.route -> {
+                            val intent = Intent(context, DashboardActivity::class.java)
+                            intent.flags =
+                                Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                            intent.putExtra("start_destination", BottomNavItem.AIChat.route)
+                            context.startActivity(intent)
+                            (context as? ComponentActivity)?.finish()
+                        }
+
+                        BottomNavItem.Profile.route -> {
+                            context.startActivity(Intent(context, UserProfileActivity::class.java))
+                        }
+
+                        else -> {
+                            val intent = Intent(context, DashboardActivity::class.java)
+                            intent.flags =
+                                Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                            intent.putExtra("start_destination", route)
+                            context.startActivity(intent)
+                            (context as? ComponentActivity)?.finish()
+                        }
+                    }
+                },
+                onProfileClick = {
+                    context.startActivity(Intent(context, UserProfileActivity::class.java))
+                },
+                navItems = listOf(
+                    BottomNavItem.Home,
+                    BottomNavItem.Search,
+                    BottomNavItem.AIChat,
+                    BottomNavItem.Notification,
+                    BottomNavItem.Profile
+                )
+            )
+        }
+    ) { innerPadding ->
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(bottom = innerPadding.calculateBottomPadding())
+        ) {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color(0xFFF8FAFC))
+            ) {
+
+                // ---- Header Image with Gradient Overlay ----
+                item {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(300.dp)
+                    ) {
+                        AsyncImage(
+                            model = school.imageUrl,
+                            contentDescription = "School Banner",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                        // Gradient overlay for better text readability
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(
+                                    androidx.compose.ui.graphics.Brush.verticalGradient(
+                                        colors = listOf(
+                                            Color.Transparent,
+                                            Color.Black.copy(alpha = 0.3f)
+                                        )
+                                    )
+                                )
+                        )
+                    }
+                }
+
+                // ---- School Info Card ----
+                item {
+                    Card(
+                        modifier = Modifier
+                            .offset(y = (-40).dp)
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp),
+                        shape = RoundedCornerShape(24.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(24.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.Top
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = school.schoolName,
+                                        fontSize = 26.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFF1E293B),
+                                        lineHeight = 34.sp
+                                    )
+                                    Spacer(modifier = Modifier.height(12.dp))
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(
+                                            Icons.Outlined.LocationOn,
+                                            contentDescription = "Location",
+                                            tint = Color(0xFF3B82F6),
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text(
+                                            text = school.location,
+                                            fontSize = 15.sp,
+                                            color = Color(0xFF64748B),
+                                            fontWeight = FontWeight.Medium
+                                        )
+                                    }
+                                }
+
+                                if (school.verified) {
+                                    Surface(
+                                        shape = RoundedCornerShape(12.dp),
+                                        color = Color(0xFF3B82F6).copy(alpha = 0.1f)
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Icon(
+                                                Icons.Outlined.Verified,
+                                                contentDescription = "Verified",
+                                                tint = Color(0xFF3B82F6),
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                            Text(
+                                                text = "Verified",
+                                                fontSize = 12.sp,
+                                                fontWeight = FontWeight.SemiBold,
+                                                color = Color(0xFF3B82F6)
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(20.dp))
+
+                        // Action buttons for students
+                        if (!isSchoolView) {
+                            // Primary Actions Row
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Button(
+                                    onClick = {
+                                        val intent = Intent(context, StudentApplicationActivity::class.java)
+                                        intent.putExtra("schoolId", school.uid)
+                                        context.startActivity(intent)
+                                    },
+                                    modifier = Modifier.weight(1f).height(52.dp),
+                                    shape = RoundedCornerShape(16.dp),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = Color(0xFF10B981)
+                                    ),
+                                    elevation = ButtonDefaults.buttonElevation(
+                                        defaultElevation = 2.dp,
+                                        pressedElevation = 6.dp
+                                    )
+                                ) {
+                                    Icon(
+                                        Icons.Outlined.Edit,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("Apply Now", fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+                                }
+
+                                OutlinedButton(
+                                    onClick = {
+                                        val intent = Intent(context, CompareActivity::class.java)
+                                        intent.putExtra("school_details", school)
+                                        context.startActivity(intent)
+                                    },
+                                    modifier = Modifier.weight(1f).height(52.dp),
+                                    shape = RoundedCornerShape(16.dp),
+                                    border = androidx.compose.foundation.BorderStroke(
+                                        2.dp,
+                                        Color(0xFF3B82F6)
+                                    ),
+                                    colors = ButtonDefaults.outlinedButtonColors(
+                                        contentColor = Color(0xFF3B82F6)
+                                    )
+                                ) {
+                                    Icon(
+                                        Icons.AutoMirrored.Outlined.CompareArrows,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("Compare", fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            // View Full Details button
+                            Button(
+                                onClick = {
+                                    val intent = Intent(context, SchoolDetailActivity::class.java)
+                                    intent.putExtra("uid", school.uid)
+                                    context.startActivity(intent)
+                                },
+                                modifier = Modifier.fillMaxWidth().height(52.dp),
+                                shape = RoundedCornerShape(16.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFF3B82F6)
+                                ),
+                                elevation = ButtonDefaults.buttonElevation(
+                                    defaultElevation = 2.dp,
+                                    pressedElevation = 6.dp
+                                )
+                            ) {
+                                Icon(
+                                    Icons.AutoMirrored.Outlined.OpenInNew,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("View Full Details", fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+                            }
+
+                            Spacer(modifier = Modifier.height(12.dp))
+                        }
+
+                        // Secondary Actions Row - Gallery and Reviews
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            OutlinedButton(
+                                onClick = {
+                                    val intent = Intent(context, SchoolGalleryActivity::class.java)
+                                        .putExtra("schoolId", school.uid)
+                                    context.startActivity(intent)
+                                },
+                                modifier = Modifier.weight(1f).height(48.dp),
+                                shape = RoundedCornerShape(14.dp),
+                                border = androidx.compose.foundation.BorderStroke(
+                                    1.5.dp,
+                                    Color(0xFF8B5CF6)
+                                ),
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    contentColor = Color(0xFF8B5CF6)
+                                )
+                            ) {
+                                Icon(Icons.Outlined.PhotoLibrary, contentDescription = "Gallery", modifier = Modifier.size(20.dp))
+                                Spacer(Modifier.width(6.dp))
+                                Text("Gallery", fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                            }
+
+                            OutlinedButton(
+                                onClick = {},
+                                modifier = Modifier.weight(1f).height(48.dp),
+                                shape = RoundedCornerShape(14.dp),
+                                border = androidx.compose.foundation.BorderStroke(
+                                    1.5.dp,
+                                    Color(0xFFF59E0B)
+                                ),
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    contentColor = Color(0xFFF59E0B)
+                                )
+                            ) {
+                                Icon(Icons.Outlined.StarOutline, contentDescription = "Reviews", modifier = Modifier.size(20.dp))
+                                Spacer(Modifier.width(6.dp))
+                                Text("Reviews", fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(24.dp))
+
+                        // Quick Stats Row
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            QuickStat(
+                                icon = Icons.Outlined.School,
+                                label = "Curriculum",
+                                value = school.curriculum,
+                                modifier = Modifier.weight(1f)
+                            )
+                            QuickStat(
+                                icon = Icons.Outlined.Groups,
+                                label = "Students",
+                                value = school.totalStudents,
+                                modifier = Modifier.weight(1f)
+                            )
+                            QuickStat(
+                                icon = Icons.Outlined.CalendarToday,
+                                label = "Est.",
+                                value = school.establishedYear,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                        }
+                    }
+                }
+
+                // ---- About Section ----
+                item {
+                    DetailSectionHeader("About School")
+                    Text(
+                        text = school.description.ifBlank { "No description available." },
+                        modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
+                        color = Color(0xFF475569),
+                        fontSize = 15.sp,
+                        lineHeight = 24.sp
+                    )
+                }
+
+                // ---- Details Cards ----
+                item {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    DetailSectionHeader("Academic Info")
+                    Column(modifier = Modifier.padding(horizontal = 24.dp)) {
+                        DetailRow(Icons.Outlined.Book, "Programs", school.programsOffered)
+                        DetailRow(Icons.Outlined.SportsSoccer, "Facilities", school.facilities)
+                        DetailRow(Icons.Outlined.LocalActivity, "Activities", school.extracurricular)
+                        DetailRow(Icons.Outlined.Payments, "Tuition Fee", school.tuitionFee)
+                    }
+                }
+
+                item {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    DetailSectionHeader("Contact & Access")
+                    Column(modifier = Modifier.padding(horizontal = 24.dp)) {
+                        DetailRow(Icons.Outlined.Person, "Principal", school.principalName)
+                        DetailRow(Icons.Outlined.Email, "Email", school.email, isLink = true, context = context)
+                        DetailRow(Icons.Outlined.Phone, "Phone", school.contactNumber, isLink = true, context = context)
+                        DetailRow(Icons.Outlined.Language, "Website", school.website, isLink = true, context = context)
+                    }
+                }
+
+                // ✅ NEW: Reviews section (consistent card UI)
+                item {
+                    Spacer(modifier = Modifier.height(18.dp))
+                    DetailSectionHeader("Reviews")
+
+                    Column(modifier = Modifier.padding(horizontal = 24.dp)) {
+                        ReviewsSummaryCard(
+                            avg = avgRating,
+                            total = totalReviews
+                        )
+
+                        Spacer(Modifier.height(12.dp))
+
+                        ReviewComposerCard(
+                            onSubmit = { rating: Int, comment: String ->
+                                val uid = FirebaseAuth.getInstance().currentUser?.uid
+                                if (!uid.isNullOrBlank()) {
+                                    reviewVm.submitReview(
+                                        reviewerUid = uid,
+                                        rating = rating,
+                                        comment = comment
+                                    )
+                                }
+                            }
+                        )
+
+                        Spacer(Modifier.height(12.dp))
+
+                        if (reviewVm.loading) {
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                                CircularProgressIndicator()
+                            }
+                        } else {
+                            if (reviews.isEmpty()) {
+                                Text(
+                                    "No reviews yet. Be the first to review!",
+                                    color = Color(0xFF64748B),
+                                    modifier = Modifier.padding(vertical = 10.dp)
+                                )
+                            } else {
+                                reviews.forEach { r ->
+                                    ReviewCardSimple(review = r)
+                                    Spacer(Modifier.height(10.dp))
+                                }
+                            }
+                        }
+
+                        reviewVm.error?.let {
+                            Text(
+                                text = it,
+                                color = Color.Red,
+                                modifier = Modifier.padding(top = 10.dp)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(30.dp))
+                }
+            }
+        }
+    }
+}
+

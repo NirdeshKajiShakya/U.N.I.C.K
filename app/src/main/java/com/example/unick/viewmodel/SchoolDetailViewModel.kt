@@ -4,16 +4,20 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.unick.model.SchoolGalleryModel
 import com.example.unick.model.SchoolProfileModel
 import com.example.unick.model.SchoolReviewModel
 import com.example.unick.repository.SchoolProfileRepo
 import com.example.unick.repository.SchoolProfileRepoImpl
+import com.example.unick.repository.ShortlistRepository
 import com.google.firebase.database.FirebaseDatabase
+import kotlinx.coroutines.launch
 
 
 class SchoolDetailViewModel(
-    private val repo: SchoolProfileRepo = SchoolProfileRepoImpl()
+    private val repo: SchoolProfileRepo = SchoolProfileRepoImpl(),
+    private val shortlistRepo: ShortlistRepository = ShortlistRepository()
 ) : ViewModel() {
 
     // ---- UI STATE ----
@@ -36,6 +40,9 @@ class SchoolDetailViewModel(
         private set
 
     var totalReviews by mutableStateOf(0)
+        private set
+
+    var isShortlisted by mutableStateOf(false)
         private set
 
     private var currentSchoolId: String? = null
@@ -81,6 +88,30 @@ class SchoolDetailViewModel(
             },
             onError = { msg -> error = msg }
         )
+
+        // Check if school is shortlisted
+        checkShortlistStatus(schoolId)
+    }
+
+    // ---- CHECK SHORTLIST STATUS ----
+    private fun checkShortlistStatus(schoolId: String) {
+        viewModelScope.launch {
+            isShortlisted = shortlistRepo.isInShortlist(schoolId)
+        }
+    }
+
+    // ---- TOGGLE SHORTLIST ----
+    fun toggleShortlist() {
+        val schoolId = currentSchoolId ?: return
+        viewModelScope.launch {
+            if (isShortlisted) {
+                shortlistRepo.removeFromShortlist(schoolId)
+                isShortlisted = false
+            } else {
+                shortlistRepo.addToShortlist(schoolId)
+                isShortlisted = true
+            }
+        }
     }
 
     // ✅ helper to fetch fullName from Users node
