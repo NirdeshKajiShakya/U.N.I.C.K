@@ -250,7 +250,7 @@ fun SettingsScreenForSettings(onBackClick: () -> Unit = {}) {
                 showLogoutDialog = false
                 FirebaseAuth.getInstance().signOut()
                 Toast.makeText(context, "Logged out successfully", Toast.LENGTH_SHORT).show()
-                val intent = Intent(context, UserLoginActivity::class.java)
+                val intent = Intent(context, WelcomeActivity::class.java)
                 intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                 context.startActivity(intent)
             },

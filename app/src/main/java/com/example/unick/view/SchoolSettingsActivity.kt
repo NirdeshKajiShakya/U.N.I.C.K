@@ -85,10 +85,10 @@ class SchoolSettingsActivity : ComponentActivity() {
                     startActivity(Intent(this, SendCodeToEmailActivity::class.java))
                 },
 
-                // ✅ Logout -> go to school login screen
+                // ✅ Logout -> go to welcome screen
                 onLogout = {
                     FirebaseAuth.getInstance().signOut()
-                    val i = Intent(this, UserLoginSchoolActivity::class.java).apply {
+                    val i = Intent(this, WelcomeActivity::class.java).apply {
                         flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                     }
                     startActivity(i)

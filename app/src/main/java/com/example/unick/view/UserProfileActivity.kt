@@ -1031,8 +1031,8 @@ fun LogoutButtonForUserProfile() {
             .shadow(4.dp, RoundedCornerShape(16.dp))
             .clickable {
                 FirebaseAuth.getInstance().signOut()
-                // Navigate to login screen
-                val intent = Intent(context, UserLoginActivity::class.java)
+                // Navigate to welcome screen
+                val intent = Intent(context, WelcomeActivity::class.java)
                 intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                 context.startActivity(intent)
             },
