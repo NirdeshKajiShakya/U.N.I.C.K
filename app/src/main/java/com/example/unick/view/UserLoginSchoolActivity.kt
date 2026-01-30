@@ -72,21 +72,80 @@ fun UserLoginSchoolScreen() {
                 SchoolLoginButton {
                     if (email.isNotBlank() && password.isNotBlank()) {
                         if (!isInPreview) {
-                            FirebaseAuth.getInstance().signInWithEmailAndPassword(email, password)
+                            val auth = FirebaseAuth.getInstance()
+                            val db = com.google.firebase.database.FirebaseDatabase.getInstance("https://vidyakhoj-927fb-default-rtdb.firebaseio.com/")
+                            
+                            auth.signInWithEmailAndPassword(email.trim(), password)
                                 .addOnCompleteListener { task ->
                                     if (task.isSuccessful) {
-                                        Toast.makeText(context, "Login Successful", Toast.LENGTH_SHORT).show()
-                                        // Navigate to standardized DashboardActivity which now handles School View
-                                        val intent = Intent(context, DashboardActivity::class.java)
-                                        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                                        context.startActivity(intent)
-                                        (context as? ComponentActivity)?.finish()
+                                        val firebaseUser = auth.currentUser
+                                        if (firebaseUser != null) {
+                                            val uid = firebaseUser.uid
+                                            val schoolRef = db.getReference("schools").child(uid)
+
+                                            // CHECK 1: Verify user exists in "schools" node
+                                            schoolRef.addListenerForSingleValueEvent(object : com.google.firebase.database.ValueEventListener {
+                                                override fun onDataChange(snapshot: com.google.firebase.database.DataSnapshot) {
+                                                    if (snapshot.exists()) {
+                                                        Toast.makeText(context, "Login Successful", Toast.LENGTH_SHORT).show()
+                                                        val intent = Intent(context, DashboardActivity::class.java)
+                                                        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                                                        context.startActivity(intent)
+                                                        (context as? ComponentActivity)?.finish()
+                                                    } else {
+                                                        // WRONG ROLE - Check Users or Admin
+                                                        db.getReference("Users").child(uid).addListenerForSingleValueEvent(object : com.google.firebase.database.ValueEventListener {
+                                                            override fun onDataChange(userSnap: com.google.firebase.database.DataSnapshot) {
+                                                                if (userSnap.exists()) {
+                                                                    Toast.makeText(context, "This email is registered as a Student. Please use the Student login portal.", Toast.LENGTH_LONG).show()
+                                                                } else {
+                                                                    db.getReference("Admins").child(uid).addListenerForSingleValueEvent(object : com.google.firebase.database.ValueEventListener {
+                                                                        override fun onDataChange(adminSnap: com.google.firebase.database.DataSnapshot) {
+                                                                            if (adminSnap.exists()) {
+                                                                                Toast.makeText(context, "This email is registered as an Admin. Please use the Admin login portal.", Toast.LENGTH_LONG).show()
+                                                                            } else {
+                                                                                Toast.makeText(context, "Account not found.", Toast.LENGTH_SHORT).show()
+                                                                            }
+                                                                            auth.signOut()
+                                                                        }
+                                                                        override fun onCancelled(error: com.google.firebase.database.DatabaseError) {
+                                                                            Toast.makeText(context, "Verification failed.", Toast.LENGTH_SHORT).show()
+                                                                            auth.signOut()
+                                                                        }
+                                                                    })
+                                                                }
+                                                                if (userSnap.exists()) auth.signOut() // Sign out if student found
+                                                            }
+                                                            override fun onCancelled(error: com.google.firebase.database.DatabaseError) {
+                                                                Toast.makeText(context, "Verification failed.", Toast.LENGTH_SHORT).show()
+                                                                auth.signOut()
+                                                            }
+                                                        })
+                                                    }
+                                                }
+
+                                                override fun onCancelled(error: com.google.firebase.database.DatabaseError) {
+                                                    Toast.makeText(context, "Database error: ${error.message}", Toast.LENGTH_SHORT).show()
+                                                    auth.signOut()
+                                                }
+                                            })
+                                        }
                                     } else {
-                                        Toast.makeText(context, "Login failed: ${task.exception?.message}", Toast.LENGTH_SHORT).show()
+                                        val exception = task.exception
+                                        val msg = when {
+                                            exception?.message?.contains("user-not-found", ignoreCase = true) == true ->
+                                                "Account not found. This email is not registered."
+                                            exception?.message?.contains("wrong-password", ignoreCase = true) == true ->
+                                                "Incorrect password. Please try again."
+                                            exception?.message?.contains("invalid-credential", ignoreCase = true) == true ->
+                                                "Invalid credentials."
+                                            else -> "Login failed: ${exception?.message}"
+                                        }
+                                        Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
                                     }
                                 }
                         } else {
-                            // In preview mode, just show the success toast
+                            // In preview mode
                             Toast.makeText(context, "Login Successful", Toast.LENGTH_SHORT).show()
                         }
                     } else {

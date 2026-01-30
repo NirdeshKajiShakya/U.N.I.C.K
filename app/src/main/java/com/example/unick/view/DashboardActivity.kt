@@ -537,7 +537,7 @@ fun SchoolSection(title: String, subtitle: String, schools: List<SchoolForm>, co
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.Top
+            verticalAlignment = Alignment.CenterVertically // Align smoothly
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
@@ -546,7 +546,7 @@ fun SchoolSection(title: String, subtitle: String, schools: List<SchoolForm>, co
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFF0F172A)
                 )
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(4.dp)) // Reduced spacer
                 Text(
                     text = subtitle,
                     fontSize = 14.sp,
@@ -554,10 +554,24 @@ fun SchoolSection(title: String, subtitle: String, schools: List<SchoolForm>, co
                     lineHeight = 20.sp
                 )
             }
+            
+            // "See More" Button
+            TextButton(onClick = {
+                context.startActivity(Intent(context, AllSchoolsActivity::class.java))
+            }) {
+                Text(
+                    text = "See More",
+                    color = Color(0xFF2563EB),
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp
+                )
+            }
         }
         Spacer(modifier = Modifier.height(16.dp))
+        
+        // Horizontal list limited to 5 items
         LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            items(schools) { school ->
+            items(schools.take(5)) { school ->
                 SchoolCard(
                     school = school,
                     context = context,
