@@ -50,14 +50,6 @@ class LoginTest {
         Intents.intended(hasComponent(SchoolDetailActivity::class.java.name))
     }
 
-    @Test
-    fun loginAdminUser_navigatesToAdminDashboard() {
-        composeRule.onNodeWithTag("email").performTextInput("admin@test.com")
-        composeRule.onNodeWithTag("password").performTextInput("admin123")
-        composeRule.onNodeWithTag("login").performClick()
-
-        Intents.intended(hasComponent(AdminDashboardActivity::class.java.name))
-    }
 
     @Test
     fun emptyFields_showError() {

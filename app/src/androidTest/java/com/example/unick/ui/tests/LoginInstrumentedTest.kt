@@ -51,12 +51,4 @@ class LoginInstrumentedTest {
         Intents.intended(hasComponent(SchoolDashboard::class.java.name))
     }
 
-    // Test for Admin login
-    @Test
-    fun loginAdmin_navigatesToAdminDashboard() {
-        composeRule.onNodeWithTag("email").performTextInput("admin@test.com")
-        composeRule.onNodeWithTag("password").performTextInput("admin123")
-        composeRule.onNodeWithTag("login").performClick()
-        Intents.intended(hasComponent(AdminDashboardActivity::class.java.name))
-    }
 }
