@@ -84,7 +84,8 @@ data class UserProfileModel(
     val email: String = "",
     val location: String = "",
     val schoolId: String = "",
-    val role: String = ""
+    val role: String = "",
+    val profilePictureUrl: String = ""
 )
 
 // -------------------- ACTIVITY ------------------------
@@ -165,6 +166,7 @@ fun UserProfileScreen(viewModel: UserProfileViewModel?) {
                             ProfileHeaderSection(
                                 userName = user.fullName,
                                 email = user.email,
+                                profilePictureUrl = user.profilePictureUrl,
                                 onEditProfileClick = {
                                     val intent = Intent(context, EditUserProfileActivity::class.java)
                                     context.startActivity(intent)
@@ -282,6 +284,7 @@ fun UserProfileScreen(viewModel: UserProfileViewModel?) {
 fun ProfileHeaderSection(
     userName: String,
     email: String,
+    profilePictureUrl: String = "",
     onEditProfileClick: () -> Unit
 ) {
     Box(
@@ -338,11 +341,20 @@ fun ProfileHeaderSection(
                     .border(3.dp, Color.White, CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                Image(
-                    painterResource(id = R.drawable.school_profile),
-                    contentDescription = null,
-                    modifier = Modifier.size(45.dp)
-                )
+                if (profilePictureUrl.isNotEmpty()) {
+                    coil.compose.AsyncImage(
+                        model = profilePictureUrl,
+                        contentDescription = "Profile Picture",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                    )
+                } else {
+                    Image(
+                        painterResource(id = R.drawable.school_profile),
+                        contentDescription = null,
+                        modifier = Modifier.size(45.dp)
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))

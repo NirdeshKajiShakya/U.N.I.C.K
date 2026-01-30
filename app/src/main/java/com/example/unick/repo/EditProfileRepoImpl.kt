@@ -20,9 +20,7 @@ class EditProfileRepoImpl : EditProfileRepo {
                     dob = snapshot.child("dob").getValue(String::class.java) ?: "",
                     gender = snapshot.child("gender").getValue(String::class.java) ?: "",
                     location = snapshot.child("location").getValue(String::class.java) ?: "",
-                    classPref = snapshot.child("classPref").getValue(String::class.java) ?: "Class",
-                    levelPref = snapshot.child("levelPref").getValue(String::class.java) ?: "Level",
-                    typePref = snapshot.child("typePref").getValue(String::class.java) ?: "Type"
+                    profilePictureUrl = snapshot.child("profilePictureUrl").getValue(String::class.java) ?: ""
                 )
                 Result.success(profile)
             } else {
@@ -42,9 +40,7 @@ class EditProfileRepoImpl : EditProfileRepo {
                 "dob" to profile.dob,
                 "gender" to profile.gender,
                 "location" to profile.location,
-                "classPref" to profile.classPref,
-                "levelPref" to profile.levelPref,
-                "typePref" to profile.typePref
+                "profilePictureUrl" to profile.profilePictureUrl
             )
             database.child(USERS_PATH).child(userId).updateChildren(updates).await()
             Result.success(Unit)

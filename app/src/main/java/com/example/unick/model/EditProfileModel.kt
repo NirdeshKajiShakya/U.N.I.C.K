@@ -7,7 +7,5 @@ data class EditProfileModel(
     val dob: String = "",
     val gender: String = "",
     val location: String = "",
-    val classPref: String = "Class",
-    val levelPref: String = "Level",
-    val typePref: String = "Type"
+    val profilePictureUrl: String = ""
 )

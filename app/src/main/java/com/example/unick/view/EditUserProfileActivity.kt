@@ -1,17 +1,17 @@
 package com.example.unick.view
 
+import android.net.Uri
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
@@ -19,7 +19,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.*
-import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -29,6 +28,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil.compose.AsyncImage
 import com.example.unick.R
 import com.example.unick.repo.EditProfileRepoImpl
 import com.example.unick.viewmodel.EditUserProfileViewModel
@@ -48,14 +49,11 @@ private val CardWhite = Color(0xFFFFFFFF)
 private val TextPrimary = Color(0xFF1A1A2E)
 private val TextSecondary = Color(0xFF6B7280)
 private val AccentRed = Color(0xFFEF4444)
-private val AccentRedDark = Color(0xFFDC2626)
 private val BorderGray = Color(0xFFE5E7EB)
-private val ChipBackground = Color(0xFFEEF2FF)
-private val ChipText = Color(0xFF4338CA)
 
 class EditUserProfileActivity : ComponentActivity() {
     private val viewModel: EditUserProfileViewModel by viewModels {
-        EditUserProfileViewModel.Factory(EditProfileRepoImpl())
+        EditUserProfileViewModel.Factory(EditProfileRepoImpl(), applicationContext)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -79,6 +77,13 @@ fun EditUserProfileScreen(
 ) {
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    // Image picker launcher
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let { viewModel.uploadProfilePicture(it) }
+    }
 
     LaunchedEffect(uiState.saveSuccess, uiState.deleteSuccess, uiState.errorMessage) {
         uiState.saveSuccess?.let { success ->
@@ -115,10 +120,15 @@ fun EditUserProfileScreen(
                 contentPadding = PaddingValues(bottom = 32.dp)
             ) {
                 item { EditProfileHeader(onBackClick = onBackClick) }
-                item { ProfileCard(
-                    name = uiState.profile.fullName.ifEmpty { "User Name" },
-                    email = uiState.profile.email.ifEmpty { "user@gmail.com" }
-                )}
+                item {
+                    ProfileCard(
+                        name = uiState.profile.fullName.ifEmpty { "User Name" },
+                        email = uiState.profile.email.ifEmpty { "user@gmail.com" },
+                        profilePictureUrl = uiState.profile.profilePictureUrl,
+                        isUploadingImage = uiState.isUploadingImage,
+                        onChangePhoto = { imagePickerLauncher.launch("image/*") }
+                    )
+                }
                 item { PersonalInfoSection(
                     fullName = uiState.profile.fullName,
                     email = uiState.profile.email,
@@ -127,11 +137,6 @@ fun EditUserProfileScreen(
                     gender = uiState.profile.gender,
                     location = uiState.profile.location,
                     onFieldChange = { field, value -> viewModel.updateField(field, value) }
-                )}
-                item { PreferencesSection(
-                    classPref = uiState.profile.classPref,
-                    levelPref = uiState.profile.levelPref,
-                    typePref = uiState.profile.typePref
                 )}
                 item { ActionButtons(
                     onDelete = { viewModel.deleteAccount() },
@@ -184,7 +189,13 @@ fun EditProfileHeader(onBackClick: () -> Unit) {
 }
 
 @Composable
-fun ProfileCard(name: String, email: String) {
+fun ProfileCard(
+    name: String,
+    email: String,
+    profilePictureUrl: String,
+    isUploadingImage: Boolean,
+    onChangePhoto: () -> Unit
+) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -213,11 +224,25 @@ fun ProfileCard(name: String, email: String) {
                     .border(3.dp, Color.White, CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                Image(
-                    painterResource(id = R.drawable.school_profile),
-                    contentDescription = null,
-                    modifier = Modifier.size(50.dp)
-                )
+                if (isUploadingImage) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(40.dp),
+                        color = PrimaryBlue
+                    )
+                } else if (profilePictureUrl.isNotEmpty()) {
+                    AsyncImage(
+                        model = profilePictureUrl,
+                        contentDescription = "Profile Picture",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Image(
+                        painterResource(id = R.drawable.school_profile),
+                        contentDescription = null,
+                        modifier = Modifier.size(50.dp)
+                    )
+                }
             }
             Spacer(modifier = Modifier.height(16.dp))
             Text(
@@ -233,7 +258,7 @@ fun ProfileCard(name: String, email: String) {
                 color = TextSecondary
             )
             Spacer(modifier = Modifier.height(12.dp))
-            TextButton(onClick = { /* Change photo */ }) {
+            TextButton(onClick = onChangePhoto) {
                 Icon(
                     Icons.Outlined.CameraAlt,
                     contentDescription = null,
@@ -345,77 +370,6 @@ fun StyledTextField(
     )
 }
 
-@Composable
-fun PreferencesSection(classPref: String, levelPref: String, typePref: String) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 20.dp)
-            .offset(y = (-10).dp)
-            .shadow(4.dp, RoundedCornerShape(16.dp)),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = CardWhite)
-    ) {
-        Column(modifier = Modifier.padding(20.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    Icons.Outlined.Tune,
-                    contentDescription = null,
-                    tint = PrimaryBlue
-                )
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    "Preferences",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = TextPrimary
-                )
-            }
-            Spacer(modifier = Modifier.height(16.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                PreferenceChip(text = classPref.ifEmpty { "Class" }, modifier = Modifier.weight(1f))
-                PreferenceChip(text = levelPref.ifEmpty { "Level" }, modifier = Modifier.weight(1f))
-                PreferenceChip(text = typePref.ifEmpty { "Type" }, modifier = Modifier.weight(1f))
-            }
-            Spacer(modifier = Modifier.height(16.dp))
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(ChipBackground.copy(alpha = 0.5f))
-                    .clickable { }
-                    .padding(12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(Icons.Outlined.Edit, contentDescription = null, tint = ChipText, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(8.dp))
-                Text("Edit Preferences", color = ChipText, fontWeight = FontWeight.Medium)
-            }
-        }
-    }
-}
-
-@Composable
-fun PreferenceChip(text: String, modifier: Modifier = Modifier) {
-    Box(
-        modifier = modifier
-            .clip(RoundedCornerShape(10.dp))
-            .background(ChipBackground)
-            .padding(horizontal = 12.dp, vertical = 10.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text,
-            color = ChipText,
-            fontWeight = FontWeight.Medium,
-            fontSize = 13.sp,
-            maxLines = 1
-        )
-    }
-}
 
 @Composable
 fun ActionButtons(onDelete: () -> Unit, onSave: () -> Unit) {
@@ -488,7 +442,7 @@ fun PreviewEditUserProfileScreen() {
     Box(modifier = Modifier.fillMaxSize().background(BackgroundGray)) {
         LazyColumn {
             item { EditProfileHeader(onBackClick = {}) }
-            item { ProfileCard("John Doe", "john@email.com") }
+            item { ProfileCard("John Doe", "john@email.com", "", false, {}) }
         }
     }
 }
