@@ -150,7 +150,24 @@ dependencies {
     androidTestImplementation("androidx.test.espresso:espresso-intents:3.7.0")  // for Intents.init()
     androidTestImplementation("androidx.compose.ui:ui-test-junit4:1.10.2")
     debugImplementation("androidx.compose.ui:ui-test-manifest:1.10.2")
+    androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation(platform(libs.androidx.compose.bom))
+    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+
+    debugImplementation(libs.androidx.compose.ui.tooling)
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
+    androidTestImplementation("androidx.test.espresso:espresso-intents:3.5.1")
+
+    // Unit testing
+    testImplementation("org.mockito:mockito-core:5.11.0")
+    testImplementation("org.mockito.kotlin:mockito-kotlin:5.2.1")
+
+// Optional but recommended
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
 
     androidTestImplementation("androidx.test.uiautomator:uiautomator:2.3.0")
     androidTestImplementation("androidx.test:monitor:1.8.0")
+}
+tasks.withType<Test> {
+    enabled = true
 }
