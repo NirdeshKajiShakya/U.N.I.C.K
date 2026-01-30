@@ -5,7 +5,6 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.espresso.intent.Intents
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasComponent
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.example.unick.view.AdminDashboardActivity
 import com.example.unick.view.DashboardActivity
 import com.example.unick.view.SchoolDetailActivity
 import com.example.unick.view.UserLoginActivity
@@ -37,7 +36,6 @@ class LoginTest {
         composeRule.onNodeWithTag("password").performTextInput("user123")
         composeRule.onNodeWithTag("login").performClick()
 
-        // Assert correct Activity is opened
         Intents.intended(hasComponent(DashboardActivity::class.java.name))
     }
 
@@ -49,7 +47,6 @@ class LoginTest {
 
         Intents.intended(hasComponent(SchoolDetailActivity::class.java.name))
     }
-
 
     @Test
     fun emptyFields_showError() {
