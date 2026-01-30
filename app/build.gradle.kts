@@ -78,44 +78,36 @@ android {
         unitTests.isIncludeAndroidResources = true
     }
 }
-
 dependencies {
-
-    // AndroidX Core
+    // Core & Compose
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.compose.runtime.saveable)
 
-    // Compose
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
 
-    // Images - Use Coil version compatible with Kotlin 2.0
     implementation("io.coil-kt:coil-compose:2.7.0")
     implementation("com.squareup.picasso:picasso:2.71828")
 
-    // Material Icons + Navigation
     implementation("androidx.compose.material:material-icons-extended:1.5.0")
     implementation("androidx.navigation:navigation-compose:2.7.0")
 
-    // Firebase (ONE BOM ONLY)
+    // Firebase
     implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-auth-ktx")
     implementation("com.google.firebase:firebase-database-ktx")
     implementation("com.google.firebase:firebase-firestore-ktx")
 
-    // Coroutines support for Firebase Tasks (await())
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
 
-    // ViewModel
+    // ViewModel & others
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.6")
-
-    // Cloudinary
     implementation("com.cloudinary:cloudinary-android:3.1.2")
 
     // Retrofit + OkHttp
@@ -123,39 +115,42 @@ dependencies {
     implementation("com.squareup.retrofit2:converter-gson:2.11.0")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
-
-    // For Multipart (images)
     implementation("com.squareup.retrofit2:converter-scalars:2.11.0")
 
-    // Maps
+    // Google Play Services
     implementation("com.google.android.gms:play-services-maps:19.2.0")
-
     implementation("com.google.android.gms:play-services-location:21.3.0")
 
-
-    // AI/ML
+    // AI / ML
     implementation(libs.generativeai)
     implementation(libs.firebase.ai)
 
-    // AppCompat & ConstraintLayout (temporarily using direct dependencies until catalog is fixed)
+    // Legacy / compatibility
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
-
-    // RecyclerView and LayoutManager dependencies
     implementation("androidx.recyclerview:recyclerview:1.3.1")
     implementation("androidx.recyclerview:recyclerview-selection:1.1.0")
 
-    // Testing
+    // ────────────────────────────────────────────────
+    // UNIT TESTS (local JVM)
+    // ────────────────────────────────────────────────
     testImplementation(libs.junit)
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
+    testImplementation("org.mockito:mockito-core:5.14.2")
+    testImplementation("org.mockito.kotlin:mockito-kotlin:6.2.3")
+    testImplementation("org.mockito:mockito-inline:5.2.0")  // for mockStatic
+    testImplementation("androidx.arch.core:core-testing:2.2.0")
+    testImplementation("app.cash.turbine:turbine:1.2.0")    // StateFlow testing
+
+    // ────────────────────────────────────────────────
+    // INSTRUMENTED TESTS (device/emulator)
+    // ────────────────────────────────────────────────
     androidTestImplementation(libs.androidx.junit)
-    androidTestImplementation(libs.androidx.espresso.core)
-    androidTestImplementation(platform(libs.androidx.compose.bom))
-    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+    androidTestImplementation("androidx.test.espresso:espresso-core:3.7.0")
+    androidTestImplementation("androidx.test.espresso:espresso-intents:3.7.0")  // for Intents.init()
+    androidTestImplementation("androidx.compose.ui:ui-test-junit4:1.10.2")
+    debugImplementation("androidx.compose.ui:ui-test-manifest:1.10.2")
 
-    debugImplementation(libs.androidx.compose.ui.tooling)
-    debugImplementation(libs.androidx.compose.ui.test.manifest)
-}
-
-tasks.withType<Test> {
-    enabled = false
+    androidTestImplementation("androidx.test.uiautomator:uiautomator:2.3.0")
+    androidTestImplementation("androidx.test:monitor:1.8.0")
 }
